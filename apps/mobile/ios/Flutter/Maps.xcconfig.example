@@ -1,0 +1,6 @@
+// Copy to Maps.xcconfig (git-ignored) and fill in the iOS-restricted Maps key.
+//
+// The iOS Maps SDK needs its key before Dart starts, so this is the one setting
+// that cannot travel through --dart-define. Leave the file absent to build
+// without embedded maps; the app falls back to the system maps app.
+GOOGLE_MAPS_KEY =

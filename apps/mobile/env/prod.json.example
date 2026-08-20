@@ -1,0 +1,13 @@
+{
+  "APP_ENV": "production",
+  "SUPABASE_URL": "https://<production-project-ref>.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<production>",
+  "RAZORPAY_KEY_ID": "rzp_live_<key>",
+  "GOOGLE_MAPS_KEY": "<android-and-ios-restricted-maps-key>",
+  "SENTRY_DSN": "https://<key>@<org>.ingest.sentry.io/<project>",
+  "FIREBASE_API_KEY": "<firebase-web-api-key>",
+  "FIREBASE_APP_ID": "1:<sender-id>:android:<hash>",
+  "FIREBASE_MESSAGING_SENDER_ID": "<sender-id>",
+  "FIREBASE_PROJECT_ID": "<firebase-project-id>",
+  "FIREBASE_STORAGE_BUCKET": "<firebase-project-id>.appspot.com"
+}

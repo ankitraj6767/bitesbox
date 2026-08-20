@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Bites Box</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>bitesbox</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- Location. Only the delivery-partner shell ever asks: a rider publishes a
+	     position while a delivery is live so the customer can watch it move.
+	     "When in use" is deliberate — the app does not track a rider in the
+	     background, and nothing here needs it to. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Bites Box shares your location with the customer while you are delivering their order, and uses it to give you accurate directions.</string>
+
+	<!-- Camera. Two uses, both in the delivery-partner shell: photographing
+	     onboarding documents, and the optional proof-of-delivery photo. iOS
+	     terminates the app if this key is missing when the picker opens, so it is
+	     required even though only riders ever reach it. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Bites Box uses the camera so you can photograph your onboarding documents and, if you want to, the handover at the customer's door.</string>
+
+	<!-- Photo library. Read-only: a rider may pick a licence photo they already
+	     have rather than retaking it. The app never writes to the library. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose an existing photo of your documents instead of taking a new one.</string>
+
+	<!-- Push. Order updates also arrive over a live connection and in the in-app
+	     inbox, so declining this degrades the experience rather than breaking it. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+
+	<!-- iOS refuses canOpenURL for undeclared schemes, which would make the call
+	     and navigate buttons silently do nothing. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>sms</string>
+		<string>mailto</string>
+		<string>https</string>
+		<string>comgooglemaps</string>
+		<string>googlemaps</string>
+		<string>maps</string>
+		<string>whatsapp</string>
+		<string>upi</string>
+	</array>
+
+	<!-- Resolved from the GOOGLE_MAPS_KEY build setting in the git-ignored
+	     ios/Flutter/Maps.xcconfig. Empty is valid: the app then hands off to the
+	     phone's maps app instead of embedding one. -->
+	<key>GMSApiKey</key>
+	<string>$(GOOGLE_MAPS_KEY)</string>
+
+	<!-- Razorpay hands off to UPI apps, which live outside App Transport Security. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

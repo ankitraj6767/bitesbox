@@ -1,0 +1,143 @@
+name: Deploy Supabase
+
+# Migrations and Edge Functions are deployed together, because a function almost
+# always depends on a schema change that must land first.
+#
+# Two environments, both gated. Configure `staging` and `production` as GitHub
+# Environments with required reviewers so a schema change to a live restaurant is a
+# deliberate act, not a side effect of merging.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which environment to deploy
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+concurrency:
+  group: deploy-supabase-${{ github.event.inputs.target || 'staging' }}
+  cancel-in-progress: false
+
+jobs:
+  # A migration is irreversible against a live database, so it is checked against a
+  # throwaway one first even though CI already did.
+  verify:
+    name: Verify migrations apply cleanly
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector
+      - run: supabase db reset
+      - run: ./supabase/tests/run.sh
+      - run: supabase stop --no-backup
+        if: always()
+
+  deploy:
+    name: Deploy to ${{ github.event.inputs.target || 'staging' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ github.event.inputs.target || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link the project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      # Shows exactly what will change before it changes. The log is the record of
+      # what a given deployment did to the schema.
+      - name: Show pending migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase migration list
+
+      - name: Push migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push
+
+      # Secrets are set before the functions that read them are deployed, so a new
+      # function never starts against missing configuration.
+      - name: Set function secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          secrets=()
+          add() { [ -n "${2:-}" ] && secrets+=("$1=$2") || echo "Skipping unset $1"; }
+
+          add RAZORPAY_KEY_ID          "${{ secrets.RAZORPAY_KEY_ID }}"
+          add RAZORPAY_KEY_SECRET      "${{ secrets.RAZORPAY_KEY_SECRET }}"
+          add RAZORPAY_WEBHOOK_SECRET  "${{ secrets.RAZORPAY_WEBHOOK_SECRET }}"
+          add FCM_PROJECT_ID           "${{ secrets.FCM_PROJECT_ID }}"
+          add FCM_SERVICE_ACCOUNT      "${{ secrets.FCM_SERVICE_ACCOUNT }}"
+          add SMS_PROVIDER             "${{ secrets.SMS_PROVIDER }}"
+          add SMS_API_KEY              "${{ secrets.SMS_API_KEY }}"
+          add SMS_SENDER_ID            "${{ secrets.SMS_SENDER_ID }}"
+          add EMAIL_PROVIDER           "${{ secrets.EMAIL_PROVIDER }}"
+          add EMAIL_API_KEY            "${{ secrets.EMAIL_API_KEY }}"
+          add EMAIL_FROM               "${{ secrets.EMAIL_FROM }}"
+          add SENTRY_DSN               "${{ secrets.SENTRY_DSN }}"
+
+          if [ ${#secrets[@]} -eq 0 ]; then
+            echo "No function secrets configured for this environment."
+            exit 0
+          fi
+
+          supabase secrets set "${secrets[@]}"
+
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd supabase/functions
+
+          for dir in */; do
+            name="${dir%/}"
+            [ -f "${dir}index.ts" ] || continue
+
+            # The webhook is called by Razorpay, which cannot present a Supabase JWT.
+            # It verifies the request itself using the HMAC signature.
+            if [ "$name" = "razorpay-webhook" ]; then
+              supabase functions deploy "$name" --no-verify-jwt
+            else
+              supabase functions deploy "$name"
+            fi
+          done
+
+      - name: Summarise
+        run: |
+          {
+            echo "### Supabase deployed to ${{ github.event.inputs.target || 'staging' }}"
+            echo ""
+            echo "- Migrations pushed"
+            echo "- Edge Functions deployed"
+            echo ""
+            echo "Scheduled jobs run from \`pg_cron\`, registered by the migrations."
+          } >> "$GITHUB_STEP_SUMMARY"

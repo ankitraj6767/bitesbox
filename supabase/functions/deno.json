@@ -1,0 +1,35 @@
+{
+    "lock": false,
+    "imports": {
+        "@supabase/supabase-js": "jsr:@supabase/supabase-js@2.49.4"
+    },
+    "compilerOptions": {
+        "strict": true,
+        "noImplicitAny": true,
+        "noUnusedLocals": true,
+        "lib": [
+            "deno.window",
+            "dom"
+        ]
+    },
+    "fmt": {
+        "lineWidth": 100,
+        "indentWidth": 4,
+        "semiColons": true,
+        "singleQuote": false,
+        "useTabs": false,
+        "exclude": [
+            "_shared/database.types.ts"
+        ]
+    },
+    "lint": {
+        "exclude": [
+            "_shared/database.types.ts"
+        ],
+        "rules": {
+            "tags": [
+                "recommended"
+            ]
+        }
+    }
+}

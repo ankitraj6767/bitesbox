@@ -1,0 +1,42 @@
+{
+    "name": "bitesbox-platform",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Bites Box — restaurant digital operating system (monorepo root)",
+    "workspaces": [
+        "apps/admin",
+        "packages/*"
+    ],
+    "engines": {
+        "node": ">=20.11.0"
+    },
+    "scripts": {
+        "db:start": "supabase start",
+        "db:stop": "supabase stop",
+        "db:reset": "supabase db reset",
+        "db:diff": "supabase db diff -f",
+        "db:push": "supabase db push",
+        "db:lint": "./scripts/db-lint.sh warning",
+        "db:test": "./supabase/tests/run.sh",
+        "db:types": "supabase gen types typescript --local > packages/shared-types/src/database.types.ts && cp packages/shared-types/src/database.types.ts supabase/functions/_shared/database.types.ts",
+        "db:psql": "./scripts/psql.sh",
+        "fn:serve": "supabase functions serve --env-file supabase/functions/.env",
+        "fn:deploy": "supabase functions deploy",
+        "fn:check": "cd supabase/functions && for d in */; do [ -f \"${d}index.ts\" ] && deno check \"${d}index.ts\"; done",
+        "fn:lint": "cd supabase/functions && deno lint && deno fmt --check",
+        "admin:dev": "npm run dev --workspace=@bitesbox/admin",
+        "admin:build": "npm run build --workspace=@bitesbox/admin",
+        "admin:lint": "npm run lint --workspace=@bitesbox/admin",
+        "admin:typecheck": "npm run typecheck --workspace=@bitesbox/admin",
+        "admin:test": "npm run test --workspace=@bitesbox/admin",
+        "mobile:get": "cd apps/mobile && flutter pub get",
+        "mobile:analyze": "cd apps/mobile && flutter analyze",
+        "mobile:test": "cd apps/mobile && flutter test",
+        "secrets:check": "./scripts/check-secrets.sh",
+        "verify": "npm run secrets:check && npm run fn:check && npm run fn:lint && npm run admin:lint && npm run admin:typecheck && npm run admin:test && npm run admin:build && npm run mobile:analyze && npm run mobile:test",
+        "verify:db": "npm run db:lint && npm run db:test"
+    },
+    "devDependencies": {
+        "prettier": "3.6.2"
+    }
+}

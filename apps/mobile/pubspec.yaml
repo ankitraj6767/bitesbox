@@ -1,0 +1,67 @@
+name: bitesbox
+description: Bites Box — one app for customers, delivery partners and the kitchen.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Backend ──
+  supabase_flutter: ^2.10.1
+
+  # ── Push notifications ──
+  # Configured entirely through --dart-define, so no google-services.json or
+  # GoogleService-Info.plist is committed. Absent config degrades to in-app only.
+  firebase_core: ^3.15.2
+  firebase_messaging: ^15.2.10
+
+  # ── State management ──
+  flutter_riverpod: ^2.6.1
+
+  # ── Routing ──
+  go_router: ^14.8.1
+
+  # ── Storage ──
+  shared_preferences: ^2.5.3
+  flutter_secure_storage: ^9.2.4
+
+  # ── Maps ──
+  # Live rider tracking and rider navigation. Rendering is gated on a Maps key
+  # being supplied; without one the UI hands off to the phone's own maps app.
+  google_maps_flutter: ^2.12.1
+
+  # ── UI ──
+  cupertino_icons: ^1.0.8
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.17
+
+  # ── Camera & files ──
+  # Rider onboarding documents and proof-of-delivery photos. Camera-first: a
+  # licence photographed on the spot is harder to borrow than one from a gallery.
+  image_picker: ^1.1.2
+
+  # ── Device & platform ──
+  geolocator: ^13.0.4
+  url_launcher: ^6.3.1
+  package_info_plus: ^8.3.0
+  device_info_plus: ^11.3.0
+  connectivity_plus: ^6.1.3
+  intl: ^0.19.0
+  razorpay_flutter: ^1.4.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/sounds/

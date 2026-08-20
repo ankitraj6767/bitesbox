@@ -1,0 +1,237 @@
+name: Release mobile app
+
+# Manual by design. A store build is a decision, not a consequence of merging.
+#
+# Configuration is assembled from secrets at build time and written to
+# env/<flavour>.json, which is git-ignored. Nothing identifying the project is
+# committed — see apps/mobile/env/README.md.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which environment to build
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+      artefact:
+        description: What to build
+        required: true
+        default: appbundle
+        type: choice
+        options: [appbundle, apk, both]
+
+concurrency:
+  group: release-mobile-${{ github.event.inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    name: Android (${{ github.event.inputs.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: ${{ github.event.inputs.target }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+          cache: true
+
+      # Only publishable client identifiers go in here. The Supabase service role
+      # key, the Razorpay secret and the FCM server credential exist solely as Edge
+      # Function secrets and never reach a build.
+      - name: Assemble the build configuration
+        env:
+          APP_ENV: ${{ github.event.inputs.target == 'production' && 'production' || 'staging' }}
+        run: |
+          set -euo pipefail
+
+          cat > apps/mobile/env/build.json <<JSON
+          {
+            "APP_ENV": "${APP_ENV}",
+            "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+            "SUPABASE_PUBLISHABLE_KEY": "${{ secrets.SUPABASE_PUBLISHABLE_KEY }}",
+            "RAZORPAY_KEY_ID": "${{ secrets.RAZORPAY_KEY_ID }}",
+            "GOOGLE_MAPS_KEY": "${{ secrets.GOOGLE_MAPS_KEY_ANDROID }}",
+            "SENTRY_DSN": "${{ secrets.SENTRY_DSN }}",
+            "FIREBASE_API_KEY": "${{ secrets.FIREBASE_API_KEY }}",
+            "FIREBASE_APP_ID": "${{ secrets.FIREBASE_APP_ID_ANDROID }}",
+            "FIREBASE_MESSAGING_SENDER_ID": "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+            "FIREBASE_PROJECT_ID": "${{ secrets.FIREBASE_PROJECT_ID }}",
+            "FIREBASE_STORAGE_BUCKET": "${{ secrets.FIREBASE_STORAGE_BUCKET }}"
+          }
+          JSON
+
+          # Fail loudly rather than shipping a build that cannot reach the backend.
+          for key in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY; do
+            if ! grep -q "\"$key\": \"[^\"]" apps/mobile/env/build.json; then
+              echo "::error::$key is not configured for the ${APP_ENV} environment."
+              exit 1
+            fi
+          done
+
+      - name: Restore the signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set. A release build must be signed."
+            exit 1
+          fi
+
+          echo "$KEYSTORE_BASE64" | base64 --decode > apps/mobile/android/upload-keystore.jks
+
+          cat > apps/mobile/android/key.properties <<PROPERTIES
+          storeFile=upload-keystore.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          PROPERTIES
+
+      - name: Resolve dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      # The same gates as CI. A release must not be the first time these run.
+      - name: Analyze and test
+        working-directory: apps/mobile
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Build the app bundle
+        if: github.event.inputs.artefact != 'apk'
+        working-directory: apps/mobile
+        env:
+          GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY_ANDROID }}
+        run: |
+          flutter build appbundle --release \
+            --dart-define-from-file=env/build.json \
+            -PgoogleMapsKey="$GOOGLE_MAPS_KEY"
+
+      - name: Build the APK
+        if: github.event.inputs.artefact != 'appbundle'
+        working-directory: apps/mobile
+        env:
+          GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY_ANDROID }}
+        run: |
+          flutter build apk --release \
+            --dart-define-from-file=env/build.json \
+            -PgoogleMapsKey="$GOOGLE_MAPS_KEY"
+
+      - name: Upload the artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitesbox-android-${{ github.event.inputs.target }}-${{ github.run_number }}
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            apps/mobile/build/app/outputs/bundle/release/*.aab
+            apps/mobile/build/app/outputs/flutter-apk/*.apk
+
+      # Neither must survive the runner, even though it is ephemeral.
+      - name: Remove the credentials
+        if: always()
+        run: |
+          rm -f apps/mobile/env/build.json
+          rm -f apps/mobile/android/key.properties
+          rm -f apps/mobile/android/upload-keystore.jks
+
+  # iOS needs a macOS runner, a provisioning profile and a distribution
+  # certificate. The job is scaffolded rather than guessed at: it runs only when the
+  # signing material is configured, so it does not sit permanently red.
+  ios:
+    name: iOS (${{ github.event.inputs.target }})
+    runs-on: macos-14
+    timeout-minutes: 60
+    environment: ${{ github.event.inputs.target }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for signing material
+        id: guard
+        run: |
+          if [ -z "${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "iOS signing is not configured; skipping. See docs/deployment.md."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: subosito/flutter-action@v2
+        if: steps.guard.outputs.configured == 'true'
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+          cache: true
+
+      - name: Assemble the build configuration
+        if: steps.guard.outputs.configured == 'true'
+        env:
+          APP_ENV: ${{ github.event.inputs.target == 'production' && 'production' || 'staging' }}
+        run: |
+          set -euo pipefail
+
+          cat > apps/mobile/env/build.json <<JSON
+          {
+            "APP_ENV": "${APP_ENV}",
+            "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+            "SUPABASE_PUBLISHABLE_KEY": "${{ secrets.SUPABASE_PUBLISHABLE_KEY }}",
+            "RAZORPAY_KEY_ID": "${{ secrets.RAZORPAY_KEY_ID }}",
+            "GOOGLE_MAPS_KEY": "${{ secrets.GOOGLE_MAPS_KEY_IOS }}",
+            "SENTRY_DSN": "${{ secrets.SENTRY_DSN }}",
+            "FIREBASE_API_KEY": "${{ secrets.FIREBASE_API_KEY }}",
+            "FIREBASE_APP_ID": "${{ secrets.FIREBASE_APP_ID_IOS }}",
+            "FIREBASE_MESSAGING_SENDER_ID": "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+            "FIREBASE_PROJECT_ID": "${{ secrets.FIREBASE_PROJECT_ID }}",
+            "FIREBASE_STORAGE_BUCKET": "${{ secrets.FIREBASE_STORAGE_BUCKET }}"
+          }
+          JSON
+
+      # The iOS Maps SDK needs its key before Dart starts, so unlike every other
+      # setting it travels through an xcconfig rather than a dart-define.
+      - name: Write the Maps xcconfig
+        if: steps.guard.outputs.configured == 'true'
+        run: |
+          printf 'GOOGLE_MAPS_KEY = %s\n' "${{ secrets.GOOGLE_MAPS_KEY_IOS }}" \
+            > apps/mobile/ios/Flutter/Maps.xcconfig
+
+      - name: Resolve dependencies
+        if: steps.guard.outputs.configured == 'true'
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Build the IPA
+        if: steps.guard.outputs.configured == 'true'
+        working-directory: apps/mobile
+        run: |
+          flutter build ipa --release \
+            --dart-define-from-file=env/build.json \
+            --export-options-plist=ios/ExportOptions.plist
+
+      - name: Upload the artefact
+        if: steps.guard.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitesbox-ios-${{ github.event.inputs.target }}-${{ github.run_number }}
+          retention-days: 30
+          if-no-files-found: error
+          path: apps/mobile/build/ios/ipa/*.ipa
+
+      - name: Remove the credentials
+        if: always()
+        run: |
+          rm -f apps/mobile/env/build.json
+          rm -f apps/mobile/ios/Flutter/Maps.xcconfig

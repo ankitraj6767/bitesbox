@@ -1,0 +1,104 @@
+name: Deploy admin dashboard
+
+# Vercel's own Git integration is the usual way to ship this, and if it is enabled
+# this workflow is redundant. It exists for the case where deployment should be
+# gated on CI passing rather than on a push landing — which is the safer default for
+# a dashboard that can cancel orders and issue refunds.
+#
+# Skips itself entirely when the Vercel secrets are absent, so a fork does not see a
+# permanently red workflow.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/admin/**'
+      - 'packages/shared-types/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which environment to deploy
+        required: true
+        default: preview
+        type: choice
+        options: [preview, production]
+
+concurrency:
+  group: deploy-admin-${{ github.event.inputs.target || 'preview' }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Vercel (${{ github.event.inputs.target || 'preview' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ github.event.inputs.target == 'production' && 'production' || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Vercel configuration
+        id: guard
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "VERCEL_TOKEN is not set; skipping. Deploy through Vercel's Git integration instead."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.configured == 'true'
+        with:
+          node-version: '20.11.0'
+          cache: npm
+
+      - run: npm ci
+        if: steps.guard.outputs.configured == 'true'
+
+      # Deployment happens after the same gates CI runs, so a broken dashboard
+      # cannot reach an operator because a push happened to land.
+      - name: Lint, type check and test
+        if: steps.guard.outputs.configured == 'true'
+        run: |
+          npm run lint --workspace=@bitesbox/admin
+          npm run typecheck --workspace=@bitesbox/admin
+          npm run test --workspace=@bitesbox/admin
+
+      - name: Install the Vercel CLI
+        if: steps.guard.outputs.configured == 'true'
+        run: npm install --global vercel@latest
+
+      - name: Pull the Vercel environment
+        if: steps.guard.outputs.configured == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel pull --yes \
+            --environment=${{ github.event.inputs.target == 'production' && 'production' || 'preview' }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        if: steps.guard.outputs.configured == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel build ${{ github.event.inputs.target == 'production' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        if: steps.guard.outputs.configured == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          url=$(vercel deploy --prebuilt \
+            ${{ github.event.inputs.target == 'production' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }})
+
+          echo "### Admin dashboard deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"

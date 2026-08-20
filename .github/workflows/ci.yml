@@ -1,0 +1,191 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A new push supersedes an in-flight run on the same branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.11.0'
+  FLUTTER_VERSION: '3.35.0'
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Database
+  #
+  # Runs the migrations from empty and then the SQL suite. This is the job that
+  # matters most: RLS is the security boundary, and a policy that passes locally
+  # and fails on a fresh database is exactly the failure worth catching here.
+  # ───────────────────────────────────────────────────────────────────────────
+  database:
+    name: Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start the local stack
+        run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector
+
+      # Applies every migration to an empty database, then the seed. A migration
+      # that only works against an already-migrated database fails here.
+      - name: Apply migrations and seed
+        run: supabase db reset
+
+      # Fails on error-level findings. `supabase db lint` alone always exits 0, and
+      # two functions that threw on every call once slipped through because of it.
+      - name: Lint the schema
+        run: ./scripts/db-lint.sh warning
+
+      - name: Run the SQL test suite
+        run: ./supabase/tests/run.sh
+
+      # The committed types must match the schema, otherwise the admin app compiles
+      # against a contract the database no longer offers.
+      - name: Check the generated types are current
+        run: |
+          supabase gen types typescript --local > /tmp/database.types.ts
+          if ! diff -q /tmp/database.types.ts packages/shared-types/src/database.types.ts; then
+            echo "::error::packages/shared-types/src/database.types.ts is stale. Run: npm run db:types"
+            diff -u packages/shared-types/src/database.types.ts /tmp/database.types.ts | head -60
+            exit 1
+          fi
+
+      - name: Stop the stack
+        if: always()
+        run: supabase stop --no-backup
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Edge Functions
+  # ───────────────────────────────────────────────────────────────────────────
+  functions:
+    name: Edge Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type check every function
+        working-directory: supabase/functions
+        run: |
+          failed=0
+          for dir in */; do
+            entry="${dir}index.ts"
+            [ -f "$entry" ] || continue
+            printf 'Checking %s\n' "$entry"
+            deno check "$entry" || failed=1
+          done
+          exit $failed
+
+      - name: Lint
+        working-directory: supabase/functions
+        run: deno lint
+
+      - name: Check formatting
+        working-directory: supabase/functions
+        run: deno fmt --check
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Admin dashboard
+  # ───────────────────────────────────────────────────────────────────────────
+  admin:
+    name: Admin dashboard
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace=@bitesbox/admin
+
+      - name: Type check
+        run: npm run typecheck --workspace=@bitesbox/admin
+
+      - name: Unit and component tests
+        run: npm run test --workspace=@bitesbox/admin
+
+      # Build-time env only. The publishable key is designed to ship in a client and
+      # is useless without a session that passes RLS.
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+        run: npm run build --workspace=@bitesbox/admin
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Flutter app
+  # ───────────────────────────────────────────────────────────────────────────
+  mobile:
+    name: Mobile app
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      # `dart format` is deliberately not enforced. It targets 80 columns, and this
+      # codebase is laid out to a wider width — widget trees in particular read far
+      # better with the existing line breaks than with reflowed ones. `flutter
+      # analyze` is the gate that catches real problems, and it treats infos as
+      # findings, so it is stricter than "it compiles".
+      - name: Analyze
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Test
+        working-directory: apps/mobile
+        run: flutter test --reporter expanded
+
+      # Proves the Android toolchain, manifest and Gradle config are coherent — the
+      # things unit tests cannot see.
+      - name: Build a debug APK
+        working-directory: apps/mobile
+        run: flutter build apk --debug --dart-define-from-file=env/dev.json
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Secret hygiene
+  # ───────────────────────────────────────────────────────────────────────────
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Look for committed credentials
+        run: ./scripts/check-secrets.sh
