@@ -10,6 +10,8 @@ import { Table, TableWrap, TBody, TD, TH, THead, TR, TableMessageRow } from '@/c
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/overlays';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { dateOnly, humanise, initials } from '@/lib/utils';
+import { StaffActions } from '@/features/staff/staff-actions';
+import { StaffInviteDialog } from '@/features/staff/staff-invite-dialog';
 
 export const metadata: Metadata = { title: 'Staff & roles' };
 export const dynamic = 'force-dynamic';
@@ -18,6 +20,10 @@ export default async function StaffPage() {
     const session = await requirePermission(PERMISSIONS.STAFF_VIEW);
     const supabase = await createSupabaseServerClient();
     const canManageRoles = hasPermission(session, PERMISSIONS.ROLE_MANAGE);
+    const canManageStaff = hasPermission(session, PERMISSIONS.ROLE_ASSIGN);
+    const canResetPassword = hasPermission(session, PERMISSIONS.STAFF_UPDATE);
+    const canCreateStaff =
+        hasPermission(session, PERMISSIONS.STAFF_CREATE) && hasPermission(session, PERMISSIONS.ROLE_ASSIGN);
 
     const [grantsResult, staffResult, rolesResult, permissionsResult] = await Promise.all([
         supabase
@@ -119,6 +125,7 @@ export default async function StaffPage() {
             <PageHeader
                 title="Staff & roles"
                 description="Who can do what. Roles map to permissions; nothing in the platform checks a role name directly."
+                actions={canCreateStaff ? <StaffInviteDialog /> : null}
             />
 
             <InlineNotice tone="info" className="mb-4">
@@ -143,15 +150,16 @@ export default async function StaffPage() {
                                     <TH>Roles</TH>
                                     <TH>Account</TH>
                                     <TH>Last seen</TH>
+                                    {canManageStaff ? <TH className="w-12" /> : null}
                                 </TR>
                             </THead>
                             <TBody>
                                 {staffList.length === 0 ? (
-                                    <TableMessageRow colSpan={5}>
+                                    <TableMessageRow colSpan={canManageStaff ? 6 : 5}>
                                         <EmptyState
                                             icon={UsersRound}
                                             title="No staff accounts yet"
-                                            description="Grant a back-office role to give someone access."
+                                            description={canCreateStaff ? 'Use Add staff to create a work account and give it a mobile sign-in password.' : 'Grant a back-office role to give someone access.'}
                                         />
                                     </TableMessageRow>
                                 ) : (
@@ -194,6 +202,16 @@ export default async function StaffPage() {
                                             <TD className="text-[12.5px] whitespace-nowrap text-ink-muted">
                                                 {person.lastSeen ? dateOnly(person.lastSeen) : '—'}
                                             </TD>
+                                            {canManageStaff ? (
+                                                <TD>
+                                                    <StaffActions
+                                                        userId={person.id}
+                                                        name={person.name ?? 'this person'}
+                                                        roles={person.roles}
+                                                        canResetPassword={canResetPassword}
+                                                    />
+                                                </TD>
+                                            ) : null}
                                         </TR>
                                     ))
                                 )}

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { EmptyState, ErrorState, InlineNotice } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/overlays';
 import { SectionToggle } from '@/features/cms/section-toggle';
+import { SoftDeleteAction } from '@/components/ui/soft-delete-action';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { dateOnly, humanise, storageUrl } from '@/lib/utils';
 
@@ -120,11 +121,18 @@ export default async function CmsPage() {
                                         description={section.subtitle ?? undefined}
                                         action={
                                             canEdit ? (
-                                                <SectionToggle
-                                                    sectionId={section.id}
-                                                    isActive={section.is_active}
-                                                    label={section.title ?? section.section_key}
-                                                />
+                                                <span className="flex items-center gap-1">
+                                                    <SectionToggle
+                                                        sectionId={section.id}
+                                                        isActive={section.is_active}
+                                                        label={section.title ?? section.section_key}
+                                                    />
+                                                    <SoftDeleteAction
+                                                        table="cms_sections"
+                                                        id={section.id}
+                                                        label={section.title ?? section.section_key}
+                                                    />
+                                                </span>
                                             ) : (
                                                 <Badge tone={section.is_active ? 'positive' : 'neutral'}>
                                                     {section.is_active ? 'Live' : 'Hidden'}
@@ -219,6 +227,13 @@ export default async function CmsPage() {
                                                     <span className="text-[11.5px] text-ink-muted">
                                                         {banner.click_count}/{banner.impression_count} clicks ({ctr}%)
                                                     </span>
+                                                ) : null}
+                                                {canEdit ? (
+                                                    <SoftDeleteAction
+                                                        table="cms_banners"
+                                                        id={banner.id}
+                                                        label={banner.title ?? 'banner'}
+                                                    />
                                                 ) : null}
                                             </div>
                                         </CardContent>

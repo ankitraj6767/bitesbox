@@ -41,10 +41,9 @@ final paymentRepositoryProvider = Provider<PaymentRepository>(
 /// this is the configured default, and switching outlets means changing this one
 /// value rather than threading a branch id through every screen.
 final activeBranchIdProvider = Provider<String?>((ref) {
-  return ref.watch(appConfigProvider).maybeWhen(
-        data: (config) => config.branchId,
-        orElse: () => null,
-      );
+  return ref
+      .watch(appConfigProvider)
+      .maybeWhen(data: (config) => config.branchId, orElse: () => null);
 });
 
 // ── Menu ───────────────────────────────────────────────────────────────────
@@ -58,15 +57,19 @@ final menuCatalogProvider = FutureProvider<MenuCatalog>((ref) async {
   return ref.watch(menuRepositoryProvider).catalog(branchId: branchId);
 });
 
-final productDetailProvider =
-    FutureProvider.family<ProductDetail, String>((ref, productId) async {
+final productDetailProvider = FutureProvider.family<ProductDetail, String>((
+  ref,
+  productId,
+) async {
   final branchId = ref.watch(activeBranchIdProvider);
   return ref
       .watch(menuRepositoryProvider)
       .productDetail(productId: productId, branchId: branchId);
 });
 
-final searchSuggestionsProvider = FutureProvider<SearchSuggestions>((ref) async {
+final searchSuggestionsProvider = FutureProvider<SearchSuggestions>((
+  ref,
+) async {
   final branchId = ref.watch(activeBranchIdProvider);
   return ref.watch(menuRepositoryProvider).suggestions(branchId: branchId);
 });
@@ -88,23 +91,30 @@ final searchResultsProvider = FutureProvider<SearchResults?>((ref) async {
 class MenuFilters {
   const MenuFilters({
     this.vegOnly = false,
+    this.nonVegOnly = false,
     this.bestSellersOnly = false,
     this.hideUnavailable = false,
     this.categoryId,
   });
 
   final bool vegOnly;
+  final bool nonVegOnly;
   final bool bestSellersOnly;
   final bool hideUnavailable;
   final String? categoryId;
 
-  bool get isActive => vegOnly || bestSellersOnly || hideUnavailable;
+  bool get isActive =>
+      vegOnly || nonVegOnly || bestSellersOnly || hideUnavailable;
 
   int get activeCount =>
-      (vegOnly ? 1 : 0) + (bestSellersOnly ? 1 : 0) + (hideUnavailable ? 1 : 0);
+      (vegOnly ? 1 : 0) +
+      (nonVegOnly ? 1 : 0) +
+      (bestSellersOnly ? 1 : 0) +
+      (hideUnavailable ? 1 : 0);
 
   MenuFilters copyWith({
     bool? vegOnly,
+    bool? nonVegOnly,
     bool? bestSellersOnly,
     bool? hideUnavailable,
     String? categoryId,
@@ -112,6 +122,7 @@ class MenuFilters {
   }) {
     return MenuFilters(
       vegOnly: vegOnly ?? this.vegOnly,
+      nonVegOnly: nonVegOnly ?? this.nonVegOnly,
       bestSellersOnly: bestSellersOnly ?? this.bestSellersOnly,
       hideUnavailable: hideUnavailable ?? this.hideUnavailable,
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
@@ -120,13 +131,16 @@ class MenuFilters {
 
   bool matches(MenuProduct product) {
     if (vegOnly && !product.isVeg) return false;
+    if (nonVegOnly && product.isVeg) return false;
     if (bestSellersOnly && !product.isBestSeller) return false;
     if (hideUnavailable && !product.isAvailable) return false;
     return true;
   }
 }
 
-final menuFiltersProvider = StateProvider<MenuFilters>((ref) => const MenuFilters());
+final menuFiltersProvider = StateProvider<MenuFilters>(
+  (ref) => const MenuFilters(),
+);
 
 // ── Addresses ──────────────────────────────────────────────────────────────
 final addressesProvider = FutureProvider<List<CustomerAddress>>((ref) async {
@@ -137,10 +151,9 @@ final addressesProvider = FutureProvider<List<CustomerAddress>>((ref) async {
 
 /// The address the customer is ordering to. Falls back to their default.
 final selectedAddressProvider = Provider<CustomerAddress?>((ref) {
-  final addresses = ref.watch(addressesProvider).maybeWhen(
-        data: (list) => list,
-        orElse: () => const <CustomerAddress>[],
-      );
+  final addresses = ref
+      .watch(addressesProvider)
+      .maybeWhen(data: (list) => list, orElse: () => const <CustomerAddress>[]);
   if (addresses.isEmpty) return null;
 
   final selectedId = ref.watch(selectedAddressIdProvider);
@@ -159,16 +172,20 @@ final selectedAddressProvider = Provider<CustomerAddress?>((ref) {
 final selectedAddressIdProvider = StateProvider<String?>((ref) => null);
 
 // ── Orders ─────────────────────────────────────────────────────────────────
-final myOrdersProvider =
-    FutureProvider.family<OrderList, String>((ref, scope) async {
+final myOrdersProvider = FutureProvider.family<OrderList, String>((
+  ref,
+  scope,
+) async {
   final session = ref.watch(currentSessionProvider);
   if (session.isGuest) return const OrderList(orders: []);
   return ref.watch(orderRepositoryProvider).myOrders(scope: scope);
 });
 
 /// A single order, refreshed whenever realtime reports a change to it.
-final orderDetailProvider =
-    FutureProvider.family<OrderDetail, String>((ref, orderId) async {
+final orderDetailProvider = FutureProvider.family<OrderDetail, String>((
+  ref,
+  orderId,
+) async {
   final repository = ref.watch(orderRepositoryProvider);
 
   // Re-read on every signal rather than trusting the realtime payload, so RLS
@@ -183,15 +200,17 @@ final orderDetailProvider =
 
 final cancellationOptionsProvider =
     FutureProvider.family<CancellationOptions, String>((ref, orderId) async {
-  return ref.watch(orderRepositoryProvider).cancellationOptions(orderId);
-});
+      return ref.watch(orderRepositoryProvider).cancellationOptions(orderId);
+    });
 
 /// Orders still in flight — powers the "track your order" strip on the home tab.
 final activeOrdersProvider = FutureProvider<List<OrderSummary>>((ref) async {
   final session = ref.watch(currentSessionProvider);
   if (session.isGuest) return const [];
 
-  final list = await ref.watch(orderRepositoryProvider).myOrders(scope: 'CURRENT');
+  final list = await ref
+      .watch(orderRepositoryProvider)
+      .myOrders(scope: 'CURRENT');
   return list.orders.where((order) => order.isActive).toList();
 });
 
@@ -202,14 +221,18 @@ final walletProvider = FutureProvider<WalletSummary>((ref) async {
   return ref.watch(accountRepositoryProvider).wallet();
 });
 
-final notificationsProvider = FutureProvider<List<AppNotificationItem>>((ref) async {
+final notificationsProvider = FutureProvider<List<AppNotificationItem>>((
+  ref,
+) async {
   final session = ref.watch(currentSessionProvider);
   if (session.isGuest) return const [];
   return ref.watch(accountRepositoryProvider).notifications();
 });
 
 final unreadNotificationCountProvider = Provider<int>((ref) {
-  return ref.watch(notificationsProvider).maybeWhen(
+  return ref
+      .watch(notificationsProvider)
+      .maybeWhen(
         data: (items) => items.where((item) => item.isUnread).length,
         orElse: () => 0,
       );
@@ -221,12 +244,16 @@ final supportTicketsProvider = FutureProvider<List<SupportTicket>>((ref) async {
   return ref.watch(accountRepositoryProvider).tickets();
 });
 
-final supportThreadProvider =
-    FutureProvider.family<SupportThread, String>((ref, ticketId) async {
+final supportThreadProvider = FutureProvider.family<SupportThread, String>((
+  ref,
+  ticketId,
+) async {
   return ref.watch(accountRepositoryProvider).ticket(ticketId);
 });
 
-final availableCouponsProvider = FutureProvider<List<CustomerCoupon>>((ref) async {
+final availableCouponsProvider = FutureProvider<List<CustomerCoupon>>((
+  ref,
+) async {
   final session = ref.watch(currentSessionProvider);
   if (session.isGuest) return const [];
 

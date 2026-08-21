@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/states.dart';
 import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
@@ -44,39 +45,50 @@ class HomeScreen extends ConsumerWidget {
                   value: feed,
                   onRetry: () => ref.invalidate(homeFeedProvider),
                   loading: const _HomeSkeleton(),
-                  data: (data) => ListView(
-                    padding: const EdgeInsets.only(bottom: 96),
-                    children: [
-                      // Store state is the first thing a customer needs to know.
-                      config.maybeWhen(
-                        data: (value) => value.acceptingOrders
-                            ? const SizedBox.shrink()
-                            : Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                                child: AppNotice(
-                                  tone: NoticeTone.caution,
-                                  icon: Icons.storefront_outlined,
-                                  message: value.closedMessage,
+                  data: (data) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      FoodImage.primeAll(data.imagePaths);
+                    });
+                    return ListView(
+                      padding: const EdgeInsets.only(bottom: 96),
+                      children: [
+                        // Store state is the first thing a customer needs to know.
+                        config.maybeWhen(
+                          data: (value) => value.acceptingOrders
+                              ? const SizedBox.shrink()
+                              : Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    0,
+                                  ),
+                                  child: AppNotice(
+                                    tone: NoticeTone.caution,
+                                    icon: Icons.storefront_outlined,
+                                    message: value.closedMessage,
+                                  ),
                                 ),
-                              ),
-                        orElse: () => const SizedBox.shrink(),
-                      ),
-                      const ActiveOrderStrip(),
-                      if (data.sections.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 60),
-                          child: AppEmptyState(
-                            title: 'Nothing here yet',
-                            message: 'Our menu is being set up. Please check back shortly.',
-                            icon: Icons.restaurant_outlined,
-                          ),
-                        )
-                      else
-                        ...data.sections.map(
-                          (section) => HomeSectionView(section: section),
+                          orElse: () => const SizedBox.shrink(),
                         ),
-                    ],
-                  ),
+                        const ActiveOrderStrip(),
+                        if (data.sections.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 60),
+                            child: AppEmptyState(
+                              title: 'Nothing here yet',
+                              message:
+                                  'Our menu is being set up. Please check back shortly.',
+                              icon: Icons.restaurant_outlined,
+                            ),
+                          )
+                        else
+                          ...data.sections.map(
+                            (section) => HomeSectionView(section: section),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -129,7 +141,8 @@ class _TopBar extends ConsumerWidget {
                               Text(
                                 session.isGuest
                                     ? 'Sign in to set your address'
-                                    : (address?.labelText ?? 'Add a delivery address'),
+                                    : (address?.labelText ??
+                                          'Add a delivery address'),
                                 style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
@@ -142,7 +155,10 @@ class _TopBar extends ConsumerWidget {
                                     'Bakhtiyarpur',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, color: brand.inkMuted),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: brand.inkMuted,
+                                ),
                               ),
                             ],
                           ),
@@ -162,7 +178,8 @@ class _TopBar extends ConsumerWidget {
                   session.isGuest ? Routes.signIn : Routes.notifications,
                 ),
                 icon: Badge(
-                  isLabelVisible: ref.watch(unreadNotificationCountProvider) > 0,
+                  isLabelVisible:
+                      ref.watch(unreadNotificationCountProvider) > 0,
                   backgroundColor: brand.primary,
                   child: const Icon(Icons.notifications_none_rounded),
                 ),

@@ -71,8 +71,9 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
           .toList();
 
       if (defaults.isEmpty) continue;
-      _selections[group.id] =
-          group.isSingleChoice ? defaults.take(1).toList() : defaults;
+      _selections[group.id] = group.isSingleChoice
+          ? defaults.take(1).toList()
+          : defaults;
     }
   }
 
@@ -99,7 +100,10 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
 
       final max = group.maxSelect;
       if (max != null && selected.length >= max) {
-        AppFeedback.showInfo(context, 'You can pick up to $max from ${group.name}.');
+        AppFeedback.showInfo(
+          context,
+          'You can pick up to $max from ${group.name}.',
+        );
         return;
       }
 
@@ -115,7 +119,9 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
     return detail.modifierGroups.where((group) {
       if (!group.isRequired) return false;
       final count = _selections[group.id]?.length ?? 0;
-      final minimum = group.isSingleChoice ? 1 : (group.minSelect < 1 ? 1 : group.minSelect);
+      final minimum = group.isSingleChoice
+          ? 1
+          : (group.minSelect < 1 ? 1 : group.minSelect);
       return count < minimum;
     }).toList();
   }
@@ -139,10 +145,11 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
       if (selected.isEmpty) continue;
 
       // Cheapest selections are the free ones, matching the server's rule.
-      final chosen = group.modifiers
-          .where((modifier) => selected.contains(modifier.id))
-          .toList()
-        ..sort((a, b) => a.price.compareTo(b.price));
+      final chosen =
+          group.modifiers
+              .where((modifier) => selected.contains(modifier.id))
+              .toList()
+            ..sort((a, b) => a.price.compareTo(b.price));
 
       for (var index = 0; index < chosen.length; index++) {
         if (index < group.freeSelections) continue;
@@ -171,7 +178,9 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
     setState(() => _submitting = true);
 
     try {
-      await ref.read(cartProvider.notifier).addItem(
+      await ref
+          .read(cartProvider.notifier)
+          .addItem(
             productId: detail.product.id,
             variantId: _variantId,
             quantity: _quantity,
@@ -181,7 +190,10 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
 
       if (!mounted) return;
       Navigator.of(context).pop();
-      AppFeedback.showSuccess(context, '${detail.product.name} added to your cart.');
+      AppFeedback.showSuccess(
+        context,
+        '${detail.product.name} added to your cart.',
+      );
     } catch (error) {
       if (!mounted) return;
       AppFeedback.showError(context, error);
@@ -200,10 +212,7 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
       loading: const SizedBox(height: 320, child: AppLoader()),
       data: (detail) {
         _primeDefaults(detail);
-        return _Content(
-          detail: detail,
-          state: this,
-        );
+        return _Content(detail: detail, state: this);
       },
     );
   }
@@ -232,6 +241,9 @@ class _Content extends StatelessWidget {
                 path: product.heroImagePath ?? product.thumbnailPath,
                 height: 200,
                 radius: 0,
+                placeholderAsset:
+                    FoodImage.assetForCategory(detail.categoryName) ??
+                    FoodImage.assetForPath(product.slug),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -268,7 +280,8 @@ class _Content extends StatelessWidget {
                         color: brand.ink,
                       ),
                     ),
-                    if ((product.description ?? product.shortDescription) != null) ...[
+                    if ((product.description ?? product.shortDescription) !=
+                        null) ...[
                       const SizedBox(height: 8),
                       Text(
                         product.description ?? product.shortDescription!,
@@ -369,9 +382,9 @@ class _Content extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      ...detail.reviews.take(3).map(
-                            (review) => _ReviewTile(review: review),
-                          ),
+                      ...detail.reviews
+                          .take(3)
+                          .map((review) => _ReviewTile(review: review)),
                     ],
                     const SizedBox(height: 24),
                   ],
@@ -421,7 +434,10 @@ class _Content extends StatelessWidget {
   }
 
   List<Widget> _modifierSections(BuildContext context) {
-    final unsatisfied = state._unsatisfied(detail).map((group) => group.id).toSet();
+    final unsatisfied = state
+        ._unsatisfied(detail)
+        .map((group) => group.id)
+        .toSet();
 
     return detail.modifierGroups.map((group) {
       final selected = state._selections[group.id] ?? const <String>[];
@@ -434,12 +450,14 @@ class _Content extends StatelessWidget {
         children: group.modifiers.map((modifier) {
           // The free allowance goes to the cheapest picks, exactly as the server
           // computes it — so the customer sees the same "Free" markers.
-          final chosen = group.modifiers
-              .where((item) => selected.contains(item.id))
-              .toList()
-            ..sort((a, b) => a.price.compareTo(b.price));
+          final chosen =
+              group.modifiers
+                  .where((item) => selected.contains(item.id))
+                  .toList()
+                ..sort((a, b) => a.price.compareTo(b.price));
           final rank = chosen.indexWhere((item) => item.id == modifier.id);
-          final isFree = rank >= 0 && rank < group.freeSelections && modifier.price > 0;
+          final isFree =
+              rank >= 0 && rank < group.freeSelections && modifier.price > 0;
 
           return _OptionRow(
             label: modifier.name,
@@ -576,13 +594,15 @@ class _OptionRow extends StatelessWidget {
               Icon(
                 isRadio
                     ? (selected
-                        ? Icons.radio_button_checked_rounded
-                        : Icons.radio_button_unchecked_rounded)
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_unchecked_rounded)
                     : (selected
-                        ? Icons.check_box_rounded
-                        : Icons.check_box_outline_blank_rounded),
+                          ? Icons.check_box_rounded
+                          : Icons.check_box_outline_blank_rounded),
                 size: 21,
-                color: selected ? brand.primary : brand.inkMuted.withValues(alpha: 0.6),
+                color: selected
+                    ? brand.primary
+                    : brand.inkMuted.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 12),
               if (foodType != null) ...[
@@ -597,7 +617,9 @@ class _OptionRow extends StatelessWidget {
                       label,
                       style: TextStyle(
                         fontSize: 14.5,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                         color: brand.ink,
                       ),
                     ),
@@ -704,7 +726,11 @@ class _ReviewTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               review.comment!,
-              style: TextStyle(fontSize: 13.5, height: 1.4, color: brand.inkMuted),
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.4,
+                color: brand.inkMuted,
+              ),
             ),
           ],
         ],

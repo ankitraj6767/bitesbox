@@ -38,16 +38,17 @@ class AccountRepository {
   }
 
   Future<List<SupportTicket>> tickets() async {
-    final rows = await _api.select(
-      'support_tickets',
-      columns: '''
-        id, ticket_number, category, subject, status, priority, order_id,
-        created_at, resolved_at, message_count, last_message_at
-      ''',
-      filter: (query) => query.order('created_at', ascending: false).limit(50),
+    final result = await _api.rpc<dynamic>(
+      'my_support_tickets',
+      params: {'p_limit': 50},
+      dedupeKey: 'my_support_tickets',
     );
+    final rows = result is List ? result : const <dynamic>[];
 
-    return rows.map(SupportTicket.fromJson).toList();
+    return rows
+        .whereType<Map>()
+        .map((row) => SupportTicket.fromJson(Map<String, dynamic>.from(row)))
+        .toList();
   }
 
   Future<SupportThread> ticket(String ticketId) async {

@@ -24,6 +24,7 @@ class MenuScreen extends ConsumerStatefulWidget {
 
 class _MenuScreenState extends ConsumerState<MenuScreen> {
   final _scrollController = ScrollController();
+  bool _categoriesExpanded = true;
 
   @override
   void dispose() {
@@ -81,6 +82,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               _CategoryRail(
                 categories: categories,
                 selectedId: selectedId,
+                expanded: _categoriesExpanded,
+                onToggle: () =>
+                    setState(() => _categoriesExpanded = !_categoriesExpanded),
                 onSelect: (id) {
                   ref
                       .read(menuFiltersProvider.notifier)
@@ -102,9 +106,11 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             ? OutlinedButton(
                                 onPressed: () => ref
                                     .read(menuFiltersProvider.notifier)
-                                    .update((value) => MenuFilters(
-                                          categoryId: value.categoryId,
-                                        )),
+                                    .update(
+                                      (value) => MenuFilters(
+                                        categoryId: value.categoryId,
+                                      ),
+                                    ),
                                 child: const Text('Clear filters'),
                               )
                             : null,
@@ -163,7 +169,17 @@ class _FilterRow extends ConsumerWidget {
             icon: Icons.eco_rounded,
             selected: filters.vegOnly,
             onTap: () => notifier.update(
-              (value) => value.copyWith(vegOnly: !value.vegOnly),
+              (value) =>
+                  value.copyWith(vegOnly: !value.vegOnly, nonVegOnly: false),
+            ),
+          ),
+          _FilterChip(
+            label: 'Non-veg only',
+            icon: Icons.set_meal_rounded,
+            selected: filters.nonVegOnly,
+            onTap: () => notifier.update(
+              (value) =>
+                  value.copyWith(nonVegOnly: !value.nonVegOnly, vegOnly: false),
             ),
           ),
           _FilterChip(
@@ -171,7 +187,8 @@ class _FilterRow extends ConsumerWidget {
             icon: Icons.local_fire_department_rounded,
             selected: filters.bestSellersOnly,
             onTap: () => notifier.update(
-              (value) => value.copyWith(bestSellersOnly: !value.bestSellersOnly),
+              (value) =>
+                  value.copyWith(bestSellersOnly: !value.bestSellersOnly),
             ),
           ),
           _FilterChip(
@@ -179,7 +196,8 @@ class _FilterRow extends ConsumerWidget {
             icon: Icons.check_circle_outline_rounded,
             selected: filters.hideUnavailable,
             onTap: () => notifier.update(
-              (value) => value.copyWith(hideUnavailable: !value.hideUnavailable),
+              (value) =>
+                  value.copyWith(hideUnavailable: !value.hideUnavailable),
             ),
           ),
           if (filters.isActive)
@@ -230,7 +248,9 @@ class _FilterChip extends StatelessWidget {
         showCheckmark: false,
         selectedColor: brand.primary.withValues(alpha: 0.10),
         side: BorderSide(
-          color: selected ? brand.primary.withValues(alpha: 0.45) : brand.hairline,
+          color: selected
+              ? brand.primary.withValues(alpha: 0.45)
+              : brand.hairline,
         ),
         labelStyle: TextStyle(
           fontSize: 13,
@@ -246,66 +266,110 @@ class _CategoryRail extends StatelessWidget {
   const _CategoryRail({
     required this.categories,
     required this.selectedId,
+    required this.expanded,
+    required this.onToggle,
     required this.onSelect,
   });
 
   final List<MenuCategory> categories;
   final String selectedId;
+  final bool expanded;
+  final VoidCallback onToggle;
   final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
 
-    return Container(
-      width: 104,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      width: expanded ? 104 : 44,
       decoration: BoxDecoration(
         color: brand.surfaceMuted,
         border: Border(right: BorderSide(color: brand.hairline)),
       ),
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final selected = category.id == selectedId;
+      child: expanded
+          ? ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: categories.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      onPressed: onToggle,
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      tooltip: 'Hide categories',
+                    ),
+                  );
+                }
 
-          return InkWell(
-            onTap: () => onSelect(category.id),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-              decoration: BoxDecoration(
-                color: selected ? brand.surface : null,
-                border: Border(
-                  left: BorderSide(
-                    color: selected ? brand.primary : Colors.transparent,
-                    width: 3,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    category.name,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      height: 1.3,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? brand.primary : brand.ink,
+                final category = categories[index - 1];
+                final selected = category.id == selectedId;
+
+                return InkWell(
+                  onTap: () => onSelect(category.id),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected ? brand.surface : null,
+                      border: Border(
+                        left: BorderSide(
+                          color: selected ? brand.primary : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          category.name,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.3,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: selected ? brand.primary : brand.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${category.productCount}',
+                          style: TextStyle(fontSize: 11, color: brand.inkMuted),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${category.productCount}',
-                    style: TextStyle(fontSize: 11, color: brand.inkMuted),
+                );
+              },
+            )
+          : Column(
+              children: [
+                IconButton(
+                  onPressed: onToggle,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  tooltip: 'Show categories',
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: Center(
+                    child: RotatedBox(
+                      quarterTurns: 3,
+                      child: Text(
+                        'Categories',
+                        style: TextStyle(fontSize: 11, color: brand.inkMuted),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          );
-        },
-      ),
     );
   }
 }

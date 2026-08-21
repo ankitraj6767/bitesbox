@@ -9,6 +9,8 @@
  *   SET_BRANCH_STATUS                  — branch.manage
  *   SETTLE_COD                         — payment.reconcile
  *   GRANT_ROLE / REVOKE_ROLE           — role.assign
+ *   CREATE_STAFF                       — staff.create + role.assign
+ *   RESET_STAFF_PASSWORD               — staff.update
  *
  * Each branch re-checks the specific permission in the database with the caller's
  * own JWT, then performs the write with the service client where a table-level
@@ -38,6 +40,8 @@ const OPERATIONS = [
     "SETTLE_COD",
     "GRANT_ROLE",
     "REVOKE_ROLE",
+    "CREATE_STAFF",
+    "RESET_STAFF_PASSWORD",
 ] as const;
 
 const BRANCH_STATUSES = ["OPEN", "CLOSED", "PAUSED", "BUSY"] as const;
@@ -59,6 +63,15 @@ const ASSIGNABLE_ROLES = [
     "FINANCE",
     "OPERATIONS",
     "MANAGER",
+    "ADMIN",
+] as const;
+const STAFF_ROLES = [
+    "KITCHEN_STAFF",
+    "MANAGER",
+    "OPERATIONS",
+    "FINANCE",
+    "SUPPORT",
+    "MARKETING",
     "ADMIN",
 ] as const;
 
@@ -285,6 +298,163 @@ serveFunction("admin-operation", async ({ req, requestId, origin }) => {
             });
             break;
         }
+
+        case "CREATE_STAFF": {
+            // Provisioning needs both capabilities: creating the employee record
+            // and granting the role that makes the account usable in the app.
+            await requirePermission(asUser, "staff.create");
+            await requirePermission(asUser, "role.assign");
+
+            const email = v.string(body, "email", { min: 5, max: 254 }).toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                throw new AppError("VALIDATION_FAILED", "Enter a valid work email address.");
+            }
+            const password = v.string(body, "temporary_password", { min: 8, max: 72 });
+            const fullName = v.string(body, "full_name", { min: 2, max: 120 });
+            const phone = v.optionalString(body, "phone", { max: 30 });
+            const roleCode = v.enumValue(body, "role", STAFF_ROLES);
+            const branchId = v.optionalUuid(body, "branch_id") ?? caller.branchIds[0] ??
+                await defaultBranchId(admin);
+            const employeeCode = v.optionalString(body, "employee_code", { max: 40 });
+            const designation = v.optionalString(body, "designation", { max: 120 });
+            const department = v.optionalString(body, "department", { max: 120 });
+            const shiftStart = v.optionalString(body, "shift_start", { max: 12 });
+            const shiftEnd = v.optionalString(body, "shift_end", { max: 12 });
+
+            await requirePermission(asUser, "staff.create", branchId);
+
+            const { data: created, error: createError } = await admin.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: {
+                    full_name: fullName,
+                    ...(phone ? { phone } : {}),
+                    signup_channel: "admin_invite",
+                },
+            });
+
+            if (createError || !created.user) {
+                throw new AppError(
+                    "VALIDATION_FAILED",
+                    createError?.message ?? "The staff account could not be created.",
+                );
+            }
+
+            const userId = created.user.id;
+            try {
+                const { data: staffMember, error: staffError } = await admin
+                    .from("staff_members")
+                    .insert({
+                        user_id: userId,
+                        branch_id: branchId,
+                        employee_code: employeeCode,
+                        designation,
+                        department,
+                        shift_start: shiftStart,
+                        shift_end: shiftEnd,
+                        created_by: caller.userId,
+                    })
+                    .select("id")
+                    .single();
+
+                if (staffError || !staffMember) {
+                    throw fromPostgrestError(
+                        staffError ?? { message: "The staff record could not be created." },
+                    );
+                }
+
+                await rpc(asUser, "manage_user_role", {
+                    p_user_id: userId,
+                    p_role: roleCode,
+                    p_branch_id: branchId,
+                    p_grant: true,
+                    p_make_primary: true,
+                });
+
+                await rpc(admin, "svc_audit", {
+                    p_action: "CREATE",
+                    p_entity_type: "staff_member",
+                    p_entity_id: staffMember.id,
+                    p_new_value: {
+                        user_id: userId,
+                        email,
+                        role: roleCode,
+                        branch_id: branchId,
+                        employee_code: employeeCode,
+                    },
+                    p_entity_label: fullName,
+                    p_branch_id: branchId,
+                    p_actor_id: caller.userId,
+                });
+
+                result = {
+                    user_id: userId,
+                    staff_member_id: staffMember.id,
+                    email,
+                    full_name: fullName,
+                    role: roleCode,
+                    branch_id: branchId,
+                    temporary_password: password,
+                };
+            } catch (error) {
+                // Do not leave an Auth account that cannot sign in to the app.
+                await admin.auth.admin.deleteUser(userId);
+                throw error;
+            }
+            break;
+        }
+
+        case "RESET_STAFF_PASSWORD": {
+            await requirePermission(asUser, "staff.update");
+
+            const userId = v.uuid(body, "user_id");
+            const password = v.string(body, "temporary_password", { min: 8, max: 72 });
+
+            if (userId === caller.userId) {
+                throw new AppError(
+                    "VALIDATION_FAILED",
+                    "Use the account recovery flow to change your own password.",
+                );
+            }
+
+            const { data: staffMember, error: staffError } = await admin
+                .from("staff_members")
+                .select("id, branch_id, profiles!staff_members_user_profile_fkey(full_name, email)")
+                .eq("user_id", userId)
+                .is("deleted_at", null)
+                .maybeSingle();
+
+            if (staffError) throw fromPostgrestError(staffError);
+            if (!staffMember) {
+                throw new AppError("VALIDATION_FAILED", "That account has no active staff record.");
+            }
+
+            const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
+                password,
+            });
+            if (updateError) throw new AppError("VALIDATION_FAILED", updateError.message);
+
+            const profile = staffMember.profiles?.[0];
+
+            await rpc(admin, "svc_audit", {
+                p_action: "UPDATE",
+                p_entity_type: "staff_member",
+                p_entity_id: staffMember.id,
+                p_new_value: { user_id: userId, password_reset: true },
+                p_reason: "Staff password reset by an authorised manager.",
+                p_entity_label: profile?.full_name ?? profile?.email ?? userId,
+                p_branch_id: staffMember.branch_id,
+                p_actor_id: caller.userId,
+            });
+
+            result = {
+                user_id: userId,
+                email: profile?.email,
+                temporary_password: password,
+            };
+            break;
+        }
     }
 
     logger.info("admin.operation", {
@@ -296,3 +466,18 @@ serveFunction("admin-operation", async ({ req, requestId, origin }) => {
 
     return jsonResponse({ operation, result }, { origin, requestId });
 });
+
+async function defaultBranchId(admin: ReturnType<typeof serviceClient>): Promise<string> {
+    const { data, error } = await admin
+        .from("branches")
+        .select("id")
+        .eq("is_default", true)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+    if (error) throw fromPostgrestError(error);
+    if (!data?.id) {
+        throw new AppError("VALIDATION_FAILED", "No active default branch is configured.");
+    }
+    return data.id;
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { Megaphone } from 'lucide-react';
+import Link from 'next/link';
+import { Megaphone, Pencil, Plus } from 'lucide-react';
 import { hasPermission, requirePermission } from '@/lib/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
@@ -7,7 +8,9 @@ import { Card, CardContent, CardToolbar } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState, ErrorState, InlineNotice } from '@/components/ui/states';
 import { Table, TableWrap, TBody, TD, TH, THead, TR, TableMessageRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { PromotionToggle } from '@/features/promotions/promotion-toggle';
+import { SoftDeleteAction } from '@/components/ui/soft-delete-action';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { dateOnly, money } from '@/lib/utils';
 
@@ -51,6 +54,13 @@ export default async function PromotionsPage() {
             <PageHeader
                 title="Promotions"
                 description="Offers that apply automatically, with no code for the customer to remember."
+                actions={
+                    canManage ? (
+                        <Button asChild size="sm">
+                            <Link href="/promotions/new"><Plus /> New promotion</Link>
+                        </Button>
+                    ) : null
+                }
             />
 
             <InlineNotice tone="info" className="mb-4">
@@ -72,7 +82,7 @@ export default async function PromotionsPage() {
                                     <TH numeric>Priority</TH>
                                     <TH>Stacks</TH>
                                     <TH>State</TH>
-                                    {canManage ? <TH className="w-24" /> : null}
+                                    {canManage ? <TH className="w-28" /> : null}
                                 </TR>
                             </THead>
                             <TBody>
@@ -167,11 +177,17 @@ export default async function PromotionsPage() {
 
                                                 {canManage ? (
                                                     <TD>
-                                                        <PromotionToggle
-                                                            promotionId={promotion.id}
-                                                            isActive={promotion.is_active}
-                                                            name={promotion.name}
-                                                        />
+                                                        <div className="flex items-center gap-1">
+                                                            <Button asChild variant="ghost" size="icon" aria-label={`Edit ${promotion.name}`}>
+                                                                <Link href={`/promotions/${promotion.id}/edit`}><Pencil /></Link>
+                                                            </Button>
+                                                            <PromotionToggle
+                                                                promotionId={promotion.id}
+                                                                isActive={promotion.is_active}
+                                                                name={promotion.name}
+                                                            />
+                                                            <SoftDeleteAction table="promotions" id={promotion.id} label={promotion.name} />
+                                                        </div>
                                                     </TD>
                                                 ) : null}
                                             </TR>
