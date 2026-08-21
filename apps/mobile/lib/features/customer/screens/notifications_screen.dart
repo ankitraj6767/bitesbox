@@ -11,11 +11,19 @@ import '../data/account_models.dart';
 import '../providers/customer_providers.dart';
 
 /// In-app notifications: order updates, offers and support replies.
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  bool _markingAllRead = false;
+
+  @override
+  Widget build(BuildContext context) {
     final brand = context.brand;
     final notifications = ref.watch(notificationsProvider);
     final unread = ref.watch(unreadNotificationCountProvider);
@@ -25,9 +33,19 @@ class NotificationsScreen extends ConsumerWidget {
         title: const Text('Notifications'),
         actions: [
           if (unread > 0)
-            TextButton(
-              onPressed: () => _markAllRead(context, ref),
-              child: const Text('Mark all read'),
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: IconButton(
+                onPressed: _markingAllRead ? null : _markAllRead,
+                icon: _markingAllRead
+                    ? const SizedBox(
+                        width: 19,
+                        height: 19,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.done_all_rounded),
+                tooltip: 'Mark all as read',
+              ),
             ),
         ],
       ),
@@ -58,7 +76,8 @@ class NotificationsScreen extends ConsumerWidget {
                 indent: 16,
                 endIndent: 16,
               ),
-              itemBuilder: (context, index) => _NotificationTile(item: list[index]),
+              itemBuilder: (context, index) =>
+                  _NotificationTile(item: list[index]),
             ),
           );
         },
@@ -66,12 +85,32 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _markAllRead(BuildContext context, WidgetRef ref) async {
+  Future<void> _markAllRead() async {
+    if (_markingAllRead) return;
+    setState(() => _markingAllRead = true);
+
     try {
-      await ref.read(accountRepositoryProvider).markNotificationsRead();
+      final count = await ref
+          .read(accountRepositoryProvider)
+          .markNotificationsRead();
+
+      // Wait for the fresh rows before removing the badge/action. This avoids
+      // leaving the old unread list on screen after the database update wins.
       ref.invalidate(notificationsProvider);
+      await ref.read(notificationsProvider.future);
+
+      if (mounted) {
+        AppFeedback.showSuccess(
+          context,
+          count == 0
+              ? 'All notifications are already read'
+              : '$count notification${count == 1 ? '' : 's'} marked as read',
+        );
+      }
     } catch (error) {
-      if (context.mounted) AppFeedback.showError(context, error);
+      if (mounted) AppFeedback.showError(context, error);
+    } finally {
+      if (mounted) setState(() => _markingAllRead = false);
     }
   }
 }
@@ -100,7 +139,11 @@ class _NotificationTile extends ConsumerWidget {
                 color: brand.surfaceMuted,
                 shape: BoxShape.circle,
               ),
-              child: Icon(_iconFor(item.event), size: 17, color: brand.inkMuted),
+              child: Icon(
+                _iconFor(item.event),
+                size: 17,
+                color: brand.inkMuted,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -111,7 +154,9 @@ class _NotificationTile extends ConsumerWidget {
                     item.title,
                     style: TextStyle(
                       fontSize: 14.5,
-                      fontWeight: item.isUnread ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: item.isUnread
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                       color: brand.ink,
                     ),
                   ),
