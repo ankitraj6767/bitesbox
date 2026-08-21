@@ -9,6 +9,7 @@ import '../../features/customer/screens/addresses_screen.dart';
 import '../../features/customer/screens/cart_screen.dart';
 import '../../features/customer/screens/checkout_screen.dart';
 import '../../features/customer/screens/customer_shell.dart';
+import '../../features/customer/screens/content_screens.dart';
 import '../../features/customer/screens/home_screen.dart';
 import '../../features/customer/screens/menu_screen.dart';
 import '../../features/customer/screens/notifications_screen.dart';
@@ -153,6 +154,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.support,
         builder: (_, __) => const SupportListScreen(),
       ),
+      GoRoute(
+        path: Routes.policies,
+        builder: (_, __) => const PoliciesScreen(),
+      ),
+      GoRoute(path: Routes.faqs, builder: (_, __) => const FaqsScreen()),
       GoRoute(
         path: '/support/:id',
         builder: (_, state) =>

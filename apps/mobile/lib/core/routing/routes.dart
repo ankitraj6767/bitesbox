@@ -26,6 +26,8 @@ abstract final class Routes {
   static const profile = '/profile';
   static const support = '/support';
   static const newTicket = '/support/new';
+  static const policies = '/policies';
+  static const faqs = '/faqs';
 
   static String product(String id) => '/product/$id';
   static String order(String id) => '/order/$id';
@@ -49,6 +51,8 @@ abstract final class Routes {
     return location == home ||
         location == menu ||
         location == search ||
+        location == policies ||
+        location == faqs ||
         location.startsWith('/product/');
   }
 

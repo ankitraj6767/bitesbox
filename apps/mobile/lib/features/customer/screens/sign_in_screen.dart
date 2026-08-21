@@ -184,6 +184,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                 ),
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => context.push(Routes.policies),
+                    child: const Text('Policies'),
+                  ),
+                  Text('·', style: TextStyle(color: brand.inkMuted)),
+                  TextButton(
+                    onPressed: () => context.push(Routes.faqs),
+                    child: const Text('FAQs'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
             ],
           ),

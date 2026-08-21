@@ -219,6 +219,21 @@ class AccountScreen extends ConsumerWidget {
                 ),
             ],
           ),
+          _Group(
+            title: 'Information',
+            tiles: [
+              _Tile(
+                icon: Icons.description_outlined,
+                label: 'Policies and terms',
+                onTap: () => context.push(Routes.policies),
+              ),
+              _Tile(
+                icon: Icons.help_outline_rounded,
+                label: 'Frequently asked questions',
+                onTap: () => context.push(Routes.faqs),
+              ),
+            ],
+          ),
           if (session.isManagement || session.isKitchen || session.isRider)
             _Group(
               title: 'Staff',

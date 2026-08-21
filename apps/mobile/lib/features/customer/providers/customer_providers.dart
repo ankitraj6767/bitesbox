@@ -6,6 +6,8 @@ import '../data/account_repository.dart';
 import '../data/address_models.dart';
 import '../data/address_repository.dart';
 import '../data/cart_repository.dart';
+import '../data/content_models.dart';
+import '../data/content_repository.dart';
 import '../data/menu_models.dart';
 import '../data/menu_repository.dart';
 import '../data/order_models.dart';
@@ -36,6 +38,18 @@ final accountRepositoryProvider = Provider<AccountRepository>(
 final paymentRepositoryProvider = Provider<PaymentRepository>(
   (ref) => PaymentRepository(ref.watch(apiClientProvider)),
 );
+
+final contentRepositoryProvider = Provider<ContentRepository>(
+  (ref) => ContentRepository(ref.watch(apiClientProvider)),
+);
+
+final publishedDocumentsProvider = FutureProvider<List<CmsDocument>>((ref) {
+  return ref.watch(contentRepositoryProvider).documents();
+});
+
+final publishedFaqsProvider = FutureProvider<List<CmsFaq>>((ref) {
+  return ref.watch(contentRepositoryProvider).faqs();
+});
 
 /// The branch everything is scoped to. Single-brand, multi-branch ready: today
 /// this is the configured default, and switching outlets means changing this one
