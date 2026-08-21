@@ -49,7 +49,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   Future<void> _reprice() async {
     try {
-      await ref.read(cartProvider.notifier).reprice(
+      await ref
+          .read(cartProvider.notifier)
+          .reprice(
             paymentMode: _paymentMode,
             tipAmount: _tip,
             loyaltyPoints: _loyaltyPoints,
@@ -62,6 +64,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _setPaymentMode(String mode) async {
     setState(() => _paymentMode = mode);
     await _reprice();
+  }
+
+  Future<void> _setFulfilment(String fulfilmentType) async {
+    try {
+      await ref.read(cartProvider.notifier).setFulfilment(fulfilmentType);
+
+      // Pickup is settled at the kitchen counter; delivery falls back to COD
+      // when Razorpay is not configured in this build.
+      final paymentMode = fulfilmentType == 'PICKUP'
+          ? 'PAY_AT_STORE'
+          : (Env.onlinePaymentsEnabled ? 'ONLINE' : 'COD');
+      if (mounted) setState(() => _paymentMode = paymentMode);
+      await _reprice();
+    } catch (error) {
+      if (mounted) AppFeedback.showError(context, error);
+    }
   }
 
   Future<void> _setTip(double tip) async {
@@ -89,7 +107,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     if (state.paymentCancelled && orderId != null) {
       // The order exists and is payable: tracking is where they can retry.
-      AppFeedback.showInfo(context, 'Your order is saved. Finish the payment to confirm it.');
+      AppFeedback.showInfo(
+        context,
+        'Your order is saved. Finish the payment to confirm it.',
+      );
       controller.reset();
       context.go(Routes.order(orderId));
       return;
@@ -130,7 +151,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               ...quote.blockingIssues.map(
                 (issue) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: AppNotice(tone: NoticeTone.critical, message: issue.message),
+                  child: AppNotice(
+                    tone: NoticeTone.critical,
+                    message: issue.message,
+                  ),
                 ),
               ),
               ...quote.warnings.map(
@@ -139,7 +163,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   child: AppNotice(message: issue.message),
                 ),
               ),
-              _FulfilmentPicker(quote: quote),
+              _FulfilmentPicker(quote: quote, onChanged: _setFulfilment),
               const SizedBox(height: 14),
               if (quote.isDelivery) ...[
                 _AddressCard(quote: quote),
@@ -168,7 +192,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               BillSummary(
                 totals: quote.totals,
                 couponCode: quote.appliedCouponCode,
-                promotionLabel: quote.promotion?.headline ?? quote.promotion?.name,
+                promotionLabel:
+                    quote.promotion?.headline ?? quote.promotion?.name,
                 isDelivery: quote.isDelivery,
                 showTaxBreakdown: true,
               ),
@@ -232,9 +257,10 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _FulfilmentPicker extends ConsumerWidget {
-  const _FulfilmentPicker({required this.quote});
+  const _FulfilmentPicker({required this.quote, required this.onChanged});
 
   final CheckoutQuote quote;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -259,13 +285,7 @@ class _FulfilmentPicker extends ConsumerWidget {
         ],
         selected: {quote.fulfilmentType},
         showSelectedIcon: false,
-        onSelectionChanged: (selection) async {
-          try {
-            await ref.read(cartProvider.notifier).setFulfilment(selection.first);
-          } catch (error) {
-            if (context.mounted) AppFeedback.showError(context, error);
-          }
-        },
+        onSelectionChanged: (selection) => onChanged(selection.first),
       ),
     );
   }
@@ -289,7 +309,9 @@ class _AddressCard extends ConsumerWidget {
       ),
       child: addresses.maybeWhen(
         data: (list) {
-          final matches = list.where((item) => item.id == quote.addressId).toList();
+          final matches = list
+              .where((item) => item.id == quote.addressId)
+              .toList();
           final selected = matches.isEmpty ? null : matches.first;
 
           if (selected == null) {
@@ -315,7 +337,11 @@ class _AddressCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.location_on_rounded, size: 16, color: brand.primary),
+                  Icon(
+                    Icons.location_on_rounded,
+                    size: 16,
+                    color: brand.primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     selected.labelText,
@@ -337,7 +363,11 @@ class _AddressCard extends ConsumerWidget {
               const SizedBox(height: 5),
               Text(
                 selected.singleLine,
-                style: TextStyle(fontSize: 13.5, height: 1.4, color: brand.inkMuted),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  height: 1.4,
+                  color: brand.inkMuted,
+                ),
               ),
               if (quote.delivery.distanceKm != null) ...[
                 const SizedBox(height: 6),
@@ -364,7 +394,8 @@ class _TimingCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
     final config = ref.watch(appConfigProvider).valueOrNull;
-    final schedulingEnabled = config?.flag('scheduled_orders', fallback: true) ?? true;
+    final schedulingEnabled =
+        config?.flag('scheduled_orders', fallback: true) ?? true;
 
     return _SectionCard(
       title: 'When?',
@@ -446,10 +477,19 @@ class _TimingCard extends ConsumerWidget {
     );
     if (time == null || !context.mounted) return;
 
-    final slot = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final slot = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
 
     if (slot.isBefore(earliest)) {
-      AppFeedback.showInfo(context, 'Please choose a slot at least 30 minutes from now.');
+      AppFeedback.showInfo(
+        context,
+        'Please choose a slot at least 30 minutes from now.',
+      );
       return;
     }
 
@@ -478,7 +518,8 @@ class _PaymentPicker extends ConsumerWidget {
 
     // COD availability is decided by the server (zone rules, value caps, pickup);
     // its verdict arrives as a blocking issue on the quote.
-    final codIssue = quote.issueWithCode('COD_UNAVAILABLE') ??
+    final codIssue =
+        quote.issueWithCode('COD_UNAVAILABLE') ??
         quote.issueWithCode('COD_LIMIT_EXCEEDED') ??
         quote.issueWithCode('COD_MIN_ORDER_NOT_MET');
 
@@ -628,7 +669,9 @@ class _TipPicker extends StatelessWidget {
             children: options
                 .map(
                   (amount) => ChoiceChip(
-                    label: Text(amount == 0 ? 'No tip' : Fmt.moneySmart(amount)),
+                    label: Text(
+                      amount == 0 ? 'No tip' : Fmt.moneySmart(amount),
+                    ),
                     selected: selected == amount,
                     onSelected: (_) => onChanged(amount),
                   ),
@@ -669,8 +712,8 @@ class _CouponTile extends StatelessWidget {
             child: Text(
               applied == null
                   ? (quote.promotion?.applied == true
-                      ? '${quote.promotion!.headline ?? 'An offer'} applied automatically'
-                      : 'No coupon applied')
+                        ? '${quote.promotion!.headline ?? 'An offer'} applied automatically'
+                        : 'No coupon applied')
                   : '$applied · saving ${Fmt.moneySmart(quote.totals.couponDiscount)}',
               style: TextStyle(
                 fontSize: 13.5,
@@ -705,7 +748,9 @@ class _PromiseCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            quote.isPickup ? Icons.storefront_rounded : Icons.delivery_dining_rounded,
+            quote.isPickup
+                ? Icons.storefront_rounded
+                : Icons.delivery_dining_rounded,
             size: 20,
             color: brand.secondary,
           ),
@@ -718,8 +763,8 @@ class _PromiseCard extends StatelessWidget {
                   quote.isScheduled
                       ? 'Scheduled for ${Fmt.dayTime(quote.scheduledFor)}'
                       : (quote.isPickup
-                          ? 'Ready to collect in ${Fmt.duration(estimate.prepMinutes)}'
-                          : 'Arriving in about ${Fmt.duration(estimate.totalMinutes)}'),
+                            ? 'Ready to collect in ${Fmt.duration(estimate.prepMinutes)}'
+                            : 'Arriving in about ${Fmt.duration(estimate.totalMinutes)}'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -731,8 +776,12 @@ class _PromiseCard extends StatelessWidget {
                   quote.isPickup
                       ? 'We will let you know the moment it is packed.'
                       : 'Cooking takes about ${Fmt.duration(estimate.prepMinutes)}, '
-                          'delivery about ${Fmt.duration(estimate.deliveryMinutes)}.',
-                  style: TextStyle(fontSize: 12.5, height: 1.35, color: brand.inkMuted),
+                            'delivery about ${Fmt.duration(estimate.deliveryMinutes)}.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.35,
+                    color: brand.inkMuted,
+                  ),
                 ),
               ],
             ),
@@ -792,7 +841,11 @@ class _CheckoutFooter extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      paymentMode == 'ONLINE' ? 'Pay now' : 'Pay on delivery',
+                      paymentMode == 'ONLINE'
+                          ? 'Pay now'
+                          : paymentMode == 'PAY_AT_STORE'
+                          ? 'Pay at counter'
+                          : 'Pay on delivery',
                       style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                     ),
                   ],

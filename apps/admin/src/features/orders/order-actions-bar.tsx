@@ -55,7 +55,9 @@ export function OrderActionsBar({
     branchId: string | null;
 }) {
     const router = useRouter();
-    const { accept, startPreparing, markReady, addNote } = useOrderActions();
+    const { accept, startPreparing, markReady, addNote } = useOrderActions({
+        onActionSuccess: () => router.refresh(),
+    });
 
     const [assignOpen, setAssignOpen] = React.useState(false);
     const [refundOpen, setRefundOpen] = React.useState(false);

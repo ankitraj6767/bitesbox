@@ -13,15 +13,16 @@ import type { AssignmentMode, CancellationReason } from '@bitesbox/shared-types'
  * state machine, so the UI never decides whether a transition is legal — it
  * just reports what the server said.
  */
-export function useOrderActions() {
+export function useOrderActions({ onActionSuccess }: { onActionSuccess?: () => void } = {}) {
     const queryClient = useQueryClient();
 
-    const invalidate = () => {
+    const afterSuccess = () => {
         void queryClient.invalidateQueries({ queryKey: ['live-operations'] });
         void queryClient.invalidateQueries({ queryKey: ['orders'] });
         void queryClient.invalidateQueries({ queryKey: ['order'] });
         void queryClient.invalidateQueries({ queryKey: ['kitchen-queue'] });
         void queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] });
+        onActionSuccess?.();
     };
 
     const accept = useMutation({
@@ -36,7 +37,7 @@ export function useOrderActions() {
         },
         onSuccess: () => {
             toast.success('Order accepted');
-            invalidate();
+            afterSuccess();
         },
         onError: (error) => toast.error(errorMessage(error)),
     });
@@ -66,7 +67,7 @@ export function useOrderActions() {
                     ? 'Order rejected. A refund is required — raise it from the order screen.'
                     : 'Order rejected',
             );
-            invalidate();
+            afterSuccess();
         },
         onError: (error) => toast.error(errorMessage(error)),
     });
@@ -80,7 +81,7 @@ export function useOrderActions() {
         },
         onSuccess: () => {
             toast.success('Marked as preparing');
-            invalidate();
+            afterSuccess();
         },
         onError: (error) => toast.error(errorMessage(error)),
     });
@@ -94,7 +95,7 @@ export function useOrderActions() {
         },
         onSuccess: () => {
             toast.success('Order is ready. The pickup code has been issued.');
-            invalidate();
+            afterSuccess();
         },
         onError: (error) => toast.error(errorMessage(error)),
     });
@@ -124,7 +125,7 @@ export function useOrderActions() {
                     ? 'That delivery partner is already assigned'
                     : `Assigned to ${data?.rider_name ?? 'delivery partner'}`,
             );
-            invalidate();
+            afterSuccess();
         },
         onError: (error) => toast.error(errorMessage(error)),
     });
@@ -154,7 +155,7 @@ export function useOrderActions() {
                     ? 'Order cancelled. A refund is due to the customer.'
                     : 'Order cancelled',
             );
-            invalidate();
+            afterSuccess();
         },
         onError: (error) => toast.error(errorMessage(error)),
     });
@@ -170,7 +171,7 @@ export function useOrderActions() {
         },
         onSuccess: () => {
             toast.success('Note added');
-            invalidate();
+            afterSuccess();
         },
         onError: (error) => toast.error(errorMessage(error)),
     });

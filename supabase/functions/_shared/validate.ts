@@ -163,6 +163,7 @@ export const v = {
 export const PAYMENT_MODES = [
     "ONLINE",
     "COD",
+    "PAY_AT_STORE",
     "WALLET",
     "SPLIT_WALLET_ONLINE",
     "SPLIT_WALLET_COD",
