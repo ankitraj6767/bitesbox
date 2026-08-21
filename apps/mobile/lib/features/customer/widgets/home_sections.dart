@@ -24,7 +24,12 @@ class HomeSectionView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (section.kind) {
-      'BANNER_CAROUSEL' => _BannerCarousel(section: section),
+      // The database uses HERO_CAROUSEL for the seeded hero rail and
+      // CAMPAIGN_BANNER for secondary banner rails. Keep the older
+      // BANNER_CAROUSEL alias so existing content remains compatible.
+      'HERO_CAROUSEL' ||
+      'BANNER_CAROUSEL' ||
+      'CAMPAIGN_BANNER' => _BannerCarousel(section: section),
       'CATEGORY_GRID' => _CategoryGrid(section: section),
       'CATEGORY_CAROUSEL' => _CategoryCarousel(section: section),
       'PRODUCT_CAROUSEL' => _ProductCarousel(section: section),
