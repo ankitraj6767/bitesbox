@@ -6,6 +6,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+    // Supabase SSR uses Node-compatible modules; avoid bundling it into the
+    // Edge runtime, which reports process.version as unsupported.
+    runtime: 'nodejs',
     matcher: [
         /*
          * Everything except Next internals and static assets. Keeping images out of
