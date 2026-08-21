@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
     Bike,
     Check,
+    CheckCheck,
     ChefHat,
     MoreHorizontal,
     NotebookPen,
@@ -55,7 +56,7 @@ export function OrderActionsBar({
     branchId: string | null;
 }) {
     const router = useRouter();
-    const { accept, startPreparing, markReady, addNote } = useOrderActions({
+    const { accept, startPreparing, markReady, confirmPickup, addNote } = useOrderActions({
         onActionSuccess: () => router.refresh(),
     });
 
@@ -114,6 +115,16 @@ export function OrderActionsBar({
                     <Button loading={markReady.isPending} onClick={() => markReady.mutate(order.id)}>
                         <PackageCheck />
                         Mark ready
+                    </Button>
+                ) : null}
+
+                {status === 'READY_FOR_PICKUP' && !isDelivery && can('delivery.pickup') ? (
+                    <Button
+                        loading={confirmPickup.isPending}
+                        onClick={() => confirmPickup.mutate(order.id)}
+                    >
+                        <CheckCheck />
+                        Confirm payment & pickup
                     </Button>
                 ) : null}
 

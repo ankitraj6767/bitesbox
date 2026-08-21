@@ -100,6 +100,22 @@ export function useOrderActions({ onActionSuccess }: { onActionSuccess?: () => v
         onError: (error) => toast.error(errorMessage(error)),
     });
 
+    const confirmPickup = useMutation({
+        mutationFn: async (orderId: string) => {
+            const supabase = createSupabaseBrowserClient();
+            const { data, error } = await supabase.rpc('confirm_pickup_order', {
+                p_order_id: orderId,
+            });
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            toast.success('Payment confirmed and pickup completed');
+            afterSuccess();
+        },
+        onError: (error) => toast.error(errorMessage(error)),
+    });
+
     const assignRider = useMutation({
         mutationFn: async ({
             orderId,
@@ -176,5 +192,5 @@ export function useOrderActions({ onActionSuccess }: { onActionSuccess?: () => v
         onError: (error) => toast.error(errorMessage(error)),
     });
 
-    return { accept, reject, startPreparing, markReady, assignRider, cancel, addNote };
+    return { accept, reject, startPreparing, markReady, confirmPickup, assignRider, cancel, addNote };
 }

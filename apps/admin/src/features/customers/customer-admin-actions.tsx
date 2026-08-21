@@ -69,7 +69,7 @@ export function CustomerAdminActions({
 
     const block = useMutation({
         mutationFn: () =>
-            invokeAdmin(isBlocked ? 'unblock_customer' : 'block_customer', {
+            invokeAdmin(isBlocked ? 'UNBLOCK_CUSTOMER' : 'BLOCK_CUSTOMER', {
                 user_id: customerId,
                 reason: reason.trim() || undefined,
             }),
@@ -84,10 +84,10 @@ export function CustomerAdminActions({
 
     const credit = useMutation({
         mutationFn: () =>
-            invokeAdmin('credit_wallet', {
+            invokeAdmin('ISSUE_WALLET_CREDIT', {
                 user_id: customerId,
                 amount: Number(amount),
-                description: creditNote.trim() || 'Goodwill credit from Bites Box support',
+                note: creditNote.trim() || 'Goodwill credit from Bites Box support',
             }),
         onSuccess: () => {
             toast.success(`${money(Number(amount), true)} credited to the wallet`);

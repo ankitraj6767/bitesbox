@@ -56,7 +56,7 @@ export function RiderActions({
     };
 
     const approve = useMutation({
-        mutationFn: () => call('approve_rider', { delivery_partner_id: riderId }),
+        mutationFn: () => call('APPROVE_RIDER', { delivery_partner_id: riderId }),
         onSuccess: () => {
             toast.success(`${riderName} can now accept deliveries`);
             setApproveOpen(false);
@@ -67,7 +67,7 @@ export function RiderActions({
 
     const suspend = useMutation({
         mutationFn: () =>
-            call('suspend_rider', { delivery_partner_id: riderId, reason: reason.trim() || undefined }),
+            call('SUSPEND_RIDER', { delivery_partner_id: riderId, reason: reason.trim() || undefined }),
         onSuccess: () => {
             toast.success(`${riderName} suspended`);
             setSuspendOpen(false);
@@ -78,7 +78,7 @@ export function RiderActions({
     });
 
     const reinstate = useMutation({
-        mutationFn: () => call('approve_rider', { delivery_partner_id: riderId }),
+        mutationFn: () => call('APPROVE_RIDER', { delivery_partner_id: riderId }),
         onSuccess: () => {
             toast.success(`${riderName} reinstated`);
             router.refresh();

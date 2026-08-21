@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -6459,6 +6439,7 @@ export type Database = {
         }
         Returns: Json
       }
+      confirm_pickup_order: { Args: { p_order_id: string }; Returns: Json }
       create_support_ticket: {
         Args: {
           p_attachments?: Json
@@ -6535,6 +6516,7 @@ export type Database = {
       }
       my_rider_onboarding: { Args: never; Returns: Json }
       my_session: { Args: never; Returns: Json }
+      my_support_tickets: { Args: { p_limit?: number }; Returns: Json }
       my_wallet: { Args: never; Returns: Json }
       order_detail: { Args: { p_order_id: string }; Returns: Json }
       order_invoice: { Args: { p_order_id: string }; Returns: Json }
@@ -7280,6 +7262,7 @@ export type Database = {
         | "WALLET"
         | "SPLIT_WALLET_ONLINE"
         | "SPLIT_WALLET_COD"
+        | "PAY_AT_STORE"
       payment_status:
         | "CREATED"
         | "PENDING"
@@ -7515,9 +7498,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       account_status: ["ACTIVE", "BLOCKED", "SUSPENDED", "DELETED"],
@@ -7784,6 +7764,7 @@ export const Constants = {
         "WALLET",
         "SPLIT_WALLET_ONLINE",
         "SPLIT_WALLET_COD",
+        "PAY_AT_STORE",
       ],
       payment_status: [
         "CREATED",
