@@ -193,6 +193,25 @@ class FoodImage extends StatelessWidget {
 
   static String? assetForPath(String? path) => assetForCategory(path);
 
+  /// Bundled first-paint artwork for CMS banners. The network image remains the
+  /// source of truth, but the home screen should never show a blank/grey card
+  /// while Supabase Storage is warming its cache.
+  static String? assetForBanner({String? title, String? path}) {
+    final key = '${title ?? ''} ${path ?? ''}'.toLowerCase();
+
+    if (key.contains('first order') || key.contains('first-order')) {
+      return 'assets/images/menu/chicken.jpg';
+    }
+    if (key.contains('free delivery') ||
+        key.contains('family feast') ||
+        key.contains('combo') ||
+        key.contains('feast')) {
+      return 'assets/images/menu/combos.jpg';
+    }
+
+    return assetForCategory(key);
+  }
+
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;

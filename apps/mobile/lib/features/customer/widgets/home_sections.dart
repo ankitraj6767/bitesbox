@@ -170,6 +170,10 @@ class _BannerCarouselState extends State<_BannerCarousel> {
                       FoodImage(
                         path: banner.imagePathWide ?? banner.imagePath,
                         radius: brand.radiusLg,
+                        placeholderAsset: FoodImage.assetForBanner(
+                          title: banner.title,
+                          path: banner.imagePath,
+                        ),
                       ),
                       if ((banner.title ?? '').isNotEmpty)
                         DecoratedBox(
