@@ -128,7 +128,10 @@ class _BannerCarousel extends StatefulWidget {
 }
 
 class _BannerCarouselState extends State<_BannerCarousel> {
-  final _controller = PageController();
+  // Leave equal breathing room on both sides of every banner. A full-width
+  // page with asymmetric child padding made the right edge look clipped on
+  // phones and tablets with wider viewports.
+  final _controller = PageController(viewportFraction: 0.94);
   int _page = 0;
 
   @override
@@ -151,16 +154,13 @@ class _BannerCarouselState extends State<_BannerCarousel> {
           child: PageView.builder(
             controller: _controller,
             itemCount: banners.length,
-            padEnds: false,
+            padEnds: true,
             onPageChanged: (page) => setState(() => _page = page),
             itemBuilder: (context, index) {
               final banner = banners[index];
 
               return Padding(
-                padding: EdgeInsets.only(
-                  left: index == 0 ? 16 : 8,
-                  right: index == banners.length - 1 ? 16 : 0,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: InkWell(
                   onTap: () => _openBanner(context, banner),
                   borderRadius: BorderRadius.circular(brand.radiusLg),
