@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/config/env.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
@@ -41,9 +40,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    // Cash is the sensible default where online payments are not configured.
-    if (!Env.onlinePaymentsEnabled) _paymentMode = 'COD';
-
     WidgetsBinding.instance.addPostFrameCallback((_) => _reprice());
   }
 
@@ -74,7 +70,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       // when Razorpay is not configured in this build.
       final paymentMode = fulfilmentType == 'PICKUP'
           ? 'PAY_AT_STORE'
-          : (Env.onlinePaymentsEnabled ? 'ONLINE' : 'COD');
+          : 'ONLINE';
       if (mounted) setState(() => _paymentMode = paymentMode);
       await _reprice();
     } catch (error) {
@@ -524,7 +520,9 @@ class _PaymentPicker extends ConsumerWidget {
         quote.issueWithCode('COD_MIN_ORDER_NOT_MET');
 
     final codBlocked = codIssue != null && selected != 'ONLINE';
-    final onlineAvailable = Env.onlinePaymentsEnabled;
+    // The server returns the public Razorpay key from create-payment. The APK
+    // must not carry a compile-time gateway key or disable the option locally.
+    const onlineAvailable = true;
 
     return _SectionCard(
       title: 'Payment',
@@ -532,9 +530,6 @@ class _PaymentPicker extends ConsumerWidget {
         groupValue: selected,
         onChanged: (value) {
           if (value == null) return;
-          // A build without a Razorpay key cannot take online payment; the tile
-          // stays visible so the reason is explained rather than hidden.
-          if (value == 'ONLINE' && !onlineAvailable) return;
           onChanged(value);
         },
         child: Column(
@@ -546,9 +541,7 @@ class _PaymentPicker extends ConsumerWidget {
               enabled: onlineAvailable,
               title: const Text('Pay online'),
               subtitle: Text(
-                onlineAvailable
-                    ? 'UPI, cards, netbanking and wallets'
-                    : 'Not configured in this build',
+                'UPI, cards, netbanking and wallets',
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
             ),

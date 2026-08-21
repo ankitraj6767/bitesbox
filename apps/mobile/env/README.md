@@ -29,7 +29,7 @@ CI runner that produces the build.
 | `APP_ENV` | yes | Defaults to `development`; a `production` value adds release assertions |
 | `SUPABASE_URL` | yes | Startup assertion fails |
 | `SUPABASE_PUBLISHABLE_KEY` | yes | Startup assertion fails |
-| `RAZORPAY_KEY_ID` | production | Online payment is hidden; cash on delivery still works end to end |
+| `RAZORPAY_KEY_ID` | optional | The hosted create-payment function returns the public key at runtime; the APK does not need to embed it |
 | `GOOGLE_MAPS_KEY` | no | Embedded maps are replaced by a hand-off to the phone's own maps app |
 | `SENTRY_DSN` | no | Crash reporting is off |
 | `FIREBASE_*` | no | Push is off; updates still arrive over Realtime and the in-app inbox |

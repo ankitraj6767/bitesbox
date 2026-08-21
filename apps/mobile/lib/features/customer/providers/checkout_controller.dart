@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
-import '../../../core/config/env.dart';
 import '../../../core/errors/app_error.dart';
 import '../data/payment_repository.dart';
 import 'cart_controller.dart';
@@ -47,12 +46,12 @@ class CheckoutState {
 
   /// Copy for the primary button while work is in progress.
   String get busyLabel => switch (stage) {
-        CheckoutStage.placingOrder => 'Placing your order…',
-        CheckoutStage.startingPayment => 'Opening payment…',
-        CheckoutStage.awaitingPayment => 'Waiting for payment…',
-        CheckoutStage.verifyingPayment => 'Confirming payment…',
-        _ => 'Please wait…',
-      };
+    CheckoutStage.placingOrder => 'Placing your order…',
+    CheckoutStage.startingPayment => 'Opening payment…',
+    CheckoutStage.awaitingPayment => 'Waiting for payment…',
+    CheckoutStage.verifyingPayment => 'Confirming payment…',
+    _ => 'Please wait…',
+  };
 
   CheckoutState copyWith({
     CheckoutStage? stage,
@@ -103,7 +102,11 @@ class CheckoutController extends Notifier<CheckoutState> {
   ///
   /// Returns the order id once the order exists — even if payment was cancelled —
   /// so the app can send the customer to a screen where they can pay again.
-  Future<String?> submit({required String paymentMode, double tipAmount = 0, int loyaltyPoints = 0}) async {
+  Future<String?> submit({
+    required String paymentMode,
+    double tipAmount = 0,
+    int loyaltyPoints = 0,
+  }) async {
     if (state.isBusy) return state.order?.orderId;
 
     _idempotencyKey ??= _newIdempotencyKey();
@@ -157,17 +160,6 @@ class CheckoutController extends Notifier<CheckoutState> {
   }
 
   Future<bool> _collectPayment(String orderId) async {
-    if (!Env.onlinePaymentsEnabled) {
-      state = state.copyWith(
-        stage: CheckoutStage.failed,
-        error: const AppError(
-          code: 'PAYMENT_UNAVAILABLE',
-          message: 'Online payment is not available in this build. Please choose cash on delivery.',
-        ),
-      );
-      return false;
-    }
-
     state = state.copyWith(stage: CheckoutStage.startingPayment);
 
     final payments = ref.read(paymentRepositoryProvider);
@@ -194,7 +186,9 @@ class CheckoutController extends Notifier<CheckoutState> {
         stage: CheckoutStage.failed,
         error: AppError(
           code: ErrorCodes.paymentFailed,
-          message: outcome.message ?? 'The payment did not go through. Please try again.',
+          message:
+              outcome.message ??
+              'The payment did not go through. Please try again.',
         ),
       );
       return false;
@@ -214,7 +208,8 @@ class CheckoutController extends Notifier<CheckoutState> {
           stage: CheckoutStage.failed,
           error: const AppError(
             code: ErrorCodes.paymentSignatureInvalid,
-            message: 'We could not confirm that payment. Our team is checking it.',
+            message:
+                'We could not confirm that payment. Our team is checking it.',
           ),
         );
         return false;
@@ -239,35 +234,44 @@ class CheckoutController extends Notifier<CheckoutState> {
     final gateway = Razorpay();
     _razorpay = gateway;
 
-    gateway.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) {
-      _settle(_GatewayOutcome(
-        succeeded: response.orderId != null &&
-            response.paymentId != null &&
-            response.signature != null,
-        providerOrderId: response.orderId,
-        providerPaymentId: response.paymentId,
-        signature: response.signature,
-        message: 'The payment response was incomplete. Please try again.',
-      ));
+    gateway.on(Razorpay.EVENT_PAYMENT_SUCCESS, (
+      PaymentSuccessResponse response,
+    ) {
+      _settle(
+        _GatewayOutcome(
+          succeeded:
+              response.orderId != null &&
+              response.paymentId != null &&
+              response.signature != null,
+          providerOrderId: response.orderId,
+          providerPaymentId: response.paymentId,
+          signature: response.signature,
+          message: 'The payment response was incomplete. Please try again.',
+        ),
+      );
     });
 
     gateway.on(Razorpay.EVENT_PAYMENT_ERROR, (PaymentFailureResponse response) {
       // Code 2 is "cancelled by user" in the Razorpay SDK.
       final cancelled = response.code == Razorpay.PAYMENT_CANCELLED;
-      _settle(_GatewayOutcome(
-        succeeded: false,
-        cancelled: cancelled,
-        message: response.message,
-      ));
+      _settle(
+        _GatewayOutcome(
+          succeeded: false,
+          cancelled: cancelled,
+          message: response.message,
+        ),
+      );
     });
 
     try {
       gateway.open(session.toCheckoutOptions());
     } catch (error) {
-      _settle(_GatewayOutcome(
-        succeeded: false,
-        message: AppError.from(error).message,
-      ));
+      _settle(
+        _GatewayOutcome(
+          succeeded: false,
+          message: AppError.from(error).message,
+        ),
+      );
     }
 
     return completer.future;
@@ -277,7 +281,9 @@ class CheckoutController extends Notifier<CheckoutState> {
     final completer = _pending;
     _pending = null;
     _disposeGateway();
-    if (completer != null && !completer.isCompleted) completer.complete(outcome);
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(outcome);
+    }
   }
 
   void _disposeGateway() {
@@ -298,16 +304,16 @@ class CheckoutController extends Notifier<CheckoutState> {
 
   static String _newIdempotencyKey() {
     final random = Random.secure();
-    final suffix = List<int>.generate(8, (_) => random.nextInt(16))
-        .map((value) => value.toRadixString(16))
-        .join();
+    final suffix = List<int>.generate(
+      8,
+      (_) => random.nextInt(16),
+    ).map((value) => value.toRadixString(16)).join();
     return 'bb-${DateTime.now().microsecondsSinceEpoch}-$suffix';
   }
 }
 
-final checkoutControllerProvider = NotifierProvider<CheckoutController, CheckoutState>(
-  CheckoutController.new,
-);
+final checkoutControllerProvider =
+    NotifierProvider<CheckoutController, CheckoutState>(CheckoutController.new);
 
 class _GatewayOutcome {
   const _GatewayOutcome({

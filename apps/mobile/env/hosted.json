@@ -1,5 +1,5 @@
 {
-  "APP_ENV": "development",
+  "APP_ENV": "production",
   "SUPABASE_URL": "https://kqsbzafxntsksalchlgc.supabase.co",
   "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_i21MTIIoW7yoVtyIkhPO_w_QfJbFnsj",
   "RAZORPAY_KEY_ID": "",
