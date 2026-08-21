@@ -23,7 +23,7 @@ class HomeSectionView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return switch (section.kind) {
+    final rendered = switch (section.kind) {
       // The database uses HERO_CAROUSEL for the seeded hero rail and
       // CAMPAIGN_BANNER for secondary banner rails. Keep the older
       // BANNER_CAROUSEL alias so existing content remains compatible.
@@ -32,12 +32,47 @@ class HomeSectionView extends ConsumerWidget {
       'CAMPAIGN_BANNER' => _BannerCarousel(section: section),
       'CATEGORY_GRID' => _CategoryGrid(section: section),
       'CATEGORY_CAROUSEL' => _CategoryCarousel(section: section),
-      'PRODUCT_CAROUSEL' => _ProductCarousel(section: section),
+      // These are all product-backed CMS rules. The database resolves the
+      // products; the app only chooses the presentation layout.
+      'PRODUCT_CAROUSEL' ||
+      'BEST_SELLERS' ||
+      'RECOMMENDED_COMBOS' ||
+      'NEW_ARRIVALS' ||
+      'PRICE_BUCKET' ||
+      'POPULAR_NOW' ||
+      'BUY_AGAIN' ||
+      'RECENTLY_ORDERED' ||
+      'CUSTOMER_FAVOURITES' =>
+        section.layout == 'GRID'
+            ? _ProductGrid(section: section)
+            : _ProductCarousel(section: section),
       'PRODUCT_GRID' => _ProductGrid(section: section),
-      'COUPON_STRIP' => _CouponStrip(section: section),
+      'COUPON_STRIP' || 'TODAYS_OFFERS' => _CouponStrip(section: section),
       'RICH_TEXT' => _RichText(section: section),
-      _ => const SizedBox.shrink(),
+      _ => null,
     };
+
+    if (rendered != null) return rendered;
+
+    // Forward-compatible fallback: if the admin publishes a new enum kind but
+    // the older APK does not know its name yet, do not silently drop content.
+    // The server has already classified the payload by the data it returned.
+    if (section.banners.isNotEmpty) return _BannerCarousel(section: section);
+    if (section.categories.isNotEmpty) {
+      return section.layout == 'GRID'
+          ? _CategoryGrid(section: section)
+          : _CategoryCarousel(section: section);
+    }
+    if (section.coupons.isNotEmpty) return _CouponStrip(section: section);
+    if (section.products.isNotEmpty) {
+      return section.layout == 'GRID'
+          ? _ProductGrid(section: section)
+          : _ProductCarousel(section: section);
+    }
+    if (section.richText != null && section.richText!.trim().isNotEmpty) {
+      return _RichText(section: section);
+    }
+    return const SizedBox.shrink();
   }
 }
 
