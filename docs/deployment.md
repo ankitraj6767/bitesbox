@@ -252,6 +252,12 @@ prefix is what puts a value in the browser bundle.
 `.github/workflows/release-mobile.yml`, `workflow_dispatch` only. A store build is
 a decision, not a consequence of merging.
 
+For direct-distributed Android builds, `.github/workflows/android-auto-release.yml`
+is the automatic channel. It runs on relevant pushes to `main`, builds ABI-split
+APKs, publishes a versioned manifest to the public `app-releases` Supabase bucket,
+and the installed app checks that manifest on launch. See
+`docs/android-auto-updates.md` for the required signing and service-role secrets.
+
 Inputs: `target` (staging / production) and `artefact` (appbundle / apk / both).
 
 ```

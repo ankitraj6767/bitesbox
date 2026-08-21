@@ -7,6 +7,7 @@ import '../core/providers/core_providers.dart';
 import '../core/routing/app_router.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/brand_tokens.dart';
+import '../core/update/update_gate.dart';
 
 /// The application root.
 ///
@@ -45,7 +46,9 @@ class BitesBoxApp extends ConsumerWidget {
             data: MediaQuery.of(context).copyWith(textScaler: scale),
             // Inside the router so a tapped notification can navigate, and above
             // every screen so the in-app banner has a Scaffold to attach to.
-            child: PushGateway(child: child ?? const SizedBox.shrink()),
+            child: UpdateGate(
+              child: PushGateway(child: child ?? const SizedBox.shrink()),
+            ),
           );
         },
       ),
