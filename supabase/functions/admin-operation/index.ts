@@ -179,38 +179,12 @@ serveFunction("admin-operation", async ({ req, requestId, origin }) => {
 
             const riderId = v.uuid(body, "delivery_partner_id");
 
-            // Documents must be reviewed before a rider can carry orders.
-            const { data: pending, error: docError } = await admin
-                .from("delivery_partner_documents")
-                .select("document_type, status")
-                .eq("delivery_partner_id", riderId)
-                .neq("status", "APPROVED");
-
-            if (docError) throw fromPostgrestError(docError);
-
-            if ((pending ?? []).length > 0) {
-                throw new AppError(
-                    "VALIDATION_FAILED",
-                    "Approve every document before activating this delivery partner.",
-                    { pending_documents: pending?.map((d) => d.document_type) },
-                );
-            }
-
-            const { error } = await admin
-                .from("delivery_partners")
-                .update({
-                    onboarding_status: "ACTIVE",
-                    approved_by: caller.userId,
-                    approved_at: now,
-                    rejection_reason: null,
-                    suspended_reason: null,
-                    updated_at: now,
-                })
-                .eq("id", riderId);
-
-            if (error) throw fromPostgrestError(error);
-
-            result = { delivery_partner_id: riderId, onboarding_status: "ACTIVE" };
+            // Keep the dashboard on the same audited transition as every other
+            // staff client. This issues the partner code, enforces the VERIFIED
+            // document gate, records the audit event and notifies the rider.
+            result = await rpc(asUser, "approve_rider", {
+                p_delivery_partner_id: riderId,
+            });
             break;
         }
 
@@ -221,37 +195,13 @@ serveFunction("admin-operation", async ({ req, requestId, origin }) => {
             const reason = v.string(body, "reason", { min: 3, max: 500 });
             const until = v.optionalString(body, "suspended_until", { max: 40 });
 
-            // A rider mid-delivery must finish before being taken offline.
-            const { data: active, error: activeError } = await admin
-                .from("delivery_assignments")
-                .select("id")
-                .eq("delivery_partner_id", riderId)
-                .in("status", ["ACCEPTED", "AT_STORE", "PICKED_UP", "AT_CUSTOMER"]);
-
-            if (activeError) throw fromPostgrestError(activeError);
-
-            if ((active ?? []).length > 0) {
-                throw new AppError(
-                    "ACTIVE_DELIVERIES_PENDING",
-                    "This delivery partner has active deliveries. Reassign them first.",
-                    { active_deliveries: active?.length },
-                );
-            }
-
-            const { error } = await admin
-                .from("delivery_partners")
-                .update({
-                    onboarding_status: "SUSPENDED",
-                    suspended_reason: reason,
-                    suspended_until: until,
-                    duty_state: "OFFLINE",
-                    updated_at: now,
-                })
-                .eq("id", riderId);
-
-            if (error) throw fromPostgrestError(error);
-
-            result = { delivery_partner_id: riderId, onboarding_status: "SUSPENDED" };
+            // The database transition refuses to strand an active order, records
+            // the reason and emits the rider notification.
+            result = await rpc(asUser, "suspend_rider", {
+                p_delivery_partner_id: riderId,
+                p_reason: reason,
+                p_until: until,
+            });
             break;
         }
 

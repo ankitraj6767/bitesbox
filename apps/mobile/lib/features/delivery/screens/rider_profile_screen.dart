@@ -37,43 +37,56 @@ class RiderProfileScreen extends ConsumerWidget {
 
     return RiderScaffold(
       title: 'Profile',
+      actions: [
+        IconButton(
+          onPressed: () => ref.read(riderDashboardProvider.notifier).refresh(),
+          icon: const Icon(Icons.refresh_rounded),
+          tooltip: 'Refresh rider status',
+        ),
+      ],
       body: AsyncValueView<RiderDashboard>(
         value: dashboard,
         onRetry: () => ref.invalidate(riderDashboardProvider),
         data: (data) {
           final profile = data.profile;
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
-            children: [
-              _IdentityCard(profile: profile, session: session),
-              const SizedBox(height: 14),
-              _DutySection(profile: profile),
-              const SizedBox(height: 14),
-              _PerformanceCard(profile: profile),
-              const SizedBox(height: 14),
-              _DetailsCard(profile: profile),
-              const SizedBox(height: 14),
-              _SupportCard(supportPhone: config?.supportPhone),
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: () => _signOut(context, ref, profile),
-                icon: const Icon(Icons.logout_rounded, size: 18),
-                label: const Text('Sign out'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 50),
-                  foregroundColor: brand.error,
-                  side: BorderSide(color: brand.error.withValues(alpha: 0.4)),
+          return RefreshIndicator(
+            color: brand.primary,
+            onRefresh: () =>
+                ref.read(riderDashboardProvider.notifier).refresh(),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
+              children: [
+                _IdentityCard(profile: profile, session: session),
+                const SizedBox(height: 14),
+                _DutySection(profile: profile),
+                const SizedBox(height: 14),
+                _PerformanceCard(profile: profile),
+                const SizedBox(height: 14),
+                _DetailsCard(profile: profile),
+                const SizedBox(height: 14),
+                _SupportCard(supportPhone: config?.supportPhone),
+                const SizedBox(height: 20),
+                OutlinedButton.icon(
+                  onPressed: () => _signOut(context, ref, profile),
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: const Text('Sign out'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 50),
+                    foregroundColor: brand.error,
+                    side: BorderSide(color: brand.error.withValues(alpha: 0.4)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Center(
-                child: Text(
-                  'Bites Box · Delivery partner app',
-                  style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
+                const SizedBox(height: 14),
+                Center(
+                  child: Text(
+                    'Bites Box · Delivery partner app',
+                    style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -92,16 +105,16 @@ class RiderProfileScreen extends ConsumerWidget {
       title: 'Sign out?',
       message: profile.activeLoad > 0
           ? 'You still have ${profile.activeLoad} delivery(ies) in progress. '
-              'Finish them first — signing out does not cancel them.'
+                'Finish them first — signing out does not cancel them.'
           : 'You will stop receiving deliveries until you sign in again.',
       confirmLabel: 'Sign out',
       destructive: true,
     );
 
     if (!confirmed) return;
-    await ref.read(sessionProvider.notifier).signOut(
-          deviceToken: ref.read(pushTokenProvider),
-        );
+    await ref
+        .read(sessionProvider.notifier)
+        .signOut(deviceToken: ref.read(pushTokenProvider));
   }
 }
 
@@ -150,9 +163,12 @@ class _IdentityCard extends StatelessWidget {
                     AppPill(
                       label: Fmt.humanise(profile.onboardingStatus),
                       dense: true,
-                      background: (profile.isActive ? brand.success : brand.warning)
-                          .withValues(alpha: 0.1),
-                      foreground: profile.isActive ? brand.success : brand.warning,
+                      background:
+                          (profile.isActive ? brand.success : brand.warning)
+                              .withValues(alpha: 0.1),
+                      foreground: profile.isActive
+                          ? brand.success
+                          : brand.warning,
                     ),
                     if (profile.ratingAverage > 0) ...[
                       const SizedBox(width: 8),
@@ -236,7 +252,8 @@ class _DutySectionState extends ConsumerState<_DutySection> {
     if (!profile.isActive) {
       // A notice with no way out is a dead end. Onboarding is the one thing a
       // rider in this state can actually do, so it is offered here.
-      final canAct = profile.onboardingStatus == 'PENDING' ||
+      final canAct =
+          profile.onboardingStatus == 'PENDING' ||
           profile.onboardingStatus == 'DOCUMENTS_SUBMITTED';
 
       return Column(
@@ -286,26 +303,39 @@ class _DutySectionState extends ConsumerState<_DutySection> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [DutyState.available, DutyState.onBreak, DutyState.offline].map(
-              (state) {
-                final selected = profile.dutyState == state ||
-                    (state == DutyState.available &&
-                        profile.dutyState == DutyState.busy);
+            children:
+                [
+                  DutyState.available,
+                  DutyState.onBreak,
+                  DutyState.offline,
+                  DutyState.busy,
+                ].map((state) {
+                  final selected =
+                      profile.dutyState == state ||
+                      (state == DutyState.available &&
+                          profile.dutyState == DutyState.busy);
 
-                return ChoiceChip(
-                  selected: selected,
-                  label: Text(state.label),
-                  onSelected: _busy || selected ? null : (_) => _set(state),
-                );
-              },
-            ).toList(),
+                  final automatic = state == DutyState.busy;
+
+                  return ChoiceChip(
+                    selected: selected,
+                    label: Text(automatic ? 'Busy · automatic' : state.label),
+                    onSelected: _busy || automatic || selected
+                        ? null
+                        : (_) => _set(state),
+                  );
+                }).toList(),
           ),
           if (profile.dutyState == DutyState.busy) ...[
             const SizedBox(height: 10),
             Text(
               'You are marked busy automatically while a delivery is live. Finish it '
               'to free up your slot.',
-              style: TextStyle(fontSize: 12.5, height: 1.4, color: brand.inkMuted),
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                color: brand.inkMuted,
+              ),
             ),
           ],
         ],

@@ -30,7 +30,10 @@ class AuthRepository {
   }
 
   /// Verifies the code and establishes a session.
-  Future<AppSession> verifyOtp({required String phone, required String token}) async {
+  Future<AppSession> verifyOtp({
+    required String phone,
+    required String token,
+  }) async {
     try {
       await _api.auth.verifyOTP(
         phone: _normalise(phone),
@@ -42,7 +45,8 @@ class AuthRepository {
 
       // Supabase reports a wrong or stale code as a 4xx auth error; give the
       // customer copy they can act on instead of the raw provider message.
-      if (mapped.code != ErrorCodes.networkError && mapped.code != ErrorCodes.timeout) {
+      if (mapped.code != ErrorCodes.networkError &&
+          mapped.code != ErrorCodes.timeout) {
         throw AppError(
           code: 'OTP_INVALID',
           message: 'That code is incorrect or has expired. Please try again.',
@@ -80,6 +84,43 @@ class AuthRepository {
     return loadSession();
   }
 
+  /// Creates a delivery-partner application. The edge function creates only a
+  /// PENDING/OFFLINE rider record; it never activates or dispatches the applicant.
+  Future<void> signUpRider({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String password,
+    required String vehicleType,
+    String? vehicleNumber,
+    String? addressLine1,
+    String? city,
+    String? state,
+    String? postalCode,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) async {
+    await _api.invoke(
+      'rider-signup',
+      body: {
+        'full_name': fullName.trim(),
+        'email': email.trim().toLowerCase(),
+        'phone': _normalise(phone),
+        'password': password,
+        'vehicle_type': vehicleType,
+        if (_present(vehicleNumber)) 'vehicle_number': vehicleNumber!.trim(),
+        if (_present(addressLine1)) 'address_line1': addressLine1!.trim(),
+        if (_present(city)) 'city': city!.trim(),
+        if (_present(state)) 'state': state!.trim(),
+        if (_present(postalCode)) 'postal_code': postalCode!.trim(),
+        if (_present(emergencyContactName))
+          'emergency_contact_name': emergencyContactName!.trim(),
+        if (_present(emergencyContactPhone))
+          'emergency_contact_phone': _normalise(emergencyContactPhone!),
+      },
+    );
+  }
+
   /// Loads identity, live permissions and branch scope.
   ///
   /// Permissions come from the database rather than the JWT, so revoking access
@@ -98,7 +139,10 @@ class AuthRepository {
     // user's order notifications.
     if (deviceToken != null && deviceToken.isNotEmpty) {
       try {
-        await _api.rpc<dynamic>('unregister_device_token', params: {'p_token': deviceToken});
+        await _api.rpc<dynamic>(
+          'unregister_device_token',
+          params: {'p_token': deviceToken},
+        );
       } catch (_) {
         // Never block sign-out on a failed cleanup.
       }
@@ -113,12 +157,16 @@ class AuthRepository {
     String? preferredLanguage,
     bool? marketingOptIn,
   }) async {
-    final result = await _api.rpc<dynamic>('update_my_profile', params: {
-      if (fullName != null) 'p_full_name': fullName,
-      if (email != null && email.isNotEmpty) 'p_email': email,
-      if (preferredLanguage != null) 'p_preferred_language': preferredLanguage,
-      if (marketingOptIn != null) 'p_marketing_opt_in': marketingOptIn,
-    });
+    final result = await _api.rpc<dynamic>(
+      'update_my_profile',
+      params: {
+        if (fullName != null) 'p_full_name': fullName,
+        if (email != null && email.isNotEmpty) 'p_email': email,
+        if (preferredLanguage != null)
+          'p_preferred_language': preferredLanguage,
+        if (marketingOptIn != null) 'p_marketing_opt_in': marketingOptIn,
+      },
+    );
 
     return UserProfile.fromJson(Map<String, dynamic>.from(result as Map));
   }
@@ -133,14 +181,17 @@ class AuthRepository {
     String? appVersion,
     String? locale,
   }) async {
-    await _api.rpc<dynamic>('register_device_token', params: {
-      'p_token': token,
-      'p_platform': platform,
-      'p_device_model': deviceModel,
-      'p_os_version': osVersion,
-      'p_app_version': appVersion,
-      'p_locale': locale,
-    });
+    await _api.rpc<dynamic>(
+      'register_device_token',
+      params: {
+        'p_token': token,
+        'p_platform': platform,
+        'p_device_model': deviceModel,
+        'p_os_version': osVersion,
+        'p_app_version': appVersion,
+        'p_locale': locale,
+      },
+    );
   }
 
   /// Indian mobile numbers to E.164, matching `app.normalize_phone` in Postgres.
@@ -160,7 +211,12 @@ class AuthRepository {
   /// Exposed for the sign-in screen's validation.
   static bool isValidIndianMobile(String input) {
     final digits = input.replaceAll(RegExp(r'[^0-9]'), '');
-    final local = digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+    final local = digits.length > 10
+        ? digits.substring(digits.length - 10)
+        : digits;
     return local.length == 10 && RegExp(r'^[6-9]').hasMatch(local);
   }
+
+  static bool _present(String? value) =>
+      value != null && value.trim().isNotEmpty;
 }

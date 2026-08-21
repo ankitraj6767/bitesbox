@@ -29,9 +29,18 @@ class AccountScreen extends ConsumerWidget {
           title: 'Sign in to Bites Box',
           message: 'Save addresses, track orders and collect rewards.',
           icon: Icons.person_outline_rounded,
-          action: FilledButton(
-            onPressed: () => context.push(Routes.signIn),
-            child: const Text('Sign in'),
+          action: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilledButton(
+                onPressed: () => context.push(Routes.signIn),
+                child: const Text('Sign in'),
+              ),
+              TextButton(
+                onPressed: () => context.push(Routes.riderSignup),
+                child: const Text('Apply as a delivery partner'),
+              ),
+            ],
           ),
         ),
       );
@@ -89,7 +98,10 @@ class AccountScreen extends ConsumerWidget {
                           const SizedBox(height: 3),
                           Text(
                             profile?.phone ?? profile?.email ?? '',
-                            style: TextStyle(fontSize: 13, color: brand.inkMuted),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: brand.inkMuted,
+                            ),
                           ),
                           if ((profile?.totalOrders ?? 0) > 0) ...[
                             const SizedBox(height: 4),
@@ -254,7 +266,8 @@ class AccountScreen extends ConsumerWidget {
 
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
@@ -267,9 +280,9 @@ class AccountScreen extends ConsumerWidget {
     );
 
     if (!confirmed) return;
-    await ref.read(sessionProvider.notifier).signOut(
-          deviceToken: ref.read(pushTokenProvider),
-        );
+    await ref
+        .read(sessionProvider.notifier)
+        .signOut(deviceToken: ref.read(pushTokenProvider));
   }
 }
 
