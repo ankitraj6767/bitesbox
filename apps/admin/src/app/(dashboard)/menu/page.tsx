@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChefHat, Plus, Star, TrendingUp } from 'lucide-react';
+import { ChefHat, Pencil, Plus, Star, TrendingUp } from 'lucide-react';
 import { requirePermission, hasPermission, activeBranchId } from '@/lib/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
@@ -12,6 +12,7 @@ import { EmptyState, ErrorState } from '@/components/ui/states';
 import { Table, TableWrap, TBody, TD, TH, THead, TR, TableMessageRow } from '@/components/ui/table';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { money, storageUrl } from '@/lib/utils';
+import { SoftDeleteAction } from '@/components/ui/soft-delete-action';
 
 export const metadata: Metadata = { title: 'Menu' };
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,10 @@ export default async function MenuPage({
 
     const supabase = await createSupabaseServerClient();
     const branchId = activeBranchId(session);
-    const canEdit = hasPermission(session, [PERMISSIONS.MENU_CREATE, PERMISSIONS.MENU_UPDATE]);
+    const canCreate = hasPermission(session, PERMISSIONS.MENU_CREATE);
+    const canUpdate = hasPermission(session, PERMISSIONS.MENU_UPDATE);
+    const canDelete = hasPermission(session, PERMISSIONS.MENU_DELETE);
+    const canEdit = canCreate || canUpdate;
 
     const [categoriesResult, productsResult] = await Promise.all([
         supabase
@@ -96,6 +100,11 @@ export default async function MenuPage({
                                 </Link>
                             </Button>
                         ) : null}
+                        {canCreate ? (
+                            <Button asChild variant="secondary" size="sm">
+                                <Link href="/menu/categories/new"><Plus /> Add category</Link>
+                            </Button>
+                        ) : null}
                     </>
                 }
             />
@@ -132,6 +141,16 @@ export default async function MenuPage({
                                                 ) : null}
                                                 <span className="tnum shrink-0 text-[11.5px] text-ink-muted">{count}</span>
                                             </Link>
+                                            {canEdit || canDelete ? (
+                                                <div className="mt-0.5 flex justify-end gap-0.5">
+                                                    {canUpdate ? (
+                                                        <Button asChild variant="ghost" size="iconSm" aria-label={`Edit ${category.name}`}>
+                                                            <Link href={`/menu/categories/${category.id}/edit`}><Pencil /></Link>
+                                                        </Button>
+                                                    ) : null}
+                                                    {canDelete ? <SoftDeleteAction table="categories" id={category.id} label={category.name} /> : null}
+                                                </div>
+                                            ) : null}
                                         </li>
                                     );
                                 })}

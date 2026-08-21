@@ -10,6 +10,7 @@ import { Table, TableWrap, TBody, TD, TH, THead, TR, TableMessageRow } from '@/c
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/overlays';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { dateOnly, humanise, initials } from '@/lib/utils';
+import { StaffActions } from '@/features/staff/staff-actions';
 
 export const metadata: Metadata = { title: 'Staff & roles' };
 export const dynamic = 'force-dynamic';
@@ -143,11 +144,12 @@ export default async function StaffPage() {
                                     <TH>Roles</TH>
                                     <TH>Account</TH>
                                     <TH>Last seen</TH>
+                                    {canManageRoles ? <TH className="w-12" /> : null}
                                 </TR>
                             </THead>
                             <TBody>
                                 {staffList.length === 0 ? (
-                                    <TableMessageRow colSpan={5}>
+                                    <TableMessageRow colSpan={canManageRoles ? 6 : 5}>
                                         <EmptyState
                                             icon={UsersRound}
                                             title="No staff accounts yet"
@@ -194,6 +196,11 @@ export default async function StaffPage() {
                                             <TD className="text-[12.5px] whitespace-nowrap text-ink-muted">
                                                 {person.lastSeen ? dateOnly(person.lastSeen) : '—'}
                                             </TD>
+                                            {canManageRoles ? (
+                                                <TD>
+                                                    <StaffActions userId={person.id} name={person.name ?? 'this person'} roles={person.roles} />
+                                                </TD>
+                                            ) : null}
                                         </TR>
                                     ))
                                 )}

@@ -22,6 +22,7 @@ node_modules/
 out/
 dist/
 build/
+assets/generated-menu/
 coverage/
 *.tsbuildinfo
 .turbo/

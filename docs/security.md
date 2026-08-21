@@ -289,7 +289,7 @@ in admin server actions. It is never in a Flutter build and never in a
   database)
 - `rzp_live_…` keys, or `RAZORPAY_KEY_SECRET` with a value assigned
 - any `BEGIN … PRIVATE KEY` block
-- a Google service-account JSON (`"type": "service_account"`)
+- a Google service-account JSON file
 - tracked files that must stay local: `*.jks`, `*.keystore`,
   `android/key.properties`, `env/prod.json`, `env/staging.json`,
   `ios/Flutter/Maps.xcconfig`, `google-services.json`,

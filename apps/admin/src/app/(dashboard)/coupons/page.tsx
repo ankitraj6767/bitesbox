@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyState, ErrorState } from '@/components/ui/states';
 import { Table, TableWrap, TBody, TD, TH, THead, TR, TableMessageRow } from '@/components/ui/table';
 import { CouponToggle } from '@/features/coupons/coupon-toggle';
+import { SoftDeleteAction } from '@/components/ui/soft-delete-action';
+import { Pencil } from 'lucide-react';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { dateOnly, money, humanise } from '@/lib/utils';
 
@@ -20,7 +22,10 @@ export const dynamic = 'force-dynamic';
 export default async function CouponsPage() {
     const session = await requirePermission(PERMISSIONS.COUPON_VIEW);
     const supabase = await createSupabaseServerClient();
-    const canEdit = hasPermission(session, [PERMISSIONS.COUPON_CREATE, PERMISSIONS.COUPON_UPDATE]);
+    const canCreate = hasPermission(session, PERMISSIONS.COUPON_CREATE);
+    const canUpdate = hasPermission(session, PERMISSIONS.COUPON_UPDATE);
+    const canDelete = hasPermission(session, PERMISSIONS.COUPON_DELETE);
+    const canManage = canCreate || canUpdate || canDelete;
 
     const [couponsResult, redemptionsResult] = await Promise.all([
         supabase
@@ -71,7 +76,7 @@ export default async function CouponsPage() {
                 title="Coupons"
                 description="Code-driven offers. Every rule is validated server-side at checkout."
                 actions={
-                    canEdit ? (
+                    canCreate ? (
                         <Button asChild size="sm">
                             <Link href="/coupons/new">
                                 <Plus />
@@ -108,16 +113,16 @@ export default async function CouponsPage() {
                                     <TH numeric>Used</TH>
                                     <TH>Window</TH>
                                     <TH>State</TH>
-                                    {canEdit ? <TH className="w-24" /> : null}
+                                    {canManage ? <TH className="w-28" /> : null}
                                 </TR>
                             </THead>
                             <TBody>
                                 {coupons.length === 0 ? (
-                                    <TableMessageRow colSpan={canEdit ? 8 : 7}>
+                                    <TableMessageRow colSpan={canManage ? 8 : 7}>
                                         <EmptyState
                                             icon={BadgePercent}
                                             title="No coupons yet"
-                                            description="Create a coupon to start running code-driven offers."
+                                            description={canCreate ? 'Create a coupon to start running code-driven offers.' : undefined}
                                         />
                                     </TableMessageRow>
                                 ) : (
@@ -207,9 +212,19 @@ export default async function CouponsPage() {
                                                     )}
                                                 </TD>
 
-                                                {canEdit ? (
+                                                {canManage ? (
                                                     <TD>
-                                                        <CouponToggle couponId={coupon.id} isActive={coupon.is_active} code={coupon.code} />
+                                                        <div className="flex items-center gap-1">
+                                                            {canUpdate ? (
+                                                                <Button asChild variant="ghost" size="icon" aria-label={`Edit ${coupon.code}`}>
+                                                                    <Link href={`/coupons/${coupon.id}/edit`}><Pencil /></Link>
+                                                                </Button>
+                                                            ) : null}
+                                                            {canUpdate ? (
+                                                                <CouponToggle couponId={coupon.id} isActive={coupon.is_active} code={coupon.code} />
+                                                            ) : null}
+                                                            {canDelete ? <SoftDeleteAction table="coupons" id={coupon.id} label={coupon.code} /> : null}
+                                                        </div>
                                                     </TD>
                                                 ) : null}
                                             </TR>
