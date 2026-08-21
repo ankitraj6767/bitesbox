@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -55,6 +57,7 @@ class FoodImage extends StatelessWidget {
     this.height,
     this.radius = 12,
     this.fit = BoxFit.cover,
+    this.placeholderAsset,
     super.key,
   });
 
@@ -63,6 +66,7 @@ class FoodImage extends StatelessWidget {
   final double? height;
   final double radius;
   final BoxFit fit;
+  final String? placeholderAsset;
 
   static const _knownBuckets = {
     'menu-images',
@@ -86,12 +90,115 @@ class FoodImage extends StatelessWidget {
     return '${Env.supabaseUrl}/storage/v1/object/public/$resolvedBucket/$objectPath';
   }
 
+  static final Set<String> _priming = <String>{};
+  static final Set<String> _primed = <String>{};
+
+  /// Starts a disk-cache download before the image scrolls into view. This is
+  /// best-effort: menu data still renders when the network is unavailable.
+  static Future<void> prime(String? path) async {
+    final url = resolve(path);
+    if (url == null || _primed.contains(url) || !_priming.add(url)) return;
+
+    try {
+      final stream = CachedNetworkImageProvider(
+        url,
+      ).resolve(const ImageConfiguration());
+      final done = Completer<void>();
+      late final ImageStreamListener listener;
+      listener = ImageStreamListener(
+        (_, __) {
+          stream.removeListener(listener);
+          _primed.add(url);
+          if (!done.isCompleted) done.complete();
+        },
+        onError: (_, __) {
+          stream.removeListener(listener);
+          if (!done.isCompleted) done.complete();
+        },
+      );
+      stream.addListener(listener);
+      await done.future;
+    } finally {
+      _priming.remove(url);
+    }
+  }
+
+  static Future<void> primeAll(Iterable<String?> paths) async {
+    final unique = paths
+        .whereType<String>()
+        .where((path) => path.isNotEmpty)
+        .toSet()
+        .take(24);
+    await Future.wait(unique.map(prime));
+  }
+
+  /// Bundled category photography used while a hosted product image downloads.
+  static String? assetForCategory(String? value) {
+    final key = (value ?? '').toLowerCase();
+    if (key.contains('biryani')) {
+      return 'assets/images/menu/biryani.jpg';
+    }
+    if (key.contains('mutton') || key.contains('goat')) {
+      return 'assets/images/menu/mutton.jpg';
+    }
+    if (key.contains('chicken') || key.contains('murgh')) {
+      return 'assets/images/menu/chicken.jpg';
+    }
+    if (key.contains('roll') || key.contains('wrap')) {
+      return 'assets/images/menu/rolls.jpg';
+    }
+    if (key.contains('chinese') ||
+        key.contains('noodle') ||
+        key.contains('manchurian')) {
+      return 'assets/images/menu/chinese.jpg';
+    }
+    if (key.contains('bread') || key.contains('naan') || key.contains('roti')) {
+      return 'assets/images/menu/breads.jpg';
+    }
+    if (key.contains('litti') ||
+        key.contains('breakfast') ||
+        key.contains('paratha') ||
+        key.contains('sattu')) {
+      return 'assets/images/menu/breakfast.jpg';
+    }
+    if (key.contains('drink') ||
+        key.contains('beverage') ||
+        key.contains('cola') ||
+        key.contains('lassi')) {
+      return 'assets/images/menu/beverages.jpg';
+    }
+    if (key.contains('dessert') ||
+        key.contains('sweet') ||
+        key.contains('kheer') ||
+        key.contains('gulab')) {
+      return 'assets/images/menu/desserts.jpg';
+    }
+    if (key.contains('combo') || key.contains('feast') || key.contains('box')) {
+      return 'assets/images/menu/combos.jpg';
+    }
+    if (key.contains('curry') ||
+        key.contains('dal') ||
+        key.contains('paneer') ||
+        key.contains('rajma')) {
+      return 'assets/images/menu/curries.jpg';
+    }
+    if (key.contains('starter') ||
+        key.contains('kebab') ||
+        key.contains('tikka') ||
+        key.contains('chilli')) {
+      return 'assets/images/menu/starters.jpg';
+    }
+    return null;
+  }
+
+  static String? assetForPath(String? path) => assetForCategory(path);
+
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
     final url = resolve(path);
 
-    final placeholder = Container(
+    final iconPlaceholder = Container(
       width: width,
       height: height,
       color: brand.surfaceMuted,
@@ -103,9 +210,21 @@ class FoodImage extends StatelessWidget {
         ),
       ),
     );
+    final placeholder = placeholderAsset == null
+        ? iconPlaceholder
+        : Image.asset(
+            placeholderAsset!,
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (_, __, ___) => iconPlaceholder,
+          );
 
     if (url == null) {
-      return ClipRRect(borderRadius: BorderRadius.circular(radius), child: placeholder);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: placeholder,
+      );
     }
 
     return ClipRRect(
@@ -115,7 +234,11 @@ class FoodImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
-        fadeInDuration: const Duration(milliseconds: 180),
+        memCacheWidth: width == null ? 800 : (width! * 2).round(),
+        maxWidthDiskCache: width == null ? 1200 : (width! * 2).round(),
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
+        placeholderFadeInDuration: Duration.zero,
         placeholder: (_, __) => placeholder,
         // A missing image must never break a menu card.
         errorWidget: (_, __, ___) => placeholder,
@@ -148,7 +271,10 @@ class AppPill extends StatelessWidget {
     final bg = background ?? brand.surfaceMuted;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: dense ? 7 : 9, vertical: dense ? 3 : 4.5),
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 7 : 9,
+        vertical: dense ? 3 : 4.5,
+      ),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
@@ -219,7 +345,11 @@ class SectionHeader extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: TextStyle(fontSize: 13.5, color: brand.inkMuted, height: 1.3),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: brand.inkMuted,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ],
@@ -281,11 +411,15 @@ class QuantityStepper extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _StepButton(
-            icon: quantity <= min ? Icons.delete_outline_rounded : Icons.remove_rounded,
+            icon: quantity <= min
+                ? Icons.delete_outline_rounded
+                : Icons.remove_rounded,
             size: size,
             colour: brand.primary,
             onTap: busy ? null : () => onChanged(quantity - 1),
-            semanticLabel: quantity <= min ? 'Remove item' : 'Decrease quantity',
+            semanticLabel: quantity <= min
+                ? 'Remove item'
+                : 'Decrease quantity',
           ),
           SizedBox(
             width: dense ? 26 : 32,
@@ -294,7 +428,10 @@ class QuantityStepper extends StatelessWidget {
                     child: SizedBox(
                       width: 12,
                       height: 12,
-                      child: CircularProgressIndicator(strokeWidth: 1.8, color: brand.primary),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.8,
+                        color: brand.primary,
+                      ),
                     ),
                   )
                 : Text(
@@ -311,7 +448,9 @@ class QuantityStepper extends StatelessWidget {
             icon: Icons.add_rounded,
             size: size,
             colour: brand.primary,
-            onTap: busy || quantity >= max ? null : () => onChanged(quantity + 1),
+            onTap: busy || quantity >= max
+                ? null
+                : () => onChanged(quantity + 1),
             semanticLabel: 'Increase quantity',
           ),
         ],
@@ -359,7 +498,12 @@ class _StepButton extends StatelessWidget {
 
 /// Rating chip: ★ 4.7 (96)
 class RatingChip extends StatelessWidget {
-  const RatingChip({required this.rating, this.count, this.dense = false, super.key});
+  const RatingChip({
+    required this.rating,
+    this.count,
+    this.dense = false,
+    super.key,
+  });
 
   final num rating;
   final int? count;

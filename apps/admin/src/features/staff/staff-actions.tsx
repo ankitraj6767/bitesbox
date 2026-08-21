@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
-import { MoreHorizontal, Pencil, Plus, UserMinus, X } from 'lucide-react';
+import { KeyRound, MoreHorizontal, Pencil, Plus, UserMinus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +21,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/overlays';
-import { Field, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/form-controls';
+import { Field, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/form-controls';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
 import type { AppRole } from '@bitesbox/shared-types';
@@ -42,14 +42,18 @@ export function StaffActions({
     userId,
     name,
     roles,
+    canResetPassword,
 }: {
     userId: string;
     name: string;
     roles: Array<{ code: string; label: string; isPrimary: boolean }>;
+    canResetPassword: boolean;
 }) {
     const router = useRouter();
     const [editOpen, setEditOpen] = React.useState(false);
     const [removeOpen, setRemoveOpen] = React.useState(false);
+    const [resetOpen, setResetOpen] = React.useState(false);
+    const [temporaryPassword, setTemporaryPassword] = React.useState('');
     const [selectedRole, setSelectedRole] = React.useState<AppRole>('MANAGER');
 
     const mutation = useMutation({
@@ -79,6 +83,30 @@ export function StaffActions({
         }
     };
 
+    const resetPassword = async () => {
+        if (temporaryPassword.trim().length < 8) return;
+        try {
+            const supabase = createSupabaseBrowserClient();
+            const { data, error } = await supabase.functions.invoke('admin-operation', {
+                body: {
+                    operation: 'RESET_STAFF_PASSWORD',
+                    user_id: userId,
+                    temporary_password: temporaryPassword,
+                },
+            });
+            if (error) {
+                const context = (error as { context?: { body?: unknown } }).context;
+                throw context?.body ?? error;
+            }
+            const result = (data as { result?: { temporary_password?: string } })?.result;
+            toast.success(`${name}'s password was reset`);
+            setResetOpen(false);
+            setTemporaryPassword(result?.temporary_password ?? '');
+        } catch (error) {
+            toast.error(errorMessage(error));
+        }
+    };
+
     return (
         <>
             <DropdownMenu>
@@ -92,6 +120,12 @@ export function StaffActions({
                         <Pencil />
                         Edit access
                     </DropdownMenuItem>
+                    {canResetPassword ? (
+                        <DropdownMenuItem onSelect={() => setResetOpen(true)}>
+                            <KeyRound />
+                            Reset password
+                        </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem destructive onSelect={() => setRemoveOpen(true)}>
                         <UserMinus />
@@ -169,6 +203,32 @@ export function StaffActions({
                 loading={mutation.isPending}
                 onConfirm={revoke}
             />
+
+            <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+                <DialogContent size="sm">
+                    <DialogHeader>
+                        <DialogTitle>Reset {name}&apos;s password</DialogTitle>
+                        <DialogDescription>The staff member will use this new password in Staff sign-in.</DialogDescription>
+                    </DialogHeader>
+                    <DialogBody>
+                        <Field label="Temporary password" required hint="At least 8 characters. Share it securely.">
+                            <Input
+                                type="text"
+                                value={temporaryPassword}
+                                onChange={(event) => setTemporaryPassword(event.target.value)}
+                                autoFocus
+                                autoComplete="new-password"
+                            />
+                        </Field>
+                    </DialogBody>
+                    <DialogFooter>
+                        <Button variant="secondary" onClick={() => setResetOpen(false)}>Cancel</Button>
+                        <Button disabled={temporaryPassword.trim().length < 8} onClick={() => void resetPassword()}>
+                            <KeyRound /> Reset password
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

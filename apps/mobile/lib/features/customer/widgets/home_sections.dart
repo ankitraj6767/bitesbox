@@ -53,7 +53,9 @@ class _SectionFrame extends StatelessWidget {
           SectionHeader(
             title: title,
             subtitle: section.subtitle,
-            actionLabel: section.actionRoute == null ? null : section.actionLabel,
+            actionLabel: section.actionRoute == null
+                ? null
+                : section.actionLabel,
             onAction: section.actionRoute == null
                 ? null
                 : () => _openRoute(context, section.actionRoute!),
@@ -169,7 +171,9 @@ class _BannerCarouselState extends State<_BannerCarousel> {
                                   Text(
                                     banner.subtitle!,
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.92),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.92,
+                                      ),
                                       fontSize: 13,
                                     ),
                                   ),
@@ -251,7 +255,8 @@ class _CategoryGrid extends ConsumerWidget {
             crossAxisSpacing: 12,
             childAspectRatio: 0.78,
           ),
-          itemBuilder: (context, index) => _CategoryTile(category: categories[index]),
+          itemBuilder: (context, index) =>
+              _CategoryTile(category: categories[index]),
         ),
       ),
     );
@@ -298,9 +303,9 @@ class _CategoryTile extends ConsumerWidget {
 
     return InkWell(
       onTap: () {
-        ref.read(menuFiltersProvider.notifier).update(
-              (filters) => filters.copyWith(categoryId: category.id),
-            );
+        ref
+            .read(menuFiltersProvider.notifier)
+            .update((filters) => filters.copyWith(categoryId: category.id));
         context.push(Routes.menu);
       },
       borderRadius: BorderRadius.circular(brand.radiusMd),
@@ -311,6 +316,7 @@ class _CategoryTile extends ConsumerWidget {
             width: 66,
             height: 66,
             radius: 999,
+            placeholderAsset: FoodImage.assetForCategory(category.slug),
           ),
           const SizedBox(height: 7),
           Text(
@@ -419,7 +425,9 @@ class _CouponStrip extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: brand.primary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(brand.radiusMd),
-                  border: Border.all(color: brand.primary.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: brand.primary.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,7 +476,10 @@ class _CouponStrip extends StatelessWidget {
                           const Spacer(),
                           Text(
                             'till ${Fmt.day(coupon.endsAt)}',
-                            style: TextStyle(fontSize: 11, color: brand.inkMuted),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: brand.inkMuted,
+                            ),
                           ),
                         ],
                       ],

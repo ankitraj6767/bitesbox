@@ -118,10 +118,7 @@ class _PriceRow extends StatelessWidget {
     return Row(
       children: [
         if (product.hasVariants)
-          Text(
-            'from ',
-            style: TextStyle(fontSize: 13, color: brand.inkMuted),
-          ),
+          Text('from ', style: TextStyle(fontSize: 13, color: brand.inkMuted)),
         Text(
           Fmt.moneySmart(product.displayPrice),
           style: TextStyle(
@@ -178,6 +175,7 @@ class _ImageWithAction extends ConsumerWidget {
                 width: 112,
                 height: 96,
                 radius: brand.radiusMd,
+                placeholderAsset: FoodImage.assetForPath(product.slug),
               ),
               if (!product.isAvailable)
                 Positioned.fill(
@@ -209,20 +207,25 @@ class _ImageWithAction extends ConsumerWidget {
               quantity: line.quantity,
               busy: busy,
               max: product.maxQuantityPerOrder ?? 50,
-              onChanged: (next) => _setQuantity(context, ref, line.cartItemId, next),
+              onChanged: (next) =>
+                  _setQuantity(context, ref, line.cartItemId, next),
             )
           else if (quantity > 0)
             // Several configurations of this dish are in the cart: editing has to
             // happen where the customer can see which one they mean.
             OutlinedButton(
-              onPressed: () => ProductSheet.show(context, productId: product.id),
+              onPressed: () =>
+                  ProductSheet.show(context, productId: product.id),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(112, 34),
                 padding: EdgeInsets.zero,
                 foregroundColor: brand.primary,
                 side: BorderSide(color: brand.primary.withValues(alpha: 0.4)),
               ),
-              child: Text('$quantity in cart', style: const TextStyle(fontSize: 12.5)),
+              child: Text(
+                '$quantity in cart',
+                style: const TextStyle(fontSize: 12.5),
+              ),
             )
           else
             OutlinedButton(
@@ -232,7 +235,10 @@ class _ImageWithAction extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 foregroundColor: brand.primary,
                 side: BorderSide(color: brand.primary.withValues(alpha: 0.4)),
-                textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: const Text('ADD'),
             ),
@@ -311,13 +317,17 @@ class ProductRailCard extends ConsumerWidget {
                     width: 156,
                     height: 116,
                     radius: brand.radiusMd,
+                    placeholderAsset: FoodImage.assetForPath(product.slug),
                   ),
                   if (product.hasDiscount)
                     Positioned(
                       left: 8,
                       top: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: brand.success,
                           borderRadius: BorderRadius.circular(6),
@@ -337,7 +347,10 @@ class ProductRailCard extends ConsumerWidget {
                       right: 8,
                       top: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: brand.primary,
                           borderRadius: BorderRadius.circular(999),

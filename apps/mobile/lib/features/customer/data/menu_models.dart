@@ -7,28 +7,28 @@
 library;
 
 double _toDouble(Object? value) => switch (value) {
-      num n => n.toDouble(),
-      String s => double.tryParse(s) ?? 0,
-      _ => 0,
-    };
+  num n => n.toDouble(),
+  String s => double.tryParse(s) ?? 0,
+  _ => 0,
+};
 
 double? _toDoubleOrNull(Object? value) => switch (value) {
-      num n => n.toDouble(),
-      String s => double.tryParse(s),
-      _ => null,
-    };
+  num n => n.toDouble(),
+  String s => double.tryParse(s),
+  _ => null,
+};
 
 int _toInt(Object? value) => switch (value) {
-      num n => n.toInt(),
-      String s => int.tryParse(s) ?? 0,
-      _ => 0,
-    };
+  num n => n.toInt(),
+  String s => int.tryParse(s) ?? 0,
+  _ => 0,
+};
 
 int? _toIntOrNull(Object? value) => switch (value) {
-      num n => n.toInt(),
-      String s => int.tryParse(s),
-      _ => null,
-    };
+  num n => n.toInt(),
+  String s => int.tryParse(s),
+  _ => null,
+};
 
 List<String> _toStringList(Object? value) =>
     value is List ? value.whereType<String>().toList() : const [];
@@ -61,18 +61,18 @@ class MenuCategory {
   final int productCount;
 
   factory MenuCategory.fromJson(Map<String, dynamic> json) => MenuCategory(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        slug: (json['slug'] as String?) ?? '',
-        shortDescription: json['short_description'] as String?,
-        imagePath: json['image_path'] as String?,
-        thumbnailPath: json['thumbnail_path'] as String?,
-        iconName: json['icon_name'] as String?,
-        accentColor: json['accent_color'] as String?,
-        dayPart: (json['day_part'] as String?) ?? 'ALL_DAY',
-        displayOrder: _toInt(json['display_order']),
-        productCount: _toInt(json['product_count']),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    slug: (json['slug'] as String?) ?? '',
+    shortDescription: json['short_description'] as String?,
+    imagePath: json['image_path'] as String?,
+    thumbnailPath: json['thumbnail_path'] as String?,
+    iconName: json['icon_name'] as String?,
+    accentColor: json['accent_color'] as String?,
+    dayPart: (json['day_part'] as String?) ?? 'ALL_DAY',
+    displayOrder: _toInt(json['display_order']),
+    productCount: _toInt(json['product_count']),
+  );
 }
 
 class MenuProduct {
@@ -157,47 +157,48 @@ class MenuProduct {
   bool get isVeg => foodType == 'VEG' || foodType == 'VEGAN';
 
   String get unavailableReason => switch (availabilityState) {
-        'OUT_OF_STOCK' => 'Sold out for today',
-        'TEMPORARILY_UNAVAILABLE' => 'Back soon',
-        _ => 'Not available right now',
-      };
+    'OUT_OF_STOCK' => 'Sold out for today',
+    'TEMPORARILY_UNAVAILABLE' => 'Back soon',
+    _ => 'Not available right now',
+  };
 
   factory MenuProduct.fromJson(Map<String, dynamic> json) => MenuProduct(
-        id: json['id'] as String,
-        categoryId: (json['category_id'] as String?) ?? '',
-        name: json['name'] as String,
-        slug: (json['slug'] as String?) ?? '',
-        basePrice: _toDouble(json['base_price']),
-        shortDescription: json['short_description'] as String?,
-        description: json['description'] as String?,
-        thumbnailPath: json['thumbnail_path'] as String?,
-        heroImagePath: json['hero_image_path'] as String?,
-        foodType: (json['food_type'] as String?) ?? 'VEG',
-        spiceLevel: (json['spice_level'] as String?) ?? 'NONE',
-        allergens: _toStringList(json['allergens']),
-        dietaryTags: _toStringList(json['dietary_tags']),
-        comparePrice: _toDoubleOrNull(json['compare_price']),
-        preparationMinutes: _toInt(json['preparation_minutes']),
-        servesCount: _toIntOrNull(json['serves_count']),
-        calories: _toIntOrNull(json['calories']),
-        isFeatured: json['is_featured'] as bool? ?? false,
-        isBestSeller: json['is_best_seller'] as bool? ?? false,
-        isNew: json['is_new'] as bool? ?? false,
-        isRecommended: json['is_recommended'] as bool? ?? false,
-        isCombo: json['is_combo'] as bool? ?? false,
-        ratingAverage: _toDouble(json['rating_average']),
-        ratingCount: _toInt(json['rating_count']),
-        displayOrder: _toInt(json['display_order']),
-        minQuantityPerOrder: json['min_quantity_per_order'] == null
-            ? 1
-            : _toInt(json['min_quantity_per_order']),
-        maxQuantityPerOrder: _toIntOrNull(json['max_quantity_per_order']),
-        allowsSpecialInstructions: json['allows_special_instructions'] as bool? ?? true,
-        isAvailable: json['is_available'] as bool? ?? true,
-        availabilityState: (json['availability_state'] as String?) ?? 'AVAILABLE',
-        hasVariants: json['has_variants'] as bool? ?? false,
-        minPrice: _toDoubleOrNull(json['min_price']),
-      );
+    id: json['id'] as String,
+    categoryId: (json['category_id'] as String?) ?? '',
+    name: json['name'] as String,
+    slug: (json['slug'] as String?) ?? '',
+    basePrice: _toDouble(json['base_price']),
+    shortDescription: json['short_description'] as String?,
+    description: json['description'] as String?,
+    thumbnailPath: json['thumbnail_path'] as String?,
+    heroImagePath: json['hero_image_path'] as String?,
+    foodType: (json['food_type'] as String?) ?? 'VEG',
+    spiceLevel: (json['spice_level'] as String?) ?? 'NONE',
+    allergens: _toStringList(json['allergens']),
+    dietaryTags: _toStringList(json['dietary_tags']),
+    comparePrice: _toDoubleOrNull(json['compare_price']),
+    preparationMinutes: _toInt(json['preparation_minutes']),
+    servesCount: _toIntOrNull(json['serves_count']),
+    calories: _toIntOrNull(json['calories']),
+    isFeatured: json['is_featured'] as bool? ?? false,
+    isBestSeller: json['is_best_seller'] as bool? ?? false,
+    isNew: json['is_new'] as bool? ?? false,
+    isRecommended: json['is_recommended'] as bool? ?? false,
+    isCombo: json['is_combo'] as bool? ?? false,
+    ratingAverage: _toDouble(json['rating_average']),
+    ratingCount: _toInt(json['rating_count']),
+    displayOrder: _toInt(json['display_order']),
+    minQuantityPerOrder: json['min_quantity_per_order'] == null
+        ? 1
+        : _toInt(json['min_quantity_per_order']),
+    maxQuantityPerOrder: _toIntOrNull(json['max_quantity_per_order']),
+    allowsSpecialInstructions:
+        json['allows_special_instructions'] as bool? ?? true,
+    isAvailable: json['is_available'] as bool? ?? true,
+    availabilityState: (json['availability_state'] as String?) ?? 'AVAILABLE',
+    hasVariants: json['has_variants'] as bool? ?? false,
+    minPrice: _toDoubleOrNull(json['min_price']),
+  );
 }
 
 class ProductVariant {
@@ -226,17 +227,17 @@ class ProductVariant {
   final int displayOrder;
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) => ProductVariant(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        optionGroup: (json['option_group'] as String?) ?? 'Option',
-        price: _toDouble(json['price']),
-        comparePrice: _toDoubleOrNull(json['compare_price']),
-        calories: _toIntOrNull(json['calories']),
-        servesCount: _toIntOrNull(json['serves_count']),
-        isDefault: json['is_default'] as bool? ?? false,
-        isAvailable: json['is_available'] as bool? ?? true,
-        displayOrder: _toInt(json['display_order']),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    optionGroup: (json['option_group'] as String?) ?? 'Option',
+    price: _toDouble(json['price']),
+    comparePrice: _toDoubleOrNull(json['compare_price']),
+    calories: _toIntOrNull(json['calories']),
+    servesCount: _toIntOrNull(json['serves_count']),
+    isDefault: json['is_default'] as bool? ?? false,
+    isAvailable: json['is_available'] as bool? ?? true,
+    displayOrder: _toInt(json['display_order']),
+  );
 }
 
 class ProductModifier {
@@ -266,7 +267,8 @@ class ProductModifier {
   final bool isAvailable;
   final int displayOrder;
 
-  factory ProductModifier.fromJson(Map<String, dynamic> json) => ProductModifier(
+  factory ProductModifier.fromJson(Map<String, dynamic> json) =>
+      ProductModifier(
         id: json['id'] as String,
         name: json['name'] as String,
         price: _toDouble(json['price']),
@@ -274,7 +276,9 @@ class ProductModifier {
         imagePath: json['image_path'] as String?,
         foodType: (json['food_type'] as String?) ?? 'VEG',
         calories: _toIntOrNull(json['calories']),
-        maxQuantity: json['max_quantity'] == null ? 1 : _toInt(json['max_quantity']),
+        maxQuantity: json['max_quantity'] == null
+            ? 1
+            : _toInt(json['max_quantity']),
         isDefault: json['is_default'] as bool? ?? false,
         isAvailable: json['is_available'] as bool? ?? true,
         displayOrder: _toInt(json['display_order']),
@@ -323,22 +327,25 @@ class ModifierGroup {
   }
 
   factory ModifierGroup.fromJson(Map<String, dynamic> json) => ModifierGroup(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        selection: (json['selection'] as String?) ?? 'MULTIPLE',
-        modifiers: json['modifiers'] is List
-            ? (json['modifiers'] as List)
-                .whereType<Map>()
-                .map((item) => ProductModifier.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        description: json['description'] as String?,
-        isRequired: json['is_required'] as bool? ?? false,
-        minSelect: _toInt(json['min_select']),
-        maxSelect: _toIntOrNull(json['max_select']),
-        freeSelections: _toInt(json['free_selections']),
-        displayOrder: _toInt(json['display_order']),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    selection: (json['selection'] as String?) ?? 'MULTIPLE',
+    modifiers: json['modifiers'] is List
+        ? (json['modifiers'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    ProductModifier.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    description: json['description'] as String?,
+    isRequired: json['is_required'] as bool? ?? false,
+    minSelect: _toInt(json['min_select']),
+    maxSelect: _toIntOrNull(json['max_select']),
+    freeSelections: _toInt(json['free_selections']),
+    displayOrder: _toInt(json['display_order']),
+  );
 }
 
 class ProductDetail {
@@ -379,33 +386,44 @@ class ProductDetail {
   }
 
   factory ProductDetail.fromJson(Map<String, dynamic> json) => ProductDetail(
-        product: MenuProduct.fromJson(json),
-        categoryName: json['category_name'] as String?,
-        variants: json['variants'] is List
-            ? (json['variants'] as List)
-                .whereType<Map>()
-                .map((item) => ProductVariant.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        modifierGroups: json['modifier_groups'] is List
-            ? (json['modifier_groups'] as List)
-                .whereType<Map>()
-                .map((item) => ModifierGroup.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        reviews: json['reviews'] is List
-            ? (json['reviews'] as List)
-                .whereType<Map>()
-                .map((item) => ProductReview.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        similarProducts: json['similar_products'] is List
-            ? (json['similar_products'] as List)
-                .whereType<Map>()
-                .map((item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-      );
+    product: MenuProduct.fromJson(json),
+    categoryName: json['category_name'] as String?,
+    variants: json['variants'] is List
+        ? (json['variants'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    ProductVariant.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    modifierGroups: json['modifier_groups'] is List
+        ? (json['modifier_groups'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    ModifierGroup.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    reviews: json['reviews'] is List
+        ? (json['reviews'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    ProductReview.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    similarProducts: json['similar_products'] is List
+        ? (json['similar_products'] as List)
+              .whereType<Map>()
+              .map(
+                (item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+  );
 }
 
 class ProductReview {
@@ -422,11 +440,11 @@ class ProductReview {
   final DateTime? createdAt;
 
   factory ProductReview.fromJson(Map<String, dynamic> json) => ProductReview(
-        rating: _toInt(json['rating']),
-        customerName: (json['customer_name'] as String?) ?? 'Customer',
-        comment: json['comment'] as String?,
-        createdAt: DateTime.tryParse((json['created_at'] as String?) ?? ''),
-      );
+    rating: _toInt(json['rating']),
+    customerName: (json['customer_name'] as String?) ?? 'Customer',
+    comment: json['comment'] as String?,
+    createdAt: DateTime.tryParse((json['created_at'] as String?) ?? ''),
+  );
 }
 
 class MenuCatalog {
@@ -444,21 +462,27 @@ class MenuCatalog {
       products.where((product) => product.categoryId == categoryId).toList();
 
   factory MenuCatalog.fromJson(Map<String, dynamic> json) => MenuCatalog(
-        categories: json['categories'] is List
-            ? (json['categories'] as List)
-                .whereType<Map>()
-                .map((item) => MenuCategory.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        products: json['products'] is List
-            ? (json['products'] as List)
-                .whereType<Map>()
-                .map((item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        generatedAt:
-            DateTime.tryParse((json['generated_at'] as String?) ?? '') ?? DateTime.now(),
-      );
+    categories: json['categories'] is List
+        ? (json['categories'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    MenuCategory.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    products: json['products'] is List
+        ? (json['products'] as List)
+              .whereType<Map>()
+              .map(
+                (item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    generatedAt:
+        DateTime.tryParse((json['generated_at'] as String?) ?? '') ??
+        DateTime.now(),
+  );
 }
 
 // ── Home feed ──────────────────────────────────────────────────────────────
@@ -494,20 +518,20 @@ class HomeBanner {
   final String? linkUrl;
 
   factory HomeBanner.fromJson(Map<String, dynamic> json) => HomeBanner(
-        id: json['id'] as String,
-        imagePath: (json['image_path'] as String?) ?? '',
-        title: json['title'] as String?,
-        subtitle: json['subtitle'] as String?,
-        badgeText: json['badge_text'] as String?,
-        imagePathWide: json['image_path_wide'] as String?,
-        backgroundColor: json['background_color'] as String?,
-        linkKind: (json['link_kind'] as String?) ?? 'NONE',
-        linkCategoryId: json['link_category_id'] as String?,
-        linkProductId: json['link_product_id'] as String?,
-        linkCouponId: json['link_coupon_id'] as String?,
-        linkRoute: json['link_route'] as String?,
-        linkUrl: json['link_url'] as String?,
-      );
+    id: json['id'] as String,
+    imagePath: (json['image_path'] as String?) ?? '',
+    title: json['title'] as String?,
+    subtitle: json['subtitle'] as String?,
+    badgeText: json['badge_text'] as String?,
+    imagePathWide: json['image_path_wide'] as String?,
+    backgroundColor: json['background_color'] as String?,
+    linkKind: (json['link_kind'] as String?) ?? 'NONE',
+    linkCategoryId: json['link_category_id'] as String?,
+    linkProductId: json['link_product_id'] as String?,
+    linkCouponId: json['link_coupon_id'] as String?,
+    linkRoute: json['link_route'] as String?,
+    linkUrl: json['link_url'] as String?,
+  );
 }
 
 class CustomerCoupon {
@@ -545,28 +569,28 @@ class CustomerCoupon {
 
   /// "20% OFF" / "₹75 OFF" / "FREE DELIVERY"
   String get headline => switch (discountKind) {
-        'PERCENTAGE' => '${discountValue.toStringAsFixed(0)}% OFF',
-        'FLAT' => '₹${discountValue.toStringAsFixed(0)} OFF',
-        'FREE_DELIVERY' => 'FREE DELIVERY',
-        _ => title,
-      };
+    'PERCENTAGE' => '${discountValue.toStringAsFixed(0)}% OFF',
+    'FLAT' => '₹${discountValue.toStringAsFixed(0)} OFF',
+    'FREE_DELIVERY' => 'FREE DELIVERY',
+    _ => title,
+  };
 
   factory CustomerCoupon.fromJson(Map<String, dynamic> json) => CustomerCoupon(
-        id: json['id'] as String,
-        code: json['code'] as String,
-        title: (json['title'] as String?) ?? '',
-        discountKind: (json['discount_kind'] as String?) ?? 'FLAT',
-        discountValue: _toDouble(json['discount_value']),
-        description: json['description'] as String?,
-        terms: json['terms'] as String?,
-        minOrderAmount: _toDouble(json['min_order_amount']),
-        maxDiscountAmount: _toDoubleOrNull(json['max_discount_amount']),
-        bannerPath: json['banner_path'] as String?,
-        endsAt: DateTime.tryParse((json['ends_at'] as String?) ?? ''),
-        isApplicable: json['is_applicable'] as bool?,
-        reason: json['reason'] as String?,
-        estimatedDiscount: _toDoubleOrNull(json['estimated_discount']),
-      );
+    id: json['id'] as String,
+    code: json['code'] as String,
+    title: (json['title'] as String?) ?? '',
+    discountKind: (json['discount_kind'] as String?) ?? 'FLAT',
+    discountValue: _toDouble(json['discount_value']),
+    description: json['description'] as String?,
+    terms: json['terms'] as String?,
+    minOrderAmount: _toDouble(json['min_order_amount']),
+    maxDiscountAmount: _toDoubleOrNull(json['max_discount_amount']),
+    bannerPath: json['banner_path'] as String?,
+    endsAt: DateTime.tryParse((json['ends_at'] as String?) ?? ''),
+    isApplicable: json['is_applicable'] as bool?,
+    reason: json['reason'] as String?,
+    estimatedDiscount: _toDoubleOrNull(json['estimated_discount']),
+  );
 }
 
 class HomeSection {
@@ -605,42 +629,52 @@ class HomeSection {
   final List<CustomerCoupon> coupons;
 
   factory HomeSection.fromJson(Map<String, dynamic> json) => HomeSection(
-        id: json['id'] as String,
-        key: (json['key'] as String?) ?? '',
-        kind: (json['kind'] as String?) ?? 'PRODUCT_CAROUSEL',
-        title: json['title'] as String?,
-        subtitle: json['subtitle'] as String?,
-        actionLabel: json['action_label'] as String?,
-        actionRoute: json['action_route'] as String?,
-        layout: (json['layout'] as String?) ?? 'CAROUSEL',
-        backgroundColor: json['background_color'] as String?,
-        richText: json['rich_text'] as String?,
-        displayOrder: _toInt(json['display_order']),
-        banners: json['banners'] is List
-            ? (json['banners'] as List)
-                .whereType<Map>()
-                .map((item) => HomeBanner.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        categories: json['categories'] is List
-            ? (json['categories'] as List)
-                .whereType<Map>()
-                .map((item) => MenuCategory.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        products: json['products'] is List
-            ? (json['products'] as List)
-                .whereType<Map>()
-                .map((item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        coupons: json['coupons'] is List
-            ? (json['coupons'] as List)
-                .whereType<Map>()
-                .map((item) => CustomerCoupon.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-      );
+    id: json['id'] as String,
+    key: (json['key'] as String?) ?? '',
+    kind: (json['kind'] as String?) ?? 'PRODUCT_CAROUSEL',
+    title: json['title'] as String?,
+    subtitle: json['subtitle'] as String?,
+    actionLabel: json['action_label'] as String?,
+    actionRoute: json['action_route'] as String?,
+    layout: (json['layout'] as String?) ?? 'CAROUSEL',
+    backgroundColor: json['background_color'] as String?,
+    richText: json['rich_text'] as String?,
+    displayOrder: _toInt(json['display_order']),
+    banners: json['banners'] is List
+        ? (json['banners'] as List)
+              .whereType<Map>()
+              .map(
+                (item) => HomeBanner.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    categories: json['categories'] is List
+        ? (json['categories'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    MenuCategory.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    products: json['products'] is List
+        ? (json['products'] as List)
+              .whereType<Map>()
+              .map(
+                (item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    coupons: json['coupons'] is List
+        ? (json['coupons'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    CustomerCoupon.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+  );
 }
 
 class HomeFeed {
@@ -649,16 +683,36 @@ class HomeFeed {
   final List<HomeSection> sections;
   final DateTime generatedAt;
 
+  /// Images likely to appear above the fold. The home screen primes these into
+  /// the disk cache while the customer reads the first section.
+  List<String> get imagePaths => [
+    for (final section in sections) ...[
+      ...section.banners.map(
+        (banner) => banner.imagePathWide ?? banner.imagePath,
+      ),
+      ...section.categories.map(
+        (category) => category.thumbnailPath ?? category.imagePath,
+      ),
+      ...section.products.map(
+        (product) => product.thumbnailPath ?? product.heroImagePath,
+      ),
+      ...section.coupons.map((coupon) => coupon.bannerPath),
+    ],
+  ].whereType<String>().where((path) => path.isNotEmpty).toList();
+
   factory HomeFeed.fromJson(Map<String, dynamic> json) => HomeFeed(
-        sections: json['sections'] is List
-            ? (json['sections'] as List)
-                .whereType<Map>()
-                .map((item) => HomeSection.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        generatedAt:
-            DateTime.tryParse((json['generated_at'] as String?) ?? '') ?? DateTime.now(),
-      );
+    sections: json['sections'] is List
+        ? (json['sections'] as List)
+              .whereType<Map>()
+              .map(
+                (item) => HomeSection.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    generatedAt:
+        DateTime.tryParse((json['generated_at'] as String?) ?? '') ??
+        DateTime.now(),
+  );
 }
 
 class SearchResults {
@@ -675,21 +729,26 @@ class SearchResults {
   final List<MenuCategory> categories;
 
   factory SearchResults.fromJson(Map<String, dynamic> json) => SearchResults(
-        query: (json['query'] as String?) ?? '',
-        count: _toInt(json['count']),
-        products: json['products'] is List
-            ? (json['products'] as List)
-                .whereType<Map>()
-                .map((item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-        categories: json['categories'] is List
-            ? (json['categories'] as List)
-                .whereType<Map>()
-                .map((item) => MenuCategory.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
-            : const [],
-      );
+    query: (json['query'] as String?) ?? '',
+    count: _toInt(json['count']),
+    products: json['products'] is List
+        ? (json['products'] as List)
+              .whereType<Map>()
+              .map(
+                (item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+    categories: json['categories'] is List
+        ? (json['categories'] as List)
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    MenuCategory.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const [],
+  );
 }
 
 class SearchSuggestions {
@@ -703,14 +762,18 @@ class SearchSuggestions {
   final List<String> trending;
   final List<MenuProduct> popularProducts;
 
-  factory SearchSuggestions.fromJson(Map<String, dynamic> json) => SearchSuggestions(
+  factory SearchSuggestions.fromJson(Map<String, dynamic> json) =>
+      SearchSuggestions(
         recent: _toStringList(json['recent']),
         trending: _toStringList(json['trending']),
         popularProducts: json['popular_products'] is List
             ? (json['popular_products'] as List)
-                .whereType<Map>()
-                .map((item) => MenuProduct.fromJson(Map<String, dynamic>.from(item)))
-                .toList()
+                  .whereType<Map>()
+                  .map(
+                    (item) =>
+                        MenuProduct.fromJson(Map<String, dynamic>.from(item)),
+                  )
+                  .toList()
             : const [],
       );
 }
