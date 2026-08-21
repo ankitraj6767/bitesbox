@@ -30,6 +30,7 @@ import '../../features/delivery/screens/rider_earnings_screen.dart';
 import '../../features/delivery/screens/rider_home_screen.dart';
 import '../../features/delivery/screens/rider_onboarding_screen.dart';
 import '../../features/delivery/screens/rider_profile_screen.dart';
+import '../../features/delivery/screens/rider_signup_screen.dart';
 import '../../features/kitchen/screens/kitchen_availability_screen.dart';
 import '../../features/kitchen/screens/kitchen_queue_screen.dart';
 import '../../features/kitchen/screens/kitchen_shell.dart';
@@ -59,27 +60,54 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.verify,
         builder: (_, state) => OtpScreen(phone: state.extra as String? ?? ''),
       ),
-      GoRoute(path: Routes.staffSignIn, builder: (_, __) => const StaffSignInScreen()),
-      GoRoute(path: Routes.profileSetup, builder: (_, __) => const ProfileSetupScreen()),
+      GoRoute(
+        path: Routes.staffSignIn,
+        builder: (_, __) => const StaffSignInScreen(),
+      ),
+      GoRoute(
+        path: Routes.riderSignup,
+        builder: (_, __) => const RiderSignupScreen(),
+      ),
+      GoRoute(
+        path: Routes.profileSetup,
+        builder: (_, __) => const ProfileSetupScreen(),
+      ),
 
       // ── Customer shell ──
       StatefulShellRoute.indexedStack(
-        builder: (_, __, navigationShell) => CustomerShell(shell: navigationShell),
+        builder: (_, __, navigationShell) =>
+            CustomerShell(shell: navigationShell),
         branches: [
           StatefulShellBranch(
-            routes: [GoRoute(path: Routes.home, builder: (_, __) => const HomeScreen())],
-          ),
-          StatefulShellBranch(
-            routes: [GoRoute(path: Routes.menu, builder: (_, __) => const MenuScreen())],
-          ),
-          StatefulShellBranch(
             routes: [
-              GoRoute(path: Routes.orders, builder: (_, __) => const OrdersScreen()),
+              GoRoute(
+                path: Routes.home,
+                builder: (_, __) => const HomeScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: Routes.account, builder: (_, __) => const AccountScreen()),
+              GoRoute(
+                path: Routes.menu,
+                builder: (_, __) => const MenuScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.orders,
+                builder: (_, __) => const OrdersScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.account,
+                builder: (_, __) => const AccountScreen(),
+              ),
             ],
           ),
         ],
@@ -89,17 +117,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.search, builder: (_, __) => const SearchScreen()),
       GoRoute(
         path: '/product/:id',
-        builder: (_, state) => ProductScreen(productId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            ProductScreen(productId: state.pathParameters['id']!),
       ),
       GoRoute(path: Routes.cart, builder: (_, __) => const CartScreen()),
-      GoRoute(path: Routes.checkout, builder: (_, __) => const CheckoutScreen()),
+      GoRoute(
+        path: Routes.checkout,
+        builder: (_, __) => const CheckoutScreen(),
+      ),
       GoRoute(path: Routes.offers, builder: (_, __) => const OffersScreen()),
-      GoRoute(path: Routes.addresses, builder: (_, __) => const AddressesScreen()),
+      GoRoute(
+        path: Routes.addresses,
+        builder: (_, __) => const AddressesScreen(),
+      ),
       GoRoute(
         path: Routes.addressEditor,
         // `extra` carries the address being edited; absent means "add new".
         builder: (_, state) => AddressEditorScreen(
-          address: state.extra is CustomerAddress ? state.extra as CustomerAddress : null,
+          address: state.extra is CustomerAddress
+              ? state.extra as CustomerAddress
+              : null,
         ),
       ),
       GoRoute(path: Routes.wallet, builder: (_, __) => const WalletScreen()),
@@ -108,22 +145,33 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const NotificationsScreen(),
       ),
       GoRoute(path: Routes.profile, builder: (_, __) => const ProfileScreen()),
-      GoRoute(path: Routes.newTicket, builder: (_, __) => const NewTicketScreen()),
-      GoRoute(path: Routes.support, builder: (_, __) => const SupportListScreen()),
+      GoRoute(
+        path: Routes.newTicket,
+        builder: (_, __) => const NewTicketScreen(),
+      ),
+      GoRoute(
+        path: Routes.support,
+        builder: (_, __) => const SupportListScreen(),
+      ),
       GoRoute(
         path: '/support/:id',
-        builder: (_, state) => SupportThreadScreen(ticketId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            SupportThreadScreen(ticketId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/order/:id',
-        builder: (_, state) => OrderTrackingScreen(orderId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            OrderTrackingScreen(orderId: state.pathParameters['id']!),
       ),
 
       // ── Kitchen shell ──
       ShellRoute(
         builder: (_, __, child) => KitchenShell(child: child),
         routes: [
-          GoRoute(path: Routes.kitchen, builder: (_, __) => const KitchenQueueScreen()),
+          GoRoute(
+            path: Routes.kitchen,
+            builder: (_, __) => const KitchenQueueScreen(),
+          ),
           GoRoute(
             path: Routes.kitchenAvailability,
             builder: (_, __) => const KitchenAvailabilityScreen(),
@@ -190,13 +238,16 @@ String? _redirect(Ref ref, GoRouterState state) {
   final landing = _landingFor(session);
 
   if (Routes.isOnboarding(location)) return landing;
-  if (location == Routes.profileSetup && !session.needsProfileSetup) return landing;
+  if (location == Routes.profileSetup && !session.needsProfileSetup) {
+    return landing;
+  }
 
   // Riders and kitchen staff have no customer tabs; keep them in their own shell.
   if (session.isRider && !location.startsWith('/rider')) return Routes.rider;
 
   if (session.prefersKitchenShell && !session.isRider) {
-    final allowed = location.startsWith('/kitchen') ||
+    final allowed =
+        location.startsWith('/kitchen') ||
         location.startsWith('/order/') ||
         location == Routes.profile;
     if (!allowed) return Routes.kitchen;

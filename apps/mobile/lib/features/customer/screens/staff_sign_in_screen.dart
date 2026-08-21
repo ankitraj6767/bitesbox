@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/core_providers.dart';
+import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
 
@@ -37,10 +39,9 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
     setState(() => _busy = true);
 
     try {
-      await ref.read(authRepositoryProvider).signInWithEmail(
-            email: _email.text,
-            password: _password.text,
-          );
+      await ref
+          .read(authRepositoryProvider)
+          .signInWithEmail(email: _email.text, password: _password.text);
 
       await ref.read(sessionProvider.notifier).refresh();
     } catch (error) {
@@ -74,7 +75,11 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
             const SizedBox(height: 8),
             Text(
               'For kitchen, delivery and management accounts. Customers should use their mobile number instead.',
-              style: TextStyle(fontSize: 14.5, height: 1.45, color: brand.inkMuted),
+              style: TextStyle(
+                fontSize: 14.5,
+                height: 1.45,
+                color: brand.inkMuted,
+              ),
             ),
             const SizedBox(height: 26),
             TextField(
@@ -99,7 +104,9 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
                 suffixIcon: IconButton(
                   onPressed: () => setState(() => _obscure = !_obscure),
                   icon: Icon(
-                    _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                   ),
                   tooltip: _obscure ? 'Show password' : 'Hide password',
                 ),
@@ -125,7 +132,16 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
             Text(
               'Forgotten your password? Ask your manager to send a reset link from the admin dashboard.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, height: 1.45, color: brand.inkMuted),
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                color: brand.inkMuted,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => context.push(Routes.riderSignup),
+              child: const Text('New delivery partner? Apply here'),
             ),
           ],
         ),

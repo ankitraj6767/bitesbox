@@ -5,6 +5,7 @@ abstract final class Routes {
   static const signIn = '/sign-in';
   static const verify = '/verify';
   static const staffSignIn = '/staff-sign-in';
+  static const riderSignup = '/rider-signup';
   static const profileSetup = '/profile-setup';
 
   // Customer shell tabs
@@ -40,7 +41,8 @@ abstract final class Routes {
   static const riderProfile = '/rider/profile';
   static const riderOnboarding = '/rider/onboarding';
 
-  static String riderDelivery(String assignmentId) => '/rider/delivery/$assignmentId';
+  static String riderDelivery(String assignmentId) =>
+      '/rider/delivery/$assignmentId';
 
   /// Routes a signed-out visitor may browse. Everything else redirects to sign-in.
   static bool isGuestBrowsable(String location) {
@@ -55,6 +57,7 @@ abstract final class Routes {
     return location == splash ||
         location == signIn ||
         location == verify ||
-        location == staffSignIn;
+        location == staffSignIn ||
+        location == riderSignup;
   }
 }

@@ -84,7 +84,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   color: brand.primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(brand.radiusMd),
                 ),
-                child: Icon(Icons.lunch_dining_rounded, size: 32, color: brand.primary),
+                child: Icon(
+                  Icons.lunch_dining_rounded,
+                  size: 32,
+                  color: brand.primary,
+                ),
               ),
               const SizedBox(height: 24),
               Text(
@@ -99,7 +103,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SizedBox(height: 8),
               Text(
                 'Enter your mobile number and we will send you a one-time code.',
-                style: TextStyle(fontSize: 15, height: 1.45, color: brand.inkMuted),
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.45,
+                  color: brand.inkMuted,
+                ),
               ),
               const SizedBox(height: 28),
               TextField(
@@ -129,7 +137,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                     ),
                   ),
-                  prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 0,
+                    minHeight: 0,
+                  ),
                 ),
                 onChanged: (_) => setState(() => _error = null),
                 onSubmitted: (_) => _sendCode(),
@@ -152,13 +163,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               Text(
                 'By continuing you agree to our terms of service and privacy policy.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, height: 1.4, color: brand.inkMuted),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.4,
+                  color: brand.inkMuted,
+                ),
               ),
               const SizedBox(height: 8),
               Center(
                 child: TextButton(
                   onPressed: () => context.push(Routes.staffSignIn),
                   child: const Text('Staff sign-in'),
+                ),
+              ),
+              Center(
+                child: TextButton(
+                  onPressed: () => context.push(Routes.riderSignup),
+                  child: const Text(
+                    'Want to deliver with us? Apply as a delivery partner',
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
