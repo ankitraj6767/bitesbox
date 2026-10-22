@@ -6324,6 +6324,19 @@ export type Database = {
         };
         Returns: Json;
       };
+      admin_recent_notifications: {
+        Args: { p_limit?: number };
+        Returns: {
+          channel: Database["public"]["Enums"]["notification_channel"];
+          created_at: string;
+          event: Database["public"]["Enums"]["notification_event"];
+          failure_reason: string | null;
+          id: string;
+          sent_at: string | null;
+          status: Database["public"]["Enums"]["notification_status"];
+          title: string | null;
+        }[];
+      };
       admin_refund_queue: { Args: { p_branch_id?: string }; Returns: Json };
       admin_support_inbox: {
         Args: {

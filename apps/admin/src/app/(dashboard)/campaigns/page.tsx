@@ -42,11 +42,7 @@ export default async function CampaignsPage() {
             .select('id, event, channel, locale, title, body, is_active')
             .order('event')
             .order('channel'),
-        supabase
-            .from('notifications')
-            .select('id, event, channel, status, title, created_at, sent_at, failure_reason')
-            .order('created_at', { ascending: false })
-            .limit(50),
+        supabase.rpc('admin_recent_notifications', { p_limit: 50 }),
     ]);
 
     if (campaignsResult.error) {
