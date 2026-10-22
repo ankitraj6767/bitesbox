@@ -1614,7 +1614,7 @@ export type Database = {
           distance_to_store_km: number | null;
           expires_at: string | null;
           failed_at: string | null;
-          failure_reason: string;
+          failure_reason: string | null;
           id: string;
           mode: Database["public"]["Enums"]["assignment_mode"];
           offered_at: string;
@@ -2985,10 +2985,10 @@ export type Database = {
           provider_message_id: string | null;
           read_at: string | null;
           scheduled_for: string | null;
-          sent_at: string;
+          sent_at: string | null;
           status: Database["public"]["Enums"]["notification_status"];
           support_ticket_id: string | null;
-          title: string;
+          title: string | null;
           updated_at: string;
           user_id: string | null;
         };
@@ -6330,11 +6330,11 @@ export type Database = {
           channel: Database["public"]["Enums"]["notification_channel"];
           created_at: string;
           event: Database["public"]["Enums"]["notification_event"];
-          failure_reason: string | null;
+          failure_reason: string;
           id: string;
-          sent_at: string | null;
+          sent_at: string;
           status: Database["public"]["Enums"]["notification_status"];
-          title: string | null;
+          title: string;
         }[];
       };
       admin_refund_queue: { Args: { p_branch_id?: string }; Returns: Json };
