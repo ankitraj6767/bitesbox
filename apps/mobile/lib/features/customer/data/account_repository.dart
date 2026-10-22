@@ -13,12 +13,19 @@ class AccountRepository {
     return WalletSummary.fromJson(Map<String, dynamic>.from(result as Map));
   }
 
-  /// In-app notifications, newest first. RLS scopes this to the caller.
+  /// In-app notifications for the signed-in user, newest first.
   Future<List<AppNotificationItem>> notifications({int limit = 50}) async {
+    final userId = _api.currentUserId;
+    if (userId == null) return const [];
+
     final rows = await _api.select(
       'notifications',
       columns: 'id, event, title, body, order_id, read_at, created_at',
       filter: (query) => query
+          // Staff members with notification.send can read the notification
+          // log under RLS. The customer app must still show only this user's
+          // notifications so another user's row cannot be marked as read here.
+          .eq('user_id', userId)
           .eq('channel', 'IN_APP')
           .order('created_at', ascending: false)
           .limit(limit),
