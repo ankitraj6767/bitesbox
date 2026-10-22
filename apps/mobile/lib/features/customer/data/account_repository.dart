@@ -22,9 +22,8 @@ class AccountRepository {
       'notifications',
       columns: 'id, event, title, body, order_id, read_at, created_at',
       filter: (query) => query
-          // Staff members with notification.send can read the notification
-          // log under RLS. The customer app must still show only this user's
-          // notifications so another user's row cannot be marked as read here.
+          // Only in-app inbox rows have read receipts. Push and SMS rows track
+          // delivery separately and must never appear as unread inbox items.
           .eq('user_id', userId)
           .eq('channel', 'IN_APP')
           .order('created_at', ascending: false)

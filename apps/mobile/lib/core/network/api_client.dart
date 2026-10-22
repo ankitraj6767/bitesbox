@@ -98,12 +98,16 @@ class ApiClient {
     String table, {
     required String columns,
     Duration? timeout,
-    void Function(PostgrestFilterBuilder<PostgrestList> query)? filter,
+    PostgrestTransformBuilder<PostgrestList> Function(
+      PostgrestFilterBuilder<PostgrestList> query,
+    )? filter,
   }) async {
     return _run<List<Map<String, dynamic>>>(
       () async {
-        var query = _client.from(table).select(columns);
-        filter?.call(query);
+        final baseQuery = _client.from(table).select(columns);
+        // Supabase query builders are immutable. Execute the returned builder
+        // so filters, ordering and limits are included in the actual request.
+        final query = filter == null ? baseQuery : filter(baseQuery);
         final rows = await query.timeout(timeout ?? _defaultTimeout);
         return List<Map<String, dynamic>>.from(rows);
       },
