@@ -33,7 +33,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.121.0
+          version: 2.110.0
 
       - name: Show Supabase CLI version
         run: supabase --version
