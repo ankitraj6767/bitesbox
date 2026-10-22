@@ -21,6 +21,7 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   bool _markingAllRead = false;
+  final Set<String> _optimisticallyRead = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -76,8 +77,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 indent: 16,
                 endIndent: 16,
               ),
-              itemBuilder: (context, index) =>
-                  _NotificationTile(item: list[index]),
+              itemBuilder: (context, index) {
+                final item = list[index];
+                return _NotificationTile(
+                  item: item,
+                  isUnread:
+                      item.isUnread && !_optimisticallyRead.contains(item.id),
+                  onTap: () => _open(item),
+                );
+              },
             ),
           );
         },
@@ -87,17 +95,51 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   Future<void> _markAllRead() async {
     if (_markingAllRead) return;
-    setState(() => _markingAllRead = true);
+    final current = ref
+        .read(notificationsProvider)
+        .maybeWhen(
+          data: (items) => items,
+          orElse: () => const <AppNotificationItem>[],
+        );
+    final ids = current
+        .where((item) => item.isUnread)
+        .map((item) => item.id)
+        .toSet();
+    setState(() {
+      _markingAllRead = true;
+      _optimisticallyRead.addAll(ids);
+    });
 
     try {
       final count = await ref
           .read(accountRepositoryProvider)
           .markNotificationsRead();
+      if (!mounted) return;
 
       // Wait for the fresh rows before removing the badge/action. This avoids
       // leaving the old unread list on screen after the database update wins.
       ref.invalidate(notificationsProvider);
-      await ref.read(notificationsProvider.future);
+      final refreshed = await ref.read(notificationsProvider.future);
+      final stillUnread = refreshed
+          .where((item) => ids.contains(item.id) && item.isUnread)
+          .map((item) => item.id)
+          .toSet();
+      if (mounted) {
+        setState(
+          () => _optimisticallyRead.removeAll(ids.difference(stillUnread)),
+        );
+      }
+
+      if (stillUnread.isNotEmpty) {
+        if (mounted) setState(() => _optimisticallyRead.removeAll(stillUnread));
+        if (mounted) {
+          AppFeedback.showInfo(
+            context,
+            'Some notifications could not be marked as read. Please try again.',
+          );
+        }
+        return;
+      }
 
       if (mounted) {
         AppFeedback.showSuccess(
@@ -108,26 +150,74 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         );
       }
     } catch (error) {
-      if (mounted) AppFeedback.showError(context, error);
+      if (mounted) {
+        setState(() => _optimisticallyRead.removeAll(ids));
+        ref.invalidate(notificationsProvider);
+        AppFeedback.showError(context, error);
+      }
     } finally {
       if (mounted) setState(() => _markingAllRead = false);
     }
   }
+
+  Future<void> _open(AppNotificationItem item) async {
+    if (item.isUnread && !_optimisticallyRead.contains(item.id)) {
+      setState(() => _optimisticallyRead.add(item.id));
+      try {
+        await ref
+            .read(accountRepositoryProvider)
+            .markNotificationsRead(ids: [item.id]);
+        if (!mounted) return;
+        ref.invalidate(notificationsProvider);
+        final refreshed = await ref.read(notificationsProvider.future);
+        if (!mounted) return;
+        final saved = refreshed
+            .where((candidate) => candidate.id == item.id)
+            .toList();
+        if (saved.isEmpty || saved.first.isUnread) {
+          if (mounted) {
+            setState(() => _optimisticallyRead.remove(item.id));
+            AppFeedback.showInfo(
+              context,
+              'This notification could not be marked as read.',
+            );
+          }
+        } else if (mounted) {
+          setState(() => _optimisticallyRead.remove(item.id));
+        }
+      } catch (error) {
+        if (mounted) {
+          setState(() => _optimisticallyRead.remove(item.id));
+          ref.invalidate(notificationsProvider);
+          AppFeedback.showError(context, error);
+        }
+      }
+    }
+
+    if (!mounted) return;
+    if (item.orderId != null) context.push(Routes.order(item.orderId!));
+  }
 }
 
-class _NotificationTile extends ConsumerWidget {
-  const _NotificationTile({required this.item});
+class _NotificationTile extends StatelessWidget {
+  const _NotificationTile({
+    required this.item,
+    required this.isUnread,
+    required this.onTap,
+  });
 
   final AppNotificationItem item;
+  final bool isUnread;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final brand = context.brand;
 
     return InkWell(
-      onTap: () => _open(context, ref),
+      onTap: onTap,
       child: Container(
-        color: item.isUnread ? brand.primary.withValues(alpha: 0.035) : null,
+        color: isUnread ? brand.primary.withValues(alpha: 0.035) : null,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,9 +244,7 @@ class _NotificationTile extends ConsumerWidget {
                     item.title,
                     style: TextStyle(
                       fontSize: 14.5,
-                      fontWeight: item.isUnread
-                          ? FontWeight.w700
-                          : FontWeight.w600,
+                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
                       color: brand.ink,
                     ),
                   ),
@@ -177,7 +265,7 @@ class _NotificationTile extends ConsumerWidget {
                 ],
               ),
             ),
-            if (item.isUnread)
+            if (isUnread)
               Container(
                 width: 8,
                 height: 8,
@@ -205,21 +293,5 @@ class _NotificationTile extends ConsumerWidget {
     }
     if (value.contains('SUPPORT')) return Icons.support_agent_rounded;
     return Icons.notifications_rounded;
-  }
-
-  Future<void> _open(BuildContext context, WidgetRef ref) async {
-    if (item.isUnread) {
-      try {
-        await ref
-            .read(accountRepositoryProvider)
-            .markNotificationsRead(ids: [item.id]);
-        ref.invalidate(notificationsProvider);
-      } on Exception {
-        // Marking read is a convenience; never block navigation on it.
-      }
-    }
-
-    if (!context.mounted) return;
-    if (item.orderId != null) context.push(Routes.order(item.orderId!));
   }
 }

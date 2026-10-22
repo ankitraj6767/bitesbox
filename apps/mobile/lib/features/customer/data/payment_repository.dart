@@ -40,18 +40,18 @@ class PlacedOrder {
   final bool replayed;
 
   factory PlacedOrder.fromJson(Map<String, dynamic> json) => PlacedOrder(
-        orderId: asString(json['order_id']),
-        orderNumber: asString(json['order_number']),
-        status: asString(json['status']),
-        paymentMode: asString(json['payment_mode'], 'ONLINE'),
-        payableAmount: asDouble(json['payable_amount']),
-        requiresPayment: asBool(json['requires_payment']),
-        paymentStatus: asString(json['payment_status'], 'PENDING'),
-        grandTotal: asDouble(json['grand_total']),
-        currencyCode: asString(json['currency_code'], 'INR'),
-        promisedAt: asDate(json['promised_at']),
-        replayed: asBool(json['replayed']),
-      );
+    orderId: asString(json['order_id']),
+    orderNumber: asString(json['order_number']),
+    status: asString(json['status']),
+    paymentMode: asString(json['payment_mode'], 'ONLINE'),
+    payableAmount: asDouble(json['payable_amount']),
+    requiresPayment: asBool(json['requires_payment']),
+    paymentStatus: asString(json['payment_status'], 'PENDING'),
+    grandTotal: asDouble(json['grand_total']),
+    currencyCode: asString(json['currency_code'], 'INR'),
+    promisedAt: asDate(json['promised_at']),
+    replayed: asBool(json['replayed']),
+  );
 }
 
 /// Everything the Razorpay checkout sheet needs. The amount is in paise and comes
@@ -93,21 +93,21 @@ class PaymentSession {
 
   /// Options map for the Razorpay checkout SDK.
   Map<String, dynamic> toCheckoutOptions() => {
-        'key': keyId,
-        'order_id': providerOrderId,
-        'amount': amountPaise,
-        'currency': currency,
-        'name': name,
-        'description': description,
-        'theme': {'color': themeColor},
-        'prefill': {
-          'name': prefillName,
-          'contact': prefillContact,
-          'email': prefillEmail,
-        },
-        'retry': {'enabled': false},
-        'send_sms_hash': true,
-      };
+    'key': keyId,
+    'order_id': providerOrderId,
+    'amount': amountPaise,
+    'currency': currency,
+    'name': name,
+    'description': description,
+    'theme': {'color': themeColor},
+    'prefill': {
+      'name': prefillName,
+      'contact': prefillContact,
+      'email': prefillEmail,
+    },
+    'retry': {'enabled': false},
+    'send_sms_hash': true,
+  };
 
   factory PaymentSession.fromJson(Map<String, dynamic> json) {
     final payment = asMap(json['payment']);
@@ -168,6 +168,100 @@ class PaymentVerification {
   }
 }
 
+/// Razorpay checkout details for a wallet top-up, created by the server.
+class WalletTopUpSession {
+  const WalletTopUpSession({
+    required this.topUpId,
+    required this.providerOrderId,
+    required this.amountPaise,
+    required this.amountRupees,
+    required this.keyId,
+    this.currency = 'INR',
+    this.name = 'Bites Box',
+    this.description = 'Add money to your wallet',
+    this.themeColor = '#C1121F',
+    this.prefillName = '',
+    this.prefillContact = '',
+    this.prefillEmail = '',
+  });
+
+  final String topUpId;
+  final String providerOrderId;
+  final int amountPaise;
+  final double amountRupees;
+  final String keyId;
+  final String currency;
+  final String name;
+  final String description;
+  final String themeColor;
+  final String prefillName;
+  final String prefillContact;
+  final String prefillEmail;
+
+  Map<String, dynamic> toCheckoutOptions() => {
+    'key': keyId,
+    'order_id': providerOrderId,
+    'amount': amountPaise,
+    'currency': currency,
+    'name': name,
+    'description': description,
+    'theme': {'color': themeColor},
+    'prefill': {
+      'name': prefillName,
+      'contact': prefillContact,
+      'email': prefillEmail,
+    },
+    'retry': {'enabled': false},
+    'send_sms_hash': true,
+  };
+
+  factory WalletTopUpSession.fromJson(Map<String, dynamic> json) {
+    final topUp = asMap(json['topup']);
+    final checkout = asMap(json['checkout']);
+    final prefill = asMap(checkout['prefill']);
+
+    return WalletTopUpSession(
+      topUpId: asString(topUp['id']),
+      providerOrderId: asString(topUp['provider_order_id']),
+      amountPaise: asInt(topUp['amount']),
+      amountRupees: asDouble(topUp['amount_rupees']),
+      keyId: asString(checkout['key_id']),
+      currency: asString(topUp['currency'], 'INR'),
+      name: asString(checkout['name'], 'Bites Box'),
+      description: asString(
+        checkout['description'],
+        'Add money to your wallet',
+      ),
+      themeColor: asString(checkout['theme_color'], '#C1121F'),
+      prefillName: asString(prefill['name']),
+      prefillContact: asString(prefill['contact']),
+      prefillEmail: asString(prefill['email']),
+    );
+  }
+}
+
+class WalletTopUpVerification {
+  const WalletTopUpVerification({
+    required this.verified,
+    required this.status,
+    this.walletBalance = 0,
+    this.message,
+  });
+
+  final bool verified;
+  final String status;
+  final double walletBalance;
+  final String? message;
+
+  factory WalletTopUpVerification.fromJson(Map<String, dynamic> json) =>
+      WalletTopUpVerification(
+        verified: asBool(json['verified']),
+        status: asString(json['status']),
+        walletBalance: asDouble(json['wallet_balance']),
+        message: asStringOrNull(json['message']),
+      );
+}
+
 class PaymentRepository {
   const PaymentRepository(this._api);
 
@@ -188,23 +282,29 @@ class PaymentRepository {
     String? appVersion,
     String? devicePlatform,
   }) async {
-    final response = await _api.invoke('create-order', body: {
-      'idempotency_key': idempotencyKey,
-      'payment_mode': paymentMode,
-      'tip_amount': tipAmount,
-      'loyalty_points': loyaltyPoints,
-      if (cartId != null) 'cart_id': cartId,
-      if (branchId != null) 'branch_id': branchId,
-      if (appVersion != null) 'app_version': appVersion,
-      if (devicePlatform != null) 'device_platform': devicePlatform,
-    });
+    final response = await _api.invoke(
+      'create-order',
+      body: {
+        'idempotency_key': idempotencyKey,
+        'payment_mode': paymentMode,
+        'tip_amount': tipAmount,
+        'loyalty_points': loyaltyPoints,
+        if (cartId != null) 'cart_id': cartId,
+        if (branchId != null) 'branch_id': branchId,
+        if (appVersion != null) 'app_version': appVersion,
+        if (devicePlatform != null) 'device_platform': devicePlatform,
+      },
+    );
 
     return PlacedOrder.fromJson(asMap(response['order']));
   }
 
   /// Creates (or reuses) the Razorpay order for an unpaid Bites Box order.
   Future<PaymentSession> createPaymentSession(String orderId) async {
-    final response = await _api.invoke('create-payment', body: {'order_id': orderId});
+    final response = await _api.invoke(
+      'create-payment',
+      body: {'order_id': orderId},
+    );
     return PaymentSession.fromJson(response);
   }
 
@@ -217,12 +317,45 @@ class PaymentRepository {
     required String razorpayPaymentId,
     required String razorpaySignature,
   }) async {
-    final response = await _api.invoke('verify-payment', body: {
-      'razorpay_order_id': razorpayOrderId,
-      'razorpay_payment_id': razorpayPaymentId,
-      'razorpay_signature': razorpaySignature,
-    });
+    final response = await _api.invoke(
+      'verify-payment',
+      body: {
+        'razorpay_order_id': razorpayOrderId,
+        'razorpay_payment_id': razorpayPaymentId,
+        'razorpay_signature': razorpaySignature,
+      },
+    );
 
     return PaymentVerification.fromJson(response);
+  }
+
+  /// Creates an idempotent Razorpay order for a wallet top-up. The server
+  /// enforces amount limits and keeps the gateway secret out of the app.
+  Future<WalletTopUpSession> createWalletTopUpSession({
+    required double amount,
+    required String idempotencyKey,
+  }) async {
+    final response = await _api.invoke(
+      'create-wallet-topup',
+      body: {'amount': amount, 'idempotency_key': idempotencyKey},
+    );
+    return WalletTopUpSession.fromJson(response);
+  }
+
+  /// Confirms the Razorpay signature and captured payment with the server.
+  Future<WalletTopUpVerification> verifyWalletTopUp({
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final response = await _api.invoke(
+      'verify-wallet-topup',
+      body: {
+        'razorpay_order_id': razorpayOrderId,
+        'razorpay_payment_id': razorpayPaymentId,
+        'razorpay_signature': razorpaySignature,
+      },
+    );
+    return WalletTopUpVerification.fromJson(response);
   }
 }

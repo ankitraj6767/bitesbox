@@ -109,6 +109,23 @@ Deno.serve(async (req) => {
         p_provider_payment_id: paymentEntity?.id ?? refundEntity?.payment_id ?? null,
     }).catch(() => null);
 
+    const topupOrderId = paymentEntity?.order_id ?? orderEntity?.id;
+    const { data: ourWalletTopup, error: topupLookupError } = topupOrderId
+        ? await admin
+            .from("wallet_topups")
+            .select("id, user_id, amount, currency_code, status, provider_order_id")
+            .eq("provider_order_id", topupOrderId)
+            .maybeSingle()
+        : { data: null, error: null };
+    if (topupLookupError) {
+        logger.error("webhook.wallet_topup_lookup_failed", {
+            request_id: requestId,
+            provider_order_id: topupOrderId,
+            error: topupLookupError.message,
+        });
+        throw topupLookupError;
+    }
+
     // ── Register the event: this is the exactly-once gate ──
     const registration = await rpc<{
         event_id: string;
@@ -143,6 +160,7 @@ Deno.serve(async (req) => {
             paymentEntity,
             refundEntity,
             ourPayment,
+            ourWalletTopup,
             requestId,
         });
 
@@ -200,14 +218,52 @@ async function handleEvent(input: {
         speed_processed?: string;
     };
     ourPayment: { id: string; order_id: string; amount: number; status: string } | null;
+    ourWalletTopup: {
+        id: string;
+        user_id: string;
+        amount: number;
+        currency_code: string;
+        status: string;
+        provider_order_id: string;
+    } | null;
     requestId: string;
 }): Promise<string> {
-    const { admin, eventType, paymentEntity, refundEntity, ourPayment } = input;
+    const { admin, eventType, paymentEntity, refundEntity, ourPayment, ourWalletTopup } = input;
 
     switch (eventType) {
         // ── Money in ──
         case "payment.captured":
         case "order.paid": {
+            if (ourWalletTopup && paymentEntity) {
+                const capturedRupees = fromPaise(paymentEntity.amount);
+                if (
+                    capturedRupees !== Number(ourWalletTopup.amount) ||
+                    (paymentEntity.currency ?? "INR") !== ourWalletTopup.currency_code
+                ) {
+                    logger.error("webhook.wallet_topup_amount_mismatch", {
+                        topup_id: ourWalletTopup.id,
+                        expected: ourWalletTopup.amount,
+                        captured: capturedRupees,
+                        currency: paymentEntity.currency,
+                    });
+                    return "wallet_topup_amount_mismatch";
+                }
+
+                const capture = await rpc<{ already_captured: boolean }>(
+                    admin,
+                    "svc_record_wallet_topup_capture",
+                    {
+                        p_topup_id: ourWalletTopup.id,
+                        p_provider_payment_id: paymentEntity.id,
+                        p_amount_captured: capturedRupees,
+                        p_source: "WEBHOOK",
+                    },
+                );
+                return capture.already_captured
+                    ? "wallet_topup_already_credited"
+                    : "wallet_topup_credited";
+            }
+
             if (!ourPayment || !paymentEntity) return "payment_not_found";
 
             // Never capture more than we asked for; a mismatch is an incident, not a sale.
@@ -240,6 +296,19 @@ async function handleEvent(input: {
         }
 
         case "payment.authorized": {
+            if (ourWalletTopup) {
+                const { error } = await admin
+                    .from("wallet_topups")
+                    .update({
+                        status: "AUTHORIZED",
+                        provider_payment_id: paymentEntity?.id ?? null,
+                    })
+                    .eq("id", ourWalletTopup.id)
+                    .neq("status", "CAPTURED");
+                if (error) throw error;
+                return "wallet_topup_authorized";
+            }
+
             if (!ourPayment) return "payment_not_found";
 
             await admin
@@ -257,6 +326,16 @@ async function handleEvent(input: {
         }
 
         case "payment.failed": {
+            if (ourWalletTopup) {
+                const { error } = await admin
+                    .from("wallet_topups")
+                    .update({ status: "FAILED" })
+                    .eq("id", ourWalletTopup.id)
+                    .neq("status", "CAPTURED");
+                if (error) throw error;
+                return "wallet_topup_failed";
+            }
+
             if (!ourPayment) return "payment_not_found";
 
             await rpc(admin, "svc_record_payment_failure", {

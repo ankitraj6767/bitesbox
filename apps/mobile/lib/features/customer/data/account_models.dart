@@ -26,17 +26,19 @@ class WalletTransaction {
   bool get isDebit => amount < 0;
 
   String get kindLabel => switch (kind) {
-        'REFUND_CREDIT' => 'Refund',
-        'ORDER_PAYMENT' => 'Order payment',
-        'CASHBACK' => 'Cashback',
-        'GOODWILL_CREDIT' => 'Goodwill credit',
-        'TOPUP' => 'Top-up',
-        'EXPIRY' => 'Expired',
-        'ADJUSTMENT' => 'Adjustment',
-        _ => kind,
-      };
+    'REFUND' || 'REFUND_CREDIT' => 'Refund',
+    'ORDER_PAYMENT' => 'Order payment',
+    'CASHBACK' => 'Cashback',
+    'GOODWILL_CREDIT' => 'Goodwill credit',
+    'CREDIT' || 'TOPUP' => 'Wallet top-up',
+    'PROMOTION' => 'Promotion',
+    'EXPIRY' => 'Expired',
+    'ADJUSTMENT' => 'Adjustment',
+    _ => kind,
+  };
 
-  factory WalletTransaction.fromJson(Map<String, dynamic> json) => WalletTransaction(
+  factory WalletTransaction.fromJson(Map<String, dynamic> json) =>
+      WalletTransaction(
         id: asString(json['id']),
         kind: asString(json['kind']),
         amount: asDouble(json['amount']),
@@ -65,11 +67,11 @@ class WalletSummary {
   bool get isSpendable => enabled && !isFrozen && balance > 0;
 
   factory WalletSummary.fromJson(Map<String, dynamic> json) => WalletSummary(
-        enabled: asBool(json['enabled']),
-        balance: asDouble(json['balance']),
-        isFrozen: asBool(json['is_frozen']),
-        transactions: asList(json['transactions'], WalletTransaction.fromJson),
-      );
+    enabled: asBool(json['enabled']),
+    balance: asDouble(json['balance']),
+    isFrozen: asBool(json['is_frozen']),
+    transactions: asList(json['transactions'], WalletTransaction.fromJson),
+  );
 }
 
 class AppNotificationItem {
@@ -93,7 +95,8 @@ class AppNotificationItem {
 
   bool get isUnread => readAt == null;
 
-  factory AppNotificationItem.fromJson(Map<String, dynamic> json) => AppNotificationItem(
+  factory AppNotificationItem.fromJson(Map<String, dynamic> json) =>
+      AppNotificationItem(
         id: asString(json['id']),
         title: asString(json['title']),
         body: asString(json['body']),
@@ -135,14 +138,14 @@ class SupportTicket {
   bool get isOpen => status != 'RESOLVED' && status != 'CLOSED';
 
   String get statusLabel => switch (status) {
-        'OPEN' => 'Open',
-        'IN_PROGRESS' => 'In progress',
-        'WAITING_ON_CUSTOMER' => 'Waiting on you',
-        'ESCALATED' => 'Escalated',
-        'RESOLVED' => 'Resolved',
-        'CLOSED' => 'Closed',
-        _ => status,
-      };
+    'OPEN' => 'Open',
+    'IN_PROGRESS' => 'In progress',
+    'WAITING_ON_CUSTOMER' => 'Waiting on you',
+    'ESCALATED' => 'Escalated',
+    'RESOLVED' => 'Resolved',
+    'CLOSED' => 'Closed',
+    _ => status,
+  };
 
   /// Customer-facing labels for `public.ticket_category`.
   static const categoryLabels = <String, String>{
@@ -161,18 +164,18 @@ class SupportTicket {
   String get categoryLabel => categoryLabels[category] ?? category;
 
   factory SupportTicket.fromJson(Map<String, dynamic> json) => SupportTicket(
-        id: asString(json['id']),
-        ticketNumber: asString(json['ticket_number']),
-        category: asString(json['category'], 'OTHER'),
-        subject: asString(json['subject']),
-        status: asString(json['status'], 'OPEN'),
-        priority: asString(json['priority'], 'NORMAL'),
-        orderId: asStringOrNull(json['order_id']),
-        createdAt: asDate(json['created_at']),
-        resolvedAt: asDate(json['resolved_at']),
-        messageCount: asInt(json['message_count']),
-        lastMessageAt: asDate(json['last_message_at']),
-      );
+    id: asString(json['id']),
+    ticketNumber: asString(json['ticket_number']),
+    category: asString(json['category'], 'OTHER'),
+    subject: asString(json['subject']),
+    status: asString(json['status'], 'OPEN'),
+    priority: asString(json['priority'], 'NORMAL'),
+    orderId: asStringOrNull(json['order_id']),
+    createdAt: asDate(json['created_at']),
+    resolvedAt: asDate(json['resolved_at']),
+    messageCount: asInt(json['message_count']),
+    lastMessageAt: asDate(json['last_message_at']),
+  );
 }
 
 class SupportMessage {
@@ -195,13 +198,13 @@ class SupportMessage {
   bool get isFromCustomer => authorKind == 'CUSTOMER';
 
   factory SupportMessage.fromJson(Map<String, dynamic> json) => SupportMessage(
-        id: asString(json['id']),
-        body: asString(json['body']),
-        authorKind: asString(json['author_kind'], 'AGENT'),
-        authorName: asStringOrNull(json['author_name']),
-        isInternal: asBool(json['is_internal']),
-        createdAt: asDate(json['created_at']),
-      );
+    id: asString(json['id']),
+    body: asString(json['body']),
+    authorKind: asString(json['author_kind'], 'AGENT'),
+    authorName: asStringOrNull(json['author_name']),
+    isInternal: asBool(json['is_internal']),
+    createdAt: asDate(json['created_at']),
+  );
 }
 
 class SupportThread {
