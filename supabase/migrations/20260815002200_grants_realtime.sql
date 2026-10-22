@@ -1,9 +1,9 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 0022 · GRANTS, RPC EXPOSURE & REALTIME
 --
--- Supabase revokes access to new public entities by default. This migration
--- explicitly states what each API role may touch, so the surface is auditable
--- in one place.
+-- Clear inherited/default client table grants, then explicitly grant the
+-- smallest API surface. RLS filters rows, while SQL privileges make forbidden
+-- writes fail instead of silently succeeding with zero affected rows.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- ─── Schema usage ──────────────────────────────────────────────────────────
@@ -14,6 +14,8 @@ grant usage on schema app to service_role;
 grant usage on schema analytics to authenticated, service_role;
 
 -- ─── Table privileges ──────────────────────────────────────────────────────
+revoke all privileges on all tables in schema public from public, anon, authenticated;
+
 -- SELECT everywhere; RLS decides which rows. Writes are deliberately narrow.
 grant select on all tables in schema public to anon, authenticated;
 grant all on all tables in schema public to service_role;
@@ -28,11 +30,9 @@ grant insert, update, delete on public.device_tokens to authenticated;
 grant insert on public.search_queries to authenticated;
 grant update on public.notifications to authenticated;
 grant update on public.profiles to authenticated;
-grant insert on public.delivery_partner_documents to authenticated;
 grant insert on public.delivery_partner_availability to authenticated;
 grant insert, update on public.delivery_partner_locations to authenticated;
 grant insert on public.delivery_location_events to authenticated;
-grant update on public.delivery_partners to authenticated;
 
 -- Back-office CRUD. RLS still requires the matching permission.
 grant insert, update, delete on
@@ -57,8 +57,6 @@ grant insert on public.branch_status_log to authenticated;
 grant insert on public.order_notes to authenticated;
 grant insert on public.stock_movements to authenticated;
 grant update on public.support_tickets to authenticated;
-grant update on public.reviews to authenticated;
-grant update on public.delivery_partner_documents to authenticated;
 
 -- ─── Function exposure ─────────────────────────────────────────────────────
 -- Default: revoke everything in public, then grant per function. Prevents an

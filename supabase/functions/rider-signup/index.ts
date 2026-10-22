@@ -115,7 +115,8 @@ serveFunction("rider-signup", async ({ req, requestId, origin }) => {
             .single();
         if (partnerError || !partner) {
             throw fromPostgrestError(
-                partnerError ?? { message: "The delivery-partner application could not be created." },
+                partnerError ??
+                    { message: "The delivery-partner application could not be created." },
             );
         }
 
