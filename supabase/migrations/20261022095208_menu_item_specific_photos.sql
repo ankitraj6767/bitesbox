@@ -1,5 +1,6 @@
 -- Replace duplicated/legacy menu artwork with the versioned, per-product photos.
 -- A new object prefix avoids stale CDN responses for the old shared files.
+-- This can match zero rows during a fresh migration run; the menu seed uses these same paths.
 begin;
 
 update public.products
@@ -102,101 +103,5 @@ where image.product_id = product.id
     'veg-manchurian',
     'veg-thali-box'
   ]::text[]);
-
-do $$
-begin
-  if (select count(*) from public.products
-      where deleted_at is null
-        and slug = any (array[
-          'aloo-chokha-rice',
-          'bihari-chicken-masala',
-          'butter-chicken',
-          'butter-naan',
-          'champaran-handi-mutton',
-          'chicken-dum-biryani',
-          'chicken-hakka-noodles',
-          'chicken-seekh-kebab',
-          'chicken-tikka',
-          'chicken-tikka-roll',
-          'chilli-chicken',
-          'coca-cola',
-          'dal-tadka',
-          'egg-biryani',
-          'egg-chicken-roll',
-          'family-feast-box',
-          'gulab-jamun',
-          'laccha-paratha',
-          'litti-chokha',
-          'masala-chaas',
-          'mutton-curry',
-          'mutton-dum-biryani',
-          'onion-pakoda',
-          'packaged-water-1l',
-          'paneer-butter-masala',
-          'paneer-tikka',
-          'paneer-tikka-roll',
-          'poori-sabzi',
-          'rice-kheer',
-          'sattu-paratha',
-          'solo-biryani-combo',
-          'subz-handi-biryani',
-          'sweet-lassi',
-          'tandoori-chicken',
-          'tandoori-roti',
-          'veg-fried-rice',
-          'veg-manchurian',
-          'veg-thali-box'
-        ]::text[])) <> 38 then
-    raise exception 'Expected 38 active menu products for food-v2 photo migration';
-  end if;
-
-  if (select count(*) from public.product_images as image
-      join public.products as product on product.id = image.product_id
-      where image.is_primary
-        and product.deleted_at is null
-        and product.slug = any (array[
-          'aloo-chokha-rice',
-          'bihari-chicken-masala',
-          'butter-chicken',
-          'butter-naan',
-          'champaran-handi-mutton',
-          'chicken-dum-biryani',
-          'chicken-hakka-noodles',
-          'chicken-seekh-kebab',
-          'chicken-tikka',
-          'chicken-tikka-roll',
-          'chilli-chicken',
-          'coca-cola',
-          'dal-tadka',
-          'egg-biryani',
-          'egg-chicken-roll',
-          'family-feast-box',
-          'gulab-jamun',
-          'laccha-paratha',
-          'litti-chokha',
-          'masala-chaas',
-          'mutton-curry',
-          'mutton-dum-biryani',
-          'onion-pakoda',
-          'packaged-water-1l',
-          'paneer-butter-masala',
-          'paneer-tikka',
-          'paneer-tikka-roll',
-          'poori-sabzi',
-          'rice-kheer',
-          'sattu-paratha',
-          'solo-biryani-combo',
-          'subz-handi-biryani',
-          'sweet-lassi',
-          'tandoori-chicken',
-          'tandoori-roti',
-          'veg-fried-rice',
-          'veg-manchurian',
-          'veg-thali-box'
-        ]::text[])) <> 38 then
-    raise exception 'Expected 38 primary product images for food-v2 photo migration';
-  end if;
-end;
-$$;
 
 commit;
