@@ -37,6 +37,7 @@ import '../../features/kitchen/screens/kitchen_queue_screen.dart';
 import '../../features/kitchen/screens/kitchen_shell.dart';
 import '../auth/session.dart';
 import '../providers/core_providers.dart';
+import 'app_navigator.dart';
 import 'routes.dart';
 
 /// One router, three shells.
@@ -50,6 +51,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
+    navigatorKey: appRootNavigatorKey,
     initialLocation: Routes.splash,
     refreshListenable: refresh,
     debugLogDiagnostics: false,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../routing/app_navigator.dart';
 import 'update_controller.dart';
 import 'update_installer.dart';
 
@@ -33,14 +34,21 @@ class _UpdateGateState extends ConsumerState<UpdateGate> {
   }
 
   Future<void> _showDialog() async {
+    final navigator = appRootNavigatorKey.currentState;
+    final dialogContext = navigator?.overlay?.context;
+    if (!mounted || dialogContext == null) return;
+
     _dialogOpen = true;
     ref.read(updateControllerProvider.notifier).markPrompted();
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: !ref.read(updateControllerProvider).mandatory,
-      builder: (_) => const _UpdateDialog(),
-    );
-    _dialogOpen = false;
+    try {
+      await showDialog<void>(
+        context: dialogContext,
+        barrierDismissible: !ref.read(updateControllerProvider).mandatory,
+        builder: (_) => const _UpdateDialog(),
+      );
+    } finally {
+      _dialogOpen = false;
+    }
   }
 }
 
