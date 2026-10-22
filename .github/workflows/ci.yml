@@ -33,7 +33,10 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.121.0
+
+      - name: Show Supabase CLI version
+        run: supabase --version
 
       - name: Start the local stack
         run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector
@@ -63,6 +66,15 @@ jobs:
             diff -u /tmp/database.types.committed.ts /tmp/database.types.ts | head -60
             exit 1
           fi
+
+      - name: Save generated types for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-database-types-${{ github.run_id }}
+          path: /tmp/database.types.ts
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Stop the stack
         if: always()
