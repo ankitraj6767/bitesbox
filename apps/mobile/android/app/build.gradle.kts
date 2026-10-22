@@ -2,6 +2,7 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -58,7 +59,12 @@ android {
             create("release") {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+                // key.properties is stored at the Android root, so resolve its
+                // relative keystore path from there too. This matches CI, which
+                // writes the keystore beside key.properties.
+                storeFile = keystoreProperties.getProperty("storeFile")?.let {
+                    rootProject.file(it)
+                }
                 storePassword = keystoreProperties.getProperty("storePassword")
             }
         }

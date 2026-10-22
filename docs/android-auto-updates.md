@@ -5,13 +5,22 @@ Bites Box now follows the LedgerPro release pattern:
 1. A push to `main` that changes `apps/mobile/**` triggers
    `.github/workflows/android-auto-release.yml`.
 2. CI runs Flutter analysis and tests.
-3. The workflow creates a monotonic version from the GitHub Actions run number.
+3. The workflow takes the release name from `apps/mobile/pubspec.yaml` and
+   creates a monotonically increasing Android build number by adding the
+   GitHub Actions run number to the pubspec build number. For example,
+   `1.2.3+10` on workflow run `7` builds as `1.2.3+17`. A version bump is
+   therefore reflected in the installed app, and every later APK has a higher
+   Android version code than the baseline build.
 4. It builds arm64, armeabi-v7a and x86_64 split APKs.
 5. It uploads the APKs and a SHA-256 verified `update-manifest.json` to the
    public `app-releases` Supabase Storage bucket.
 6. Installed apps check that manifest on launch and offer the matching ABI APK.
 7. Android opens the normal system installer; the app never silently installs
    software outside Android’s security controls.
+
+Before uploading, the publisher checks the current manifest and rejects a
+version rollback or an Android build number that is not newer than the published
+one. This prevents a delayed or retried workflow from replacing a newer update.
 
 ## One-time GitHub setup
 
@@ -27,6 +36,10 @@ The keystore must be the same signing key used for the first build installed by
 customers. If the installed APK was signed with a different key, Android will
 reject the update; distribute one correctly signed baseline APK once, then all
 later releases can update in place.
+
+For each release, update the `version:` value in `apps/mobile/pubspec.yaml`
+(for example, from `1.2.3+10` to `1.2.4+11`) and push the change to `main`.
+The workflow builds and publishes the APKs; no local APK build is needed.
 
 The Supabase `app-releases` bucket is public-read but write-only from CI using
 the service role. The service role is never included in the APK. Split APKs are

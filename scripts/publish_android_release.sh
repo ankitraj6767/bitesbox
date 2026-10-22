@@ -29,6 +29,18 @@ if [[ -z "$VERSION" || -z "$BUILD" || -z "$ARM64" || -z "$ARMV7" || -z "$X64" ]]
   echo "version, build and all split APK paths are required." >&2
   exit 2
 fi
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "version must use MAJOR.MINOR.PATCH format." >&2
+  exit 2
+fi
+if [[ ! "$BUILD" =~ ^[1-9][0-9]*$ ]]; then
+  echo "build must be a positive Android version code." >&2
+  exit 2
+fi
+if [[ "$MANDATORY" != "true" && "$MANDATORY" != "false" ]]; then
+  echo "mandatory must be true or false." >&2
+  exit 2
+fi
 
 ORIGIN="${SUPABASE_URL%/}"
 BUCKET="app-releases"
@@ -37,6 +49,61 @@ AUTH=(-H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY")
 API=(-H "apikey: $SUPABASE_SERVICE_ROLE_KEY")
 
 sha256() { sha256sum "$1" | awk '{print $1}'; }
+
+CURRENT="$(mktemp)"
+UPDATED="$(mktemp)"
+trap 'rm -f "$CURRENT" "$UPDATED"' EXIT
+
+if ! STATUS="$(curl -sS "$ORIGIN/storage/v1/object/$BUCKET/$MANIFEST" \
+  "${AUTH[@]}" "${API[@]}" -o "$CURRENT" -w '%{http_code}')"; then
+  echo "Could not read the current Android update manifest." >&2
+  exit 1
+fi
+case "$STATUS" in
+  200)
+    if ! jq -e 'type == "object" and ((.android? == null) or (.android | type == "object"))' "$CURRENT" >/dev/null; then
+      echo "The current update manifest is invalid; refusing to replace it." >&2
+      exit 1
+    fi
+    ;;
+  404) echo '{}' > "$CURRENT" ;;
+  *)
+    echo "Reading the current update manifest returned HTTP $STATUS." >&2
+    exit 1
+    ;;
+esac
+
+CURRENT_VERSION="$(jq -r '.android.version // "0.0.0"' "$CURRENT")"
+CURRENT_BUILD="$(jq -r '.android.buildNumber // 0' "$CURRENT")"
+if ! python3 - "$VERSION" "$BUILD" "$CURRENT_VERSION" "$CURRENT_BUILD" <<'PY'
+import re
+import sys
+
+new_version, new_build, current_version, current_build = sys.argv[1:]
+version_pattern = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+new_match = version_pattern.fullmatch(new_version)
+current_match = version_pattern.fullmatch(current_version)
+if not new_match or not current_match or not current_build.isdigit():
+    print("The current or requested release version is invalid.", file=sys.stderr)
+    raise SystemExit(1)
+
+if tuple(map(int, new_match.groups())) < tuple(map(int, current_match.groups())):
+    print(
+        f"Refusing to publish {new_version}; the current release is {current_version}.",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+if int(new_build) <= int(current_build):
+    print(
+        f"Refusing build {new_build}; the published Android build is {current_build}. "
+        "Android requires a higher version code for in-place updates.",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+then
+  exit 1
+fi
 
 upload() {
   local file="$1" name="$2" size hash
@@ -62,15 +129,6 @@ X64_NAME="bitesbox-android-v${VERSION}-${BUILD}-x86_64.apk"
 ARM64_HASH="$(upload "$ARM64" "$ARM64_NAME")"
 ARMV7_HASH="$(upload "$ARMV7" "$ARMV7_NAME")"
 X64_HASH="$(upload "$X64" "$X64_NAME")"
-
-CURRENT="$(mktemp)"
-UPDATED="$(mktemp)"
-trap 'rm -f "$CURRENT" "$UPDATED"' EXIT
-
-if ! curl -fsSL "$ORIGIN/storage/v1/object/$BUCKET/$MANIFEST" \
-  "${AUTH[@]}" "${API[@]}" -o "$CURRENT" 2>/dev/null || ! jq empty "$CURRENT" >/dev/null 2>&1; then
-  echo '{}' > "$CURRENT"
-fi
 
 jq \
   --arg version "$VERSION" --argjson build "$BUILD" --arg notes "$NOTES" \

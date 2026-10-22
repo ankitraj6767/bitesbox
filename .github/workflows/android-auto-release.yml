@@ -75,12 +75,23 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          base="$(grep -E '^version:' apps/mobile/pubspec.yaml | sed 's/version:[[:space:]]*//' | cut -d. -f1-2)"
-          version="${base}.${GITHUB_RUN_NUMBER}"
-          build="${GITHUB_RUN_NUMBER}"
+          pubspec_version="$(grep -E '^version:' apps/mobile/pubspec.yaml | head -n1 | sed 's/version:[[:space:]]*//')"
+          if [[ ! "$pubspec_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(\+([0-9]+))?$ ]]; then
+            echo "::error::Expected apps/mobile/pubspec.yaml version in MAJOR.MINOR.PATCH+BUILD format. Found: $pubspec_version"
+            exit 1
+          fi
+
+          version="${BASH_REMATCH[1]}"
+          base_build="${BASH_REMATCH[3]:-0}"
+          build="$((10#$base_build + GITHUB_RUN_NUMBER))"
+          if (( build > 2100000000 )); then
+            echo "::error::Android version code $build exceeds the supported maximum."
+            exit 1
+          fi
+
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
-          echo "Auto release version: $version+$build"
+          echo "Auto release version: $version+$build (pubspec $pubspec_version, Actions run $GITHUB_RUN_NUMBER)"
 
       - name: Build split APKs
         working-directory: apps/mobile
