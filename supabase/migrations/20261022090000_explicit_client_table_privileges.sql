@@ -24,6 +24,8 @@ grant update on public.profiles to authenticated;
 grant insert on public.delivery_partner_availability to authenticated;
 grant insert, update on public.delivery_partner_locations to authenticated;
 grant insert on public.delivery_location_events to authenticated;
+-- There is deliberately no rider UPDATE policy; attempts return zero rows.
+grant update on public.delivery_partners to authenticated;
 
 -- Back-office CRUD. RLS still requires the matching permission.
 grant insert, update, delete on
@@ -49,5 +51,6 @@ grant insert on public.order_notes to authenticated;
 grant insert on public.stock_movements to authenticated;
 grant update on public.support_tickets to authenticated;
 
--- Reviews, rider documents and rider records are now changed only through
--- audited RPCs. Orders, payments, refunds and ledgers are function-only too.
+-- Reviews and rider documents are now changed only through audited RPCs.
+-- Rider-record RPCs are the only effective write path because RLS has no direct
+-- UPDATE policy. Orders, payments, refunds and ledgers are function-only too.

@@ -33,6 +33,9 @@ grant update on public.profiles to authenticated;
 grant insert on public.delivery_partner_availability to authenticated;
 grant insert, update on public.delivery_partner_locations to authenticated;
 grant insert on public.delivery_location_events to authenticated;
+-- The rider UPDATE policy is removed by the later privilege-scope migration;
+-- retain the table grant so those direct attempts are filtered to zero rows.
+grant update on public.delivery_partners to authenticated;
 
 -- Back-office CRUD. RLS still requires the matching permission.
 grant insert, update, delete on
