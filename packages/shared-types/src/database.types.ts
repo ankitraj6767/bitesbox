@@ -1614,7 +1614,7 @@ export type Database = {
           distance_to_store_km: number | null;
           expires_at: string | null;
           failed_at: string | null;
-          failure_reason: string | null;
+          failure_reason: string;
           id: string;
           mode: Database["public"]["Enums"]["assignment_mode"];
           offered_at: string;
@@ -2985,10 +2985,10 @@ export type Database = {
           provider_message_id: string | null;
           read_at: string | null;
           scheduled_for: string | null;
-          sent_at: string | null;
+          sent_at: string;
           status: Database["public"]["Enums"]["notification_status"];
           support_ticket_id: string | null;
-          title: string | null;
+          title: string;
           updated_at: string;
           user_id: string | null;
         };
