@@ -58,7 +58,7 @@ jobs:
       # against a contract the database no longer offers.
       - name: Check the generated types are current
         run: |
-          supabase gen types typescript --local > /tmp/database.types.ts
+          supabase gen types typescript --local --schema public > /tmp/database.types.ts
           cp packages/shared-types/src/database.types.ts /tmp/database.types.committed.ts
           npx --yes oxfmt@0.74.0 --write /tmp/database.types.ts /tmp/database.types.committed.ts
           if ! diff -q /tmp/database.types.ts /tmp/database.types.committed.ts; then
