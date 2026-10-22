@@ -170,5 +170,5 @@ jobs:
           {
             echo "### Supabase deployment skipped"
             echo ""
-            echo "Migration verification passed. Configure `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_REF` in the selected GitHub environment to deploy."
+            echo "Migration verification passed. Add SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD and SUPABASE_PROJECT_REF to the selected GitHub environment to enable deployment."
           } >> "$GITHUB_STEP_SUMMARY"
