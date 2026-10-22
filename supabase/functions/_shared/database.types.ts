@@ -6153,6 +6153,54 @@ export type Database = {
           },
         ];
       };
+      wallet_topups: {
+        Row: {
+          amount: number;
+          captured_at: string | null;
+          created_at: string;
+          currency_code: string;
+          expires_at: string | null;
+          id: string;
+          idempotency_key: string;
+          payment_source: string | null;
+          provider_order_id: string | null;
+          provider_payment_id: string | null;
+          status: Database["public"]["Enums"]["payment_status"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          captured_at?: string | null;
+          created_at?: string;
+          currency_code?: string;
+          expires_at?: string | null;
+          id?: string;
+          idempotency_key: string;
+          payment_source?: string | null;
+          provider_order_id?: string | null;
+          provider_payment_id?: string | null;
+          status?: Database["public"]["Enums"]["payment_status"];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          captured_at?: string | null;
+          created_at?: string;
+          currency_code?: string;
+          expires_at?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          payment_source?: string | null;
+          provider_order_id?: string | null;
+          provider_payment_id?: string | null;
+          status?: Database["public"]["Enums"]["payment_status"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       wallet_transactions: {
         Row: {
           amount: number;
@@ -6929,6 +6977,15 @@ export type Database = {
           p_failure_reason: string;
           p_payment_id: string;
           p_source?: string;
+        };
+        Returns: Json;
+      };
+      svc_record_wallet_topup_capture: {
+        Args: {
+          p_amount_captured: number;
+          p_provider_payment_id: string;
+          p_source: string;
+          p_topup_id: string;
         };
         Returns: Json;
       };
