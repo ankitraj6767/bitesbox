@@ -242,8 +242,8 @@ class _Content extends StatelessWidget {
                 height: 200,
                 radius: 0,
                 placeholderAsset:
-                    FoodImage.assetForCategory(detail.categoryName) ??
-                    FoodImage.assetForPath(product.slug),
+                    FoodImage.assetForPath(product.slug) ??
+                    FoodImage.assetForCategory(detail.categoryName),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),

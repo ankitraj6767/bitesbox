@@ -191,7 +191,53 @@ class FoodImage extends StatelessWidget {
     return null;
   }
 
-  static String? assetForPath(String? path) => assetForCategory(path);
+  static const _productAssetSlugs = {
+    'aloo-chokha-rice',
+    'bihari-chicken-masala',
+    'butter-chicken',
+    'butter-naan',
+    'champaran-handi-mutton',
+    'chicken-dum-biryani',
+    'chicken-hakka-noodles',
+    'chicken-seekh-kebab',
+    'chicken-tikka',
+    'chicken-tikka-roll',
+    'chilli-chicken',
+    'coca-cola',
+    'dal-tadka',
+    'egg-biryani',
+    'egg-chicken-roll',
+    'family-feast-box',
+    'gulab-jamun',
+    'laccha-paratha',
+    'litti-chokha',
+    'masala-chaas',
+    'mutton-curry',
+    'mutton-dum-biryani',
+    'onion-pakoda',
+    'packaged-water-1l',
+    'paneer-butter-masala',
+    'paneer-tikka',
+    'paneer-tikka-roll',
+    'poori-sabzi',
+    'rice-kheer',
+    'sattu-paratha',
+    'solo-biryani-combo',
+    'subz-handi-biryani',
+    'sweet-lassi',
+    'tandoori-chicken',
+    'tandoori-roti',
+    'veg-fried-rice',
+    'veg-manchurian',
+    'veg-thali-box',
+  };
+
+  /// Bundled product photography used while a hosted item image downloads.
+  static String? assetForPath(String? path) {
+    final key = (path ?? '').trim().toLowerCase();
+    if (!_productAssetSlugs.contains(key)) return assetForCategory(key);
+    return 'assets/images/menu/products/$key.jpg';
+  }
 
   /// Bundled first-paint artwork for CMS banners. The network image remains the
   /// source of truth, but the home screen should never show a blank/grey card
