@@ -18,7 +18,7 @@
         "db:push": "supabase db push",
         "db:lint": "./scripts/db-lint.sh warning",
         "db:test": "./supabase/tests/run.sh",
-        "db:types": "npx --yes supabase@2.110.0 gen types typescript --local --schema public > packages/shared-types/src/database.types.ts && npx --yes oxfmt@0.74.0 --write packages/shared-types/src/database.types.ts && cp packages/shared-types/src/database.types.ts supabase/functions/_shared/database.types.ts",
+        "db:types": "npx --yes supabase@2.110.0 gen types typescript --local --schema public > packages/shared-types/src/database.types.ts && node scripts/inject-postgrest-version.mjs packages/shared-types/src/database.types.ts && npx --yes prettier@3.6.2 --write packages/shared-types/src/database.types.ts && cp packages/shared-types/src/database.types.ts supabase/functions/_shared/database.types.ts",
         "db:psql": "./scripts/psql.sh",
         "fn:serve": "supabase functions serve --env-file supabase/functions/.env",
         "fn:deploy": "supabase functions deploy",

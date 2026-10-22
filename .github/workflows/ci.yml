@@ -59,22 +59,14 @@ jobs:
       - name: Check the generated types are current
         run: |
           supabase gen types typescript --local --schema public > /tmp/database.types.ts
+          node scripts/inject-postgrest-version.mjs /tmp/database.types.ts
           cp packages/shared-types/src/database.types.ts /tmp/database.types.committed.ts
-          npx --yes oxfmt@0.74.0 --write /tmp/database.types.ts /tmp/database.types.committed.ts
+          npx --yes prettier@3.6.2 --write /tmp/database.types.ts /tmp/database.types.committed.ts
           if ! diff -q /tmp/database.types.ts /tmp/database.types.committed.ts; then
             echo "::error::packages/shared-types/src/database.types.ts is stale. Run: npm run db:types"
-            diff -u /tmp/database.types.committed.ts /tmp/database.types.ts | head -60
+            diff -u /tmp/database.types.committed.ts /tmp/database.types.ts | sed -n '1,60p'
             exit 1
           fi
-
-      - name: Save generated types for inspection
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-database-types-${{ github.run_id }}
-          path: /tmp/database.types.ts
-          if-no-files-found: ignore
-          retention-days: 1
 
       - name: Stop the stack
         if: always()
