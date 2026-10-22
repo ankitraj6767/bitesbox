@@ -27,7 +27,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final brand = context.brand;
     final notifications = ref.watch(notificationsProvider);
-    final unread = ref.watch(unreadNotificationCountProvider);
+    final unread = notifications.maybeWhen(
+      data: (items) => items
+          .where(
+            (item) => item.isUnread && !_optimisticallyRead.contains(item.id),
+          )
+          .length,
+      orElse: () => 0,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -116,30 +123,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           .markNotificationsRead();
       if (!mounted) return;
 
-      // Wait for the fresh rows before removing the badge/action. This avoids
-      // leaving the old unread list on screen after the database update wins.
+      // The RPC is authoritative. Refresh the list, but don't undo the
+      // optimistic state based on an immediate, potentially stale readback.
       ref.invalidate(notificationsProvider);
-      final refreshed = await ref.read(notificationsProvider.future);
-      final stillUnread = refreshed
-          .where((item) => ids.contains(item.id) && item.isUnread)
-          .map((item) => item.id)
-          .toSet();
-      if (mounted) {
-        setState(
-          () => _optimisticallyRead.removeAll(ids.difference(stillUnread)),
-        );
-      }
-
-      if (stillUnread.isNotEmpty) {
-        if (mounted) setState(() => _optimisticallyRead.removeAll(stillUnread));
-        if (mounted) {
-          AppFeedback.showInfo(
-            context,
-            'Some notifications could not be marked as read. Please try again.',
-          );
-        }
-        return;
-      }
 
       if (mounted) {
         AppFeedback.showSuccess(
@@ -169,22 +155,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             .markNotificationsRead(ids: [item.id]);
         if (!mounted) return;
         ref.invalidate(notificationsProvider);
-        final refreshed = await ref.read(notificationsProvider.future);
-        if (!mounted) return;
-        final saved = refreshed
-            .where((candidate) => candidate.id == item.id)
-            .toList();
-        if (saved.isEmpty || saved.first.isUnread) {
-          if (mounted) {
-            setState(() => _optimisticallyRead.remove(item.id));
-            AppFeedback.showInfo(
-              context,
-              'This notification could not be marked as read.',
-            );
-          }
-        } else if (mounted) {
-          setState(() => _optimisticallyRead.remove(item.id));
-        }
       } catch (error) {
         if (mounted) {
           setState(() => _optimisticallyRead.remove(item.id));
