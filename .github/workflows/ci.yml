@@ -56,9 +56,11 @@ jobs:
       - name: Check the generated types are current
         run: |
           supabase gen types typescript --local > /tmp/database.types.ts
-          if ! diff -q /tmp/database.types.ts packages/shared-types/src/database.types.ts; then
+          cp packages/shared-types/src/database.types.ts /tmp/database.types.committed.ts
+          npx --yes oxfmt@0.74.0 --write /tmp/database.types.ts /tmp/database.types.committed.ts
+          if ! diff -q /tmp/database.types.ts /tmp/database.types.committed.ts; then
             echo "::error::packages/shared-types/src/database.types.ts is stale. Run: npm run db:types"
-            diff -u packages/shared-types/src/database.types.ts /tmp/database.types.ts | head -60
+            diff -u /tmp/database.types.committed.ts /tmp/database.types.ts | head -60
             exit 1
           fi
 
