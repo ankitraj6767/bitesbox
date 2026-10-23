@@ -1,74 +1,73 @@
 # Release status
 
-Last updated: 23 October 2026. The owner delivery-zone access fix and source
-version bump are on `main` in implementation commit `a1392a4`. The production
-admin site was not replaced, no Android update was published, and no hosted
-Supabase migration was applied.
+Last updated: 23 October 2026. This source release adds complete edit/archive
+controls for operator-managed settings, with local database and application
+verification. No production website or mobile build was published, and no
+hosted Supabase migration was applied.
+
+## Settings and outlet controls
+
+Branch details, trading hours, dated holiday exceptions, tax categories, delivery
+zones, and feature-flag rollout can now be managed from Settings according to
+their existing branch or settings permissions. Outlet and tax-category removal
+is a soft archive that preserves history and references. Archiving is blocked
+when it would remove the last active outlet, strand the default outlet, or leave
+non-terminal orders behind. Trading-hour and holiday changes are audited.
+
+Singleton settings and feature flags are stable application keys; their values
+and rollouts can be changed, but the keys are not deletable. The mobile customer
+app listens for public settings changes and refreshes configuration, menu,
+product, cart, coupons, and outlet data. It also refreshes these values when
+resuming after backgrounding.
 
 ## Delivery-zone owner error
 
-The owner role and `branch.manage` permission were present. Read-only hosted
-Postgres logs showed `42501 permission denied for schema app` on delivery-zone
-updates. The RLS policy calls `app.has_permission(...)`; Postgres requires API
-roles to have schema `USAGE` to resolve that helper while evaluating the policy.
-The application had only granted function execution, which was insufficient. The
-fix grants schema `USAGE` to `anon` and `authenticated`; it does not add `app` to
-PostgREST's exposed schemas, and existing function grants, signed AAL2 checks, and
-RLS still enforce access. The admin error copy now describes a database
-authorization failure without incorrectly telling an owner that their outlet
-assignment changed.
+The earlier owner-access fix addressed `42501 permission denied for schema app`
+when an RLS policy resolved `app.has_permission(...)`. It grants `USAGE` on the
+private `app` schema to API roles without exposing that schema through PostgREST;
+function grants, signed AAL2 checks, and RLS remain authoritative. That earlier
+change was verified locally. The linked hosted project's state was not checked
+again for this settings release.
 
 ## Migration and hosted state
 
-The repository contains **62 migration files**. Migration
-`20261023132322_grant_rls_helper_schema_usage.sql` is applied and tested on the
-local Supabase stack. Read-only inspection of the linked hosted project showed its
-applied migration history current through `20261023114100` before this change;
-the new migration is **pending remotely**. No hosted migration was pushed by this
-work. The owner edit will work against that hosted project after the pending
-migration is applied.
+This checkout contains **63 migration files**. Migration
+`20261023135427_settings_crud_audit_and_public_sync.sql` was applied to the
+local Supabase stack and passed its SQL/RLS suite. No hosted migration was
+pushed. Hosted migration state for this migration is **unverified**. The last
+recorded read-only hosted check before the previous source release reported
+history through `20261023114100`; that older observation has not been refreshed
+for this release, so migrations after it must be checked before any hosted
+deployment.
 
-Matching pushes run Supabase migration verification, but the hosted deploy job is
-manual-only. The GitHub Vercel admin and Android release jobs are also
-manual-only. A source push to `main` therefore does not apply migrations or publish
-APKs. The normal CI workflow still runs on pushes to `main`. Vercel Git integration
-is connected to the repository; the Vercel ignore command skips this source-only
-commit (marked `[source-only]`) while preserving normal deployment behavior for
-subsequent commits.
+Supabase deployment and production admin/mobile release workflows remain
+manual. This source-only change does not deploy the admin site, apply migrations,
+or publish an APK. No production credentials were used for local build checks.
 
 ## Version
 
-Workspace, admin, storefront, and shared-types packages: **1.2.1**. Flutter source
-version: **1.2.1+14**. This is a source version bump, not a signed release. No APK
-was built locally; GitHub CI's debug APK check passed. No signed iOS build was run.
+Workspace, admin, storefront, and shared-types packages: **1.2.2**. Flutter
+source version: **1.2.2+15**. This is a source version bump, not a signed mobile
+release. No APK was built locally and no signed iOS release was run.
 
 ## Verification record
 
-Local and GitHub results on 23 October 2026:
+Local results on 23 October 2026:
 
 | Area | Result | Evidence / limitation |
 | --- | --- | --- |
-| Local migration | Passed | New grant applied to local Supabase; hosted project unchanged |
-| SQL/RLS tests | Passed: 12 suites, 433 assertions | `npm run db:test`; includes owner AAL2 delivery-zone update and schema-usage checks |
-| Database lint | Passed | `npm run db:lint`; warning-level findings remain |
+| Local migration | Passed | New settings migration applied to local Supabase; no hosted write |
+| SQL/RLS tests | Passed: 13 suites, 472 assertion calls in source | `npm run db:test`; includes branch schedule CRUD, tax archive/default guards, outlet archive protections, unauthorized archive refusal, and Realtime publication |
+| Database lint | Passed | `npm run db:lint`; no error-level findings; existing warning-level findings remain |
 | Admin lint and typecheck | Passed | `npm run admin:lint`, `npm run admin:typecheck` |
-| Admin unit tests | Passed: 76 tests | `npm run admin:test`, 9 files |
-| Admin browser journey | Passed: 10 tests | `npm run e2e --workspace=@bitesbox/admin`; owner delivery-zone create/edit/pause/delete covered with deterministic local fakes |
-| Admin build | Passed | `npm run admin:build` with placeholder Supabase configuration; no hosted credentials |
-| GitHub CI | Passed: 6 jobs | [Run 39962577075](https://github.com/ankitraj6767/bitesbox/actions/runs/39962577075), commit `a1392a4` |
-| Supabase workflow | Verification passed; deploy skipped | [Run 39962577056](https://github.com/ankitraj6767/bitesbox/actions/runs/39962577056); no hosted write occurred |
-| Vercel Git deployment | Canceled | Source-only marker prevented publishing a deployment for commit `a1392a4` |
-| Hosted migration | Pending | Requires a separately authorized workflow dispatch and environment review |
+| Admin unit tests | Passed: 82 tests | `npm run admin:test`, 10 files |
+| Admin browser journey | Passed: 11 tests | `npm run e2e --workspace=@bitesbox/admin`; deterministic local Supabase fake, including outlet edit/archive confirmation |
+| Admin build | Passed | `npm run admin:build` with a local placeholder Supabase URL/key |
+| Edge Function checks | Passed | `npm run fn:check`, `npm run fn:lint`; Deno lint checked 29 files and Deno format checked 30 |
+| Flutter analysis and tests | Passed | `npm run mobile:analyze`, `npm run mobile:test`; 144 tests |
+| GitHub workflow for this source-only change | Not run locally | Check the repository Actions page after pushing; no GitHub status is claimed here |
+| Hosted migration | Unverified | No hosted inspection or migration write was performed for this release |
 | Device/store behavior | Not verified | No physical device or signed store build was run |
-
-## Remaining operator step
-
-After review, an operator with access to the protected GitHub environment must
-explicitly dispatch `Deploy Supabase` to apply the pending migration to the
-intended environment. Verify the migration list and retry delivery-zone editing
-after deployment. The source push alone does not fix the live database. Do not
-dispatch the Android or admin deployment workflows unless those releases are
-separately intended.
 
 See [testing.md](testing.md), [deployment.md](deployment.md), and
 [operations-runbook.md](operations-runbook.md) for procedures.

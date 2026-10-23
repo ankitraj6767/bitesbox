@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../providers/cart_controller.dart';
+import '../providers/customer_settings_sync.dart';
 import '../providers/customer_providers.dart';
 
 /// The customer tab bar: Home, Menu, Orders, Account.
@@ -18,6 +19,7 @@ class CustomerShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(customerSettingsRealtimeProvider);
     final brand = context.brand;
     final l10n = AppLocalizations.of(context);
     final cartCount = ref.watch(cartUnitCountProvider);

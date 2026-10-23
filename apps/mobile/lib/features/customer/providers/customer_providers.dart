@@ -364,5 +364,7 @@ final availableCouponsProvider = FutureProvider<List<CustomerCoupon>>((
 
   final branchId = ref.watch(activeBranchIdProvider);
   final locale = session.profile?.preferredLanguage ?? 'en';
-  return ref.watch(cartRepositoryProvider).availableCoupons(branchId: branchId, locale: locale);
+  return ref
+      .watch(cartRepositoryProvider)
+      .availableCoupons(branchId: branchId, locale: locale);
 });

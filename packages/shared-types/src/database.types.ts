@@ -6790,6 +6790,11 @@ export type Database = {
         };
         Returns: Json;
       };
+      archive_branch: { Args: { p_branch_id: string }; Returns: string };
+      archive_tax_category: {
+        Args: { p_category_id: string };
+        Returns: string;
+      };
       assign_rider: {
         Args: {
           p_delivery_partner_id: string;
@@ -7305,6 +7310,10 @@ export type Database = {
           p_status: Database["public"]["Enums"]["branch_status"];
         };
         Returns: Json;
+      };
+      set_default_tax_category: {
+        Args: { p_category_id: string };
+        Returns: string;
       };
       set_delivery_location_sharing: {
         Args: { p_assignment_id: string; p_enabled: boolean };

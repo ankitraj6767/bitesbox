@@ -69,6 +69,31 @@ after changing a zone boundary or priority. Do not change delivery-zone rows in
 SQL or use a client-selected outlet as authorization; branch permissions and RLS
 remain authoritative.
 
+## Other settings and outlet records
+
+Open Admin → Settings and select the intended outlet before changing its Branch
+tab. A user needs `branch.manage` for that outlet to edit its profile, weekly
+trading hours, or dated holiday exceptions. Schedule and exception changes are
+audited and affect future order availability. The customer app re-reads public
+configuration after a Realtime change signal and when it resumes; confirmed
+orders keep their saved terms.
+
+An outlet cannot be hard-deleted. **Archive** is a soft removal that preserves
+historical orders and audit records. It is blocked while the outlet has
+non-terminal orders and while it is the last active outlet. Archiving the
+default outlet also selects an active replacement the operator can manage. If
+the archive option is disabled, check that another active outlet exists and that
+the selected outlet can be managed. If availability cannot be verified, refresh
+and retry instead of treating the check as proof that this is the last outlet.
+
+Tax categories require `settings.update`. Make the replacement category default
+before archiving the current default; category archival preserves menu and
+historical order references. Changing tax configuration affects future quotes,
+while order tax snapshots remain unchanged. Singleton settings and feature flag
+keys are application contracts: edit their values or rollout percentages, but
+do not delete the keys. Every such change is audited. Do not mutate these tables
+directly in SQL.
+
 ## Stale rider location
 
 `DELIVERY_LOCATION_STALE` means an active rider-enabled assignment has no accepted

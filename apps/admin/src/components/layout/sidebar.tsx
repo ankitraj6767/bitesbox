@@ -130,7 +130,7 @@ export function Sidebar({
                     <p className="text-[11px] leading-relaxed text-ink-muted">
                         Bites Box Operations
                         <span className="mx-1.5 text-hairline">·</span>
-                        v1.2.0
+                        v1.2.2
                     </p>
                 </div>
             </aside>

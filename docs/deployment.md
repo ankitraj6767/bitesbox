@@ -35,7 +35,7 @@ cp .env.example .env                       # fill in what you have
 # Backend
 npm run db:start                           # supabase start
 npm run db:reset                           # migrations + seeds, ~3 min
-npm run db:test                            # 12 suites, expect 12 passed
+npm run db:test                            # 13 suites, expect 13 passed
 
 # Admin
 cd apps/admin && cp ../../.env.example .env.local
@@ -49,7 +49,7 @@ flutter run --dart-define-from-file=env/local.json
 cd apps/storefront && npm run dev          # http://localhost:3001
 ```
 
-`db:reset` applies all 62 migrations to an empty database and then the seven seed
+`db:reset` applies all 63 migrations to an empty database and then the seven seed
 files in order. It is the only supported way to get a working local database —
 there is no snapshot to restore.
 

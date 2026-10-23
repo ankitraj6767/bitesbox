@@ -13,8 +13,8 @@ Unit-testing a Dart function that formats a duration is cheap and worth having;
 it is not where the risk lives.
 
 ```
-supabase/tests/      12 suites · 433 assertion calls in source   ← the security boundary
-apps/admin/           9 unit files · 76 tests; 10 deterministic Playwright tests
+supabase/tests/      13 suites · 472 assertion calls in source   ← the security boundary
+apps/admin/          10 unit files · 82 tests; 11 deterministic Playwright tests
 apps/storefront/      1 unit file · 4 tests; deterministic customer journeys
 apps/mobile/test/     16 files · see final run record below
 supabase/functions/   Deno checks · lint · fmt · logger/provider contracts
@@ -29,25 +29,26 @@ schema                db-lint.sh — fails on error-level findings
 npm run db:test                  # same thing
 ```
 
-The 433 SQL assertion calls are counted from the checked-in SQL test files. The
+The 472 SQL assertion calls are counted from the checked-in SQL test files. The
 full suite passed against the local Supabase/Postgres stack on 23 October 2026;
 this is local verification only and says nothing about a hosted project's schema.
 No hosted migration was pushed. See [status.md](status.md) for release state.
 
 | Suite | Assertions | Covers |
 | --- | --- | --- |
-| `010_rbac_rls` | 46 | Role/permission boundaries, cross-customer isolation, branch scoping, live delivery-zone write controls, the role-assignment rank guard |
+| `010_rbac_rls` | 56 | Role/permission boundaries, cross-customer isolation, branch scoping, live delivery-zone write controls, the role-assignment rank guard |
 | `020_order_state_machine` | 20 | Legal edges, guards, direct-write refusal, terminal states |
 | `030_pricing_and_coupons` | 40 | Server pricing, coupon eligibility, quantity limits, serviceability |
 | `040_delivery_flow` | 48 | Dispatch → pickup → OTP → delivered, timestamped assignment-scoped location, rider scoping, payout |
 | `050_payments_and_idempotency` | 15 | Placement idempotency, webhook dedupe counters, unpaid-order isolation |
 | `060_refunds` | 27 | Refundable balance, approval separation, ledger settlement |
 | `070_rider_lifecycle` | 64 | Onboarding chain, document review, self-promotion refusal, the staff read surface |
-| `080_campaigns_and_reviews` | 33 | Audience resolution, opt-out honouring, review moderation |
+| `080_campaigns_and_reviews` | 34 | Audience resolution, opt-out honouring, review moderation |
 | `090_read_surfaces` | 65 | Every client-callable read RPC actually executes, as a role allowed to call it |
 | `100_group_orders` | 10 | Invite privacy, membership checks, host authority, server-validated merge and participant-cart clearing |
-| `110_staff_mfa_and_location` | 28 | Private-schema helper access, owner zone updates, signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
-| `120_customer_growth_localization_outlets` | 37 | Two active outlets, hidden-branch exclusion, Hindi search, favorites ownership/availability, referral rollout and reward idempotency, localized notification/channel preferences, partial-refund wallet preservation, guest-cart import retries, analytics permissions |
+| `110_staff_mfa_and_location` | 29 | Private-schema helper access, owner zone updates, signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
+| `120_customer_growth_localization_outlets` | 44 | Two active outlets, hidden-branch exclusion, Hindi search, favorites ownership/availability, referral rollout and reward idempotency, localized notification/channel preferences, partial-refund wallet preservation, guest-cart import retries, analytics permissions |
+| `130_settings_crud` | 20 | Branch-scoped schedule/holiday CRUD, tax default and archive guards, audit capture, settings Realtime publication, active-order and last-outlet archive protection, unauthorized outlet-archive refusal |
 
 ### Why 090 exists
 
@@ -176,8 +177,8 @@ proves that pickup is what issues it.
 npm run test --workspace=@bitesbox/admin
 ```
 
-Vitest with jsdom. The suite contains **9 files and 76 tests**;
-`npm run test --workspace=@bitesbox/admin` passed all 76 on 23 October 2026.
+Vitest with jsdom. The suite contains **10 files and 82 tests**;
+`npm run test --workspace=@bitesbox/admin` passed all 82 on 23 October 2026.
 
 | File | Tests | Covers |
 | --- | --- | --- |

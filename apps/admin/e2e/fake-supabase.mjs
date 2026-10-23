@@ -12,6 +12,69 @@ const supportTicketId = '00000000-0000-4000-8000-000000000501';
 const supportTicketNumber = 'BB-T-E2E-001';
 let zoneSequence = 0;
 
+const branches = [
+    {
+        id: branchId,
+        code: 'BKP-01',
+        name: 'Bites Box Bakhtiyarpur',
+        legal_name: 'Bites Box Foods Private Limited',
+        phone: '+919431100100',
+        alternate_phone: null,
+        whatsapp_phone: '+919431100100',
+        email: 'bakhtiyarpur@bitesbox.test',
+        address_line1: 'Station Road',
+        address_line2: 'Near Bakhtiyarpur Junction',
+        landmark: 'Ward 12',
+        city: 'Bakhtiyarpur',
+        state: 'Bihar',
+        postal_code: '803212',
+        latitude: 25.46,
+        longitude: 85.51,
+        google_maps_url: 'https://maps.google.com/?q=25.46,85.51',
+        gstin: '10ABCDE1234F1Z5',
+        fssai_licence_no: '20424001000123',
+        fssai_valid_till: '2027-03-31',
+        timezone: 'Asia/Kolkata',
+        service_mode: 'BOTH',
+        default_prep_minutes: 22,
+        rush_buffer_minutes: 0,
+        max_concurrent_orders: 40,
+        is_active: true,
+        is_default: true,
+        deleted_at: null,
+    },
+    {
+        id: secondBranchId,
+        code: 'PAT-01',
+        name: 'Patna Test Outlet',
+        legal_name: 'Bites Box Foods Private Limited',
+        phone: '+919431100101',
+        alternate_phone: null,
+        whatsapp_phone: null,
+        email: 'patna@bitesbox.test',
+        address_line1: 'Test Road',
+        address_line2: null,
+        landmark: null,
+        city: 'Patna',
+        state: 'Bihar',
+        postal_code: '800001',
+        latitude: 25.61,
+        longitude: 85.14,
+        google_maps_url: null,
+        gstin: null,
+        fssai_licence_no: null,
+        fssai_valid_till: null,
+        timezone: 'Asia/Kolkata',
+        service_mode: 'BOTH',
+        default_prep_minutes: 30,
+        rush_buffer_minutes: 0,
+        max_concurrent_orders: null,
+        is_active: true,
+        is_default: false,
+        deleted_at: null,
+    },
+];
+
 const zones = [
     {
         id: '00000000-0000-4000-8000-000000000401',
@@ -274,6 +337,9 @@ const server = createServer(async (request, response) => {
     if (url.pathname === '/__e2e/delivery-zones') {
         return send(response, 200, zones);
     }
+    if (url.pathname === '/__e2e/branches') {
+        return send(response, 200, branches);
+    }
 
     if (
         url.pathname === '/auth/v1/token' &&
@@ -534,6 +600,36 @@ const server = createServer(async (request, response) => {
             );
             for (const zone of found) Object.assign(zone, body);
             return send(response, 200, singularOrArray(request, found));
+        }
+    }
+
+    if (url.pathname === '/rest/v1/branches') {
+        if (request.method === 'HEAD') {
+            const idFilter = url.searchParams.get('id');
+            const excludedId = idFilter?.startsWith('neq.') ? idFilter.slice(4) : null;
+            const count = branches.filter(
+                (branch) => branch.is_active && branch.deleted_at === null && branch.id !== excludedId,
+            ).length;
+            response.writeHead(200, {
+                'content-range': count === 0 ? '0-0/0' : `0-${count - 1}/${count}`,
+            });
+            return response.end();
+        }
+
+        if (request.method === 'GET') {
+            const idFilter = url.searchParams.get('id');
+            const id = idFilter?.startsWith('eq.') ? idFilter.slice(3) : null;
+            const rows = branches.filter((branch) => branch.deleted_at === null && (!id || branch.id === id));
+            return send(response, 200, singularOrArray(request, rows));
+        }
+
+        if (request.method === 'PATCH') {
+            const body = await jsonBody(request);
+            const idFilter = url.searchParams.get('id');
+            const id = idFilter?.startsWith('eq.') ? idFilter.slice(3) : null;
+            const changed = branches.filter((branch) => branch.id === id && branch.deleted_at === null);
+            for (const branch of changed) Object.assign(branch, body);
+            return send(response, 200, singularOrArray(request, changed));
         }
     }
 

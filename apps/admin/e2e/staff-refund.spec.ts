@@ -206,6 +206,46 @@ test('branch-scoped admin only sees delivery-zone controls in the assigned outle
     await expect(page.getByText(/does not include this outlet/i)).toBeVisible();
 });
 
+test('owner can edit the selected outlet and sees guarded archive controls', async ({
+    page,
+}) => {
+    const updatedName = `Bakhtiyarpur QA ${Date.now()}`;
+    await page.context().addCookies([
+        {
+            ...sessionCookie('owner@bitesbox.test', 'aal2'),
+            url: 'http://localhost:3100',
+        },
+    ]);
+    await page.goto('/settings');
+    await page.getByRole('tab', { name: 'Branch' }).click();
+    await page.getByRole('button', { name: 'Edit outlet' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit outlet details' });
+    await dialog.locator('input').first().fill(updatedName);
+    await dialog.getByRole('button', { name: 'Save outlet' }).click();
+    await expect(page.getByText('Outlet details saved')).toBeVisible();
+    await expect(page.getByText(updatedName, { exact: true })).toBeVisible();
+
+    await expect
+        .poll(async () => {
+            const response = await page.request.get(
+                'http://127.0.0.1:55320/__e2e/branches',
+            );
+            const currentBranches = await response.json();
+            return currentBranches.find(
+                (branch: { id: string; name: string }) =>
+                    branch.id === '00000000-0000-4000-8000-000000000101',
+            )?.name;
+        })
+        .toBe(updatedName);
+
+    await page.getByRole('button', { name: 'Archive', exact: true }).click();
+    await expect(
+        page.getByRole('heading', { name: `Archive ${updatedName}?` }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Archive outlet' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+});
+
 test('owner can configure referral terms while the independent rollout flag remains off', async ({
     page,
 }) => {

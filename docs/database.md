@@ -1,8 +1,9 @@
 # Database
 
-93 tables, 57 enums, 144 RLS policies, and 130 client-callable functions across
-61 version-controlled migrations in this checkout. These counts come from the
-local schema after `npm run db:reset`; nothing is created by hand in the dashboard.
+93 tables, 57 enums, 144 RLS policies, and 133 client-callable functions across
+63 version-controlled migrations in this checkout. These counts were checked
+against the local schema and migration directory; nothing is created by hand in
+the dashboard.
 
 ## Schemas
 
@@ -132,6 +133,7 @@ create unique index delivery_earnings_assignment_key
 | `20261023113000 idempotent_guest_cart_import` | Atomically moves a post-OTP browser cart into a customer cart with server-side repricing and retry safety |
 | `20261023114000 add_referral_reward_notification_event` | Adds a dedicated transactional referral-reward event |
 | `20261023114100 notify_referral_rewards` | Sends idempotent, profile-language push/in-app reward notifications through existing preference checks |
+| `20261023135427_settings_crud_audit_and_public_sync` | Audits trading-hour and holiday edits, adds guarded outlet/tax-category archival RPCs, and publishes customer settings change signals |
 
 The notification event enums are isolated from their use in later migrations
 because PostgreSQL refuses to *use* a new enum value in the same transaction

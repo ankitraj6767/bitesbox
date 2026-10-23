@@ -2,14 +2,16 @@ import type { Metadata } from 'next';
 import { activeBranchId, hasPermission, requirePermission } from '@/lib/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
-import { Card, CardContent, CardToolbar } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { ErrorState, InlineNotice } from '@/components/ui/states';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/overlays';
-import { Table, TableWrap, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { SettingsEditor, type SettingRow } from '@/features/settings/settings-editor';
 import { FeatureFlagList, type FeatureFlagRow } from '@/features/settings/feature-flag-list';
 import { DeliveryZoneManager } from '@/features/settings/delivery-zone-manager';
+import { BranchSettingsManager } from '@/features/settings/branch-settings-manager';
+import { BranchHoursManager } from '@/features/settings/branch-hours-manager';
+import { BranchHolidayManager } from '@/features/settings/branch-holiday-manager';
+import { TaxCategoryManager } from '@/features/settings/tax-category-manager';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { humanise } from '@/lib/utils';
 
@@ -24,47 +26,68 @@ export default async function SettingsPage() {
     const canEditSettings = hasPermission(session, PERMISSIONS.SETTINGS_UPDATE);
     const canEditFlags = hasPermission(session, PERMISSIONS.FEATURE_FLAG_UPDATE);
 
-    const [settingsResult, flagsResult, zonesResult, hoursResult, branchResult, taxResult] =
-        await Promise.all([
-            supabase
-                .from('settings')
-                .select('key, value, value_type, group:group, label, description, is_public')
-                .order('key'),
-            supabase
-                .from('feature_flags')
-                .select('key, label, description, is_enabled, rollout_percentage')
-                .order('key'),
-            supabase
-                .from('delivery_zones')
-                .select(
-                    `id, branch_id, name, description, kind, min_distance_km, max_distance_km, polygon, delivery_fee,
+    const [
+        settingsResult,
+        flagsResult,
+        zonesResult,
+        hoursResult,
+        holidaysResult,
+        branchResult,
+        taxResult,
+        otherBranchesResult,
+    ] = await Promise.all([
+        supabase
+            .from('settings')
+            .select('key, value, value_type, group:group, label, description, is_public')
+            .order('key'),
+        supabase.from('feature_flags').select('key, label, description, is_enabled, rollout_percentage').order('key'),
+        supabase
+            .from('delivery_zones')
+            .select(
+                `id, branch_id, name, description, kind, min_distance_km, max_distance_km, polygon, delivery_fee,
            min_order_amount, free_delivery_threshold, per_km_surcharge, surcharge_after_km,
            peak_surcharge, peak_starts_at, peak_ends_at, dynamic_surcharge, base_eta_minutes, extra_eta_minutes,
            cod_enabled, max_cod_amount, is_serviceable, is_active, priority`,
-                )
-                .is('deleted_at', null)
-                .eq('branch_id', branchId ?? '')
-                .order('priority'),
-            supabase
-                .from('branch_hours')
-                .select('day_of_week, opens_at, closes_at, day_part, is_closed, closes_next_day')
-                .order('day_of_week')
-                .order('opens_at'),
-            supabase
-                .from('branches')
-                .select(
-                    `id, code, name, legal_name, phone, whatsapp_phone, email, address_line1, address_line2,
-           city, state, postal_code, gstin, fssai_licence_no, fssai_valid_till, timezone,
-           service_mode, default_prep_minutes, rush_buffer_minutes, max_concurrent_orders`,
-                )
-                .eq('id', branchId ?? '')
-                .maybeSingle(),
-            supabase
-                .from('tax_categories')
-                .select('code, name, rate, cgst_rate, sgst_rate, hsn_sac_code, is_inclusive, is_default')
-                .is('deleted_at', null)
-                .order('code'),
-        ]);
+            )
+            .is('deleted_at', null)
+            .eq('branch_id', branchId ?? '')
+            .order('priority'),
+        supabase
+            .from('branch_hours')
+            .select('id, branch_id, day_of_week, opens_at, closes_at, day_part, is_closed, closes_next_day')
+            .eq('branch_id', branchId ?? '')
+            .order('day_of_week')
+            .order('opens_at'),
+        supabase
+            .from('branch_holidays')
+            .select('id, branch_id, holiday_on, label, is_closed, opens_at, closes_at')
+            .eq('branch_id', branchId ?? '')
+            .order('holiday_on'),
+        supabase
+            .from('branches')
+            .select(
+                `id, code, name, legal_name, phone, alternate_phone, whatsapp_phone, email, address_line1, address_line2, landmark,
+           city, state, postal_code, latitude, longitude, google_maps_url, gstin, fssai_licence_no, fssai_valid_till, timezone,
+           service_mode, default_prep_minutes, rush_buffer_minutes, max_concurrent_orders, is_active, is_default`,
+            )
+            .eq('id', branchId ?? '')
+            .maybeSingle(),
+        supabase
+            .from('tax_categories')
+            .select(
+                'id, code, name, description, rate, cgst_rate, sgst_rate, igst_rate, cess_rate, hsn_sac_code, is_inclusive, is_default, is_active',
+            )
+            .is('deleted_at', null)
+            .order('code'),
+        branchId
+            ? supabase
+                  .from('branches')
+                  .select('id', { count: 'exact', head: true })
+                  .neq('id', branchId)
+                  .eq('is_active', true)
+                  .is('deleted_at', null)
+            : Promise.resolve({ count: 0, data: null, error: null }),
+    ]);
 
     const branchPermissionResult = branchId
         ? await supabase.rpc('has_permission', {
@@ -94,18 +117,18 @@ export default async function SettingsPage() {
     const flags = (flagsResult.data ?? []) as unknown as FeatureFlagRow[];
     const zones = zonesResult.data ?? [];
     const hours = hoursResult.data ?? [];
+    const holidays = holidaysResult.data ?? [];
     const branch = branchResult.data;
     const taxes = taxResult.data ?? [];
+    const canArchiveBranch = !otherBranchesResult.error && (otherBranchesResult.count ?? 0) > 0;
 
     const byGroup = (group: string) => settings.filter((setting) => setting.group === group);
-
-    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
     return (
         <>
             <PageHeader
                 title="Settings"
-                description="Everything an operator can change without a deploy. Each change is versioned and audited."
+                description="Everything an operator can change without a deploy. Record-based settings can be edited or archived; singleton keys and feature flags are edited in place. Each change is audited."
             />
 
             {!canEditSettings ? (
@@ -180,59 +203,11 @@ export default async function SettingsPage() {
                     />
 
                     <Card>
-                        <CardToolbar
-                            title="Tax categories"
-                            description="GST rates applied to menu items. Restaurant supply is inclusive of tax."
+                        <TaxCategoryManager
+                            categories={taxes}
+                            canEdit={canEditSettings}
+                            loadError={Boolean(taxResult.error)}
                         />
-                        <CardContent className="p-0">
-                            <TableWrap className="rounded-none border-0">
-                                <Table>
-                                    <THead>
-                                        <TR className="hover:bg-transparent">
-                                            <TH>Code</TH>
-                                            <TH>Name</TH>
-                                            <TH numeric>Rate</TH>
-                                            <TH numeric>CGST</TH>
-                                            <TH numeric>SGST</TH>
-                                            <TH>HSN/SAC</TH>
-                                            <TH>Inclusive</TH>
-                                        </TR>
-                                    </THead>
-                                    <TBody>
-                                        {taxes.map((tax) => (
-                                            <TR key={tax.code}>
-                                                <TD className="font-mono text-[12.5px] font-semibold">
-                                                    {tax.code}
-                                                    {tax.is_default ? (
-                                                        <Badge tone="brand" className="ml-1.5 px-1.5 py-0">
-                                                            Default
-                                                        </Badge>
-                                                    ) : null}
-                                                </TD>
-                                                <TD className="text-[13px]">{tax.name}</TD>
-                                                <TD numeric className="text-[13px] font-semibold">
-                                                    {(Number(tax.rate) * 100).toFixed(2)}%
-                                                </TD>
-                                                <TD numeric className="text-[12.5px]">
-                                                    {(Number(tax.cgst_rate) * 100).toFixed(2)}%
-                                                </TD>
-                                                <TD numeric className="text-[12.5px]">
-                                                    {(Number(tax.sgst_rate) * 100).toFixed(2)}%
-                                                </TD>
-                                                <TD className="font-mono text-[12px] text-ink-muted">
-                                                    {tax.hsn_sac_code ?? '—'}
-                                                </TD>
-                                                <TD>
-                                                    <Badge tone={tax.is_inclusive ? 'positive' : 'neutral'}>
-                                                        {tax.is_inclusive ? 'Inclusive' : 'Added on top'}
-                                                    </Badge>
-                                                </TD>
-                                            </TR>
-                                        ))}
-                                    </TBody>
-                                </Table>
-                            </TableWrap>
-                        </CardContent>
                     </Card>
                 </TabsContent>
 
@@ -275,11 +250,20 @@ export default async function SettingsPage() {
                 </TabsContent>
 
                 <TabsContent value="branch" className="space-y-4">
-                    {branch ? (
+                    {branchResult.error ? (
                         <Card>
-                            <CardToolbar
-                                title={branch.name}
-                                description={`${branch.code} · ${branch.timezone}`}
+                            <ErrorState
+                                title="Could not load outlet settings"
+                                message="Refresh the page or select another outlet before editing branch details."
+                            />
+                        </Card>
+                    ) : branch ? (
+                        <Card>
+                            <BranchSettingsManager
+                                branch={branch}
+                                canManage={canManageBranch}
+                                canArchive={canArchiveBranch}
+                                archiveCheckFailed={Boolean(otherBranchesResult.error)}
                             />
                             <CardContent>
                                 <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
@@ -289,7 +273,13 @@ export default async function SettingsPage() {
                                     <Detail label="Email" value={branch.email} />
                                     <Detail
                                         label="Address"
-                                        value={[branch.address_line1, branch.address_line2, branch.city, branch.state, branch.postal_code]
+                                        value={[
+                                            branch.address_line1,
+                                            branch.address_line2,
+                                            branch.city,
+                                            branch.state,
+                                            branch.postal_code,
+                                        ]
                                             .filter(Boolean)
                                             .join(', ')}
                                     />
@@ -297,11 +287,18 @@ export default async function SettingsPage() {
                                     <Detail label="FSSAI licence" value={branch.fssai_licence_no} mono />
                                     <Detail label="FSSAI valid till" value={branch.fssai_valid_till} />
                                     <Detail label="Service mode" value={humanise(branch.service_mode)} />
-                                    <Detail label="Default prep time" value={`${branch.default_prep_minutes} minutes`} />
+                                    <Detail
+                                        label="Default prep time"
+                                        value={`${branch.default_prep_minutes} minutes`}
+                                    />
                                     <Detail label="Rush buffer" value={`${branch.rush_buffer_minutes} minutes`} />
                                     <Detail
                                         label="Max concurrent orders"
-                                        value={branch.max_concurrent_orders ? String(branch.max_concurrent_orders) : 'Unlimited'}
+                                        value={
+                                            branch.max_concurrent_orders
+                                                ? String(branch.max_concurrent_orders)
+                                                : 'Unlimited'
+                                        }
                                     />
                                 </dl>
 
@@ -312,42 +309,28 @@ export default async function SettingsPage() {
                                 ) : null}
                             </CardContent>
                         </Card>
-                    ) : null}
+                    ) : (
+                        <Card>
+                            <InlineNotice tone="info">
+                                Select an outlet to view and manage its branch settings.
+                            </InlineNotice>
+                        </Card>
+                    )}
 
                     <Card>
-                        <CardToolbar
-                            title="Trading hours"
-                            description="When the kitchen accepts orders. Holidays in branch_holidays override these."
+                        <BranchHoursManager
+                            hours={hours}
+                            canManage={canManageBranch}
+                            loadError={Boolean(hoursResult.error)}
                         />
-                        <CardContent className="p-0">
-                            <TableWrap className="rounded-none border-0">
-                                <Table>
-                                    <THead>
-                                        <TR className="hover:bg-transparent">
-                                            <TH>Day</TH>
-                                            <TH>Service</TH>
-                                            <TH>Opens</TH>
-                                            <TH>Closes</TH>
-                                        </TR>
-                                    </THead>
-                                    <TBody>
-                                        {hours.map((slot, index) => (
-                                            <TR key={`${slot.day_of_week}-${slot.day_part}-${index}`}>
-                                                <TD className="text-[13px] font-medium">{DAY_NAMES[slot.day_of_week]}</TD>
-                                                <TD>
-                                                    <Badge tone="neutral">{humanise(slot.day_part)}</Badge>
-                                                </TD>
-                                                <TD className="tnum text-[12.5px]">{slot.opens_at.slice(0, 5)}</TD>
-                                                <TD className="tnum text-[12.5px]">
-                                                    {slot.closes_at.slice(0, 5)}
-                                                    {slot.closes_next_day ? ' (next day)' : ''}
-                                                </TD>
-                                            </TR>
-                                        ))}
-                                    </TBody>
-                                </Table>
-                            </TableWrap>
-                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <BranchHolidayManager
+                            holidays={holidays}
+                            canManage={canManageBranch}
+                            loadError={Boolean(holidaysResult.error)}
+                        />
                     </Card>
                 </TabsContent>
             </Tabs>
@@ -355,15 +338,7 @@ export default async function SettingsPage() {
     );
 }
 
-function Detail({
-    label,
-    value,
-    mono = false,
-}: {
-    label: string;
-    value: string | null | undefined;
-    mono?: boolean;
-}) {
+function Detail({ label, value, mono = false }: { label: string; value: string | null | undefined; mono?: boolean }) {
     return (
         <div>
             <dt className="text-[11.5px] font-semibold tracking-wide text-ink-muted uppercase">{label}</dt>
