@@ -6960,9 +6960,9 @@ export type Database = {
         };
         Returns: Json;
       };
-      stop_my_delivery_location_sharing: { Args: never; Returns: Json };
       staff_directory: { Args: { p_branch_id?: string }; Returns: Json };
       start_preparing: { Args: { p_order_id: string }; Returns: Json };
+      stop_my_delivery_location_sharing: { Args: never; Returns: Json };
       submit_review: {
         Args: {
           p_comment?: string;
