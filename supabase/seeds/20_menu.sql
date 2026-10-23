@@ -786,10 +786,9 @@ select p.id, 'Breakfast service', 'BREAKFAST', '{0,1,2,3,4,5,6}', '08:00', '11:3
 from public.products p
 where p.slug in ('sattu-paratha','poori-sabzi');
 
--- Litti chokha is a Bihar staple — available all day.
-insert into public.product_schedules (product_id, label, day_part, days_of_week, starts_at, ends_at)
-select p.id, 'All day', 'ALL_DAY', '{0,1,2,3,4,5,6}', '08:00', '23:00'
-from public.products p where p.slug = 'litti-chokha';
+-- Litti chokha is available all day, so leave it unscheduled. A finite 08:00–23:00
+-- window looked like “all day” in the menu but made deterministic order seeds fail
+-- whenever CI reset the database outside that window.
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- PRODUCT IMAGES
