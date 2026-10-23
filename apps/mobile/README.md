@@ -4,7 +4,7 @@ The Flutter app serves customers, delivery partners, and kitchen staff in one
 application. The database remains authoritative for pricing, permissions, order
 transitions, delivery completion, and payment state.
 
-Current app version: **1.2.4 (build 17)**.
+Current app version: **1.2.5 (build 37)**.
 
 ## Requirements
 
@@ -55,7 +55,10 @@ server-only. See [environment variables](env/README.md) and
   assignment is accepted and the rider enables sharing. Denying GPS never blocks
   pickup, delivery, cash collection, or failure reporting.
 - **Kitchen:** staff sign-in, kitchen queue, accepting/rejecting orders, preparation
-  state, and availability controls. Privileged back-office administration and
+  state, availability controls, and issuing a rider-bound pickup code for a ready
+  delivery. Staff can copy the code or open a prefilled SMS to the assigned rider;
+  they confirm sending it in the messaging app. Reissuing invalidates the previous
+  code. Privileged back-office administration and
   staff MFA are handled by the Next.js admin application.
 
 Location sharing runs only for the server-confirmed current assignment. Android
@@ -114,5 +117,9 @@ separate.
 - **Delivery actions are unavailable:** GPS permission is not required for pickup
   or completion. Check assignment state, verification code/OTP, and the server
   error shown by the app.
+- **Share pickup code is missing:** the order must be a ready delivery with an
+  accepted or at-store rider assignment. The signed-in kitchen account also needs
+  `kitchen.operate` for that outlet, and migration
+  `20261023151817_kitchen_pickup_handoff_code.sql` must be applied to the backend.
 - **Crash reporting is absent:** verify the environment's Sentry DSN and release
   configuration. A missing DSN is supported and does not block ordering.

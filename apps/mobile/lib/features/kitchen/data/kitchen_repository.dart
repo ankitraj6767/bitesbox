@@ -80,6 +80,16 @@ class KitchenRepository {
     );
   }
 
+  /// Rotates the one-time pickup code for the current rider on a ready order.
+  /// The server returns plaintext only to this authorized kitchen request.
+  Future<PickupHandoffCode> issuePickupHandoffCode(String orderId) async {
+    final result = await _api.rpc<dynamic>(
+      'issue_pickup_handoff_code',
+      params: {'p_order_id': orderId},
+    );
+    return PickupHandoffCode.fromJson(Map<String, dynamic>.from(result as Map));
+  }
+
   /// Marks one dish out of stock or back on. [minutes] auto-restores it later,
   /// which is what the kitchen actually wants during a lunch rush.
   Future<void> setProductAvailability({

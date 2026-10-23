@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
@@ -241,6 +243,125 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
             reason: result.reason,
             note: result.note,
           ),
+    );
+  }
+
+  Future<void> _sharePickupCode() async {
+    final order = widget.order;
+    if (!order.canSharePickupCode) return;
+
+    setState(() => _busy = true);
+    try {
+      final handoff = await ref
+          .read(kitchenRepositoryProvider)
+          .issuePickupHandoffCode(order.id);
+      if (!mounted) return;
+      await _showPickupCode(order, handoff);
+    } catch (error) {
+      if (mounted) AppFeedback.showError(context, error);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _showPickupCode(KitchenOrder order, PickupHandoffCode handoff) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final brand = dialogContext.brand;
+        final phone = handoff.riderPhone?.trim();
+        final message =
+            'Bites Box pickup code for ${order.orderNumber}: ${handoff.code}. '
+            'Use it only to verify this order at pickup.';
+
+        return AlertDialog(
+          title: const Text('Pickup code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Share this code with ${handoff.riderName} so they can verify the parcel before leaving.',
+                style: const TextStyle(height: 1.4),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: brand.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(brand.radiusMd),
+                ),
+                child: SelectableText(
+                  handoff.code,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: brand.primary,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 9,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Valid for 6 hours. Generating a new code invalidates any earlier code.',
+                style: TextStyle(fontSize: 12.5, color: brand.inkMuted, height: 1.35),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: handoff.code));
+                if (dialogContext.mounted) {
+                  AppFeedback.showSuccess(dialogContext, 'Pickup code copied');
+                }
+              },
+              icon: const Icon(Icons.copy_rounded),
+              label: const Text('Copy code'),
+            ),
+            if (phone != null && phone.isNotEmpty)
+              FilledButton.icon(
+                onPressed: () async {
+                  final uri = Uri(
+                    scheme: 'sms',
+                    path: phone,
+                    queryParameters: {'body': message},
+                  );
+                  try {
+                    final opened = await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (opened) {
+                      if (dialogContext.mounted) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                      return;
+                    }
+                  } catch (_) {
+                    // Keep the handoff available when a device has no SMS app.
+                  }
+
+                  await Clipboard.setData(ClipboardData(text: message));
+                  if (!mounted || !dialogContext.mounted) return;
+                  Navigator.of(dialogContext).pop();
+                  AppFeedback.showSuccess(
+                    context,
+                    'Message copied. Paste it into a message to the rider.',
+                  );
+                },
+                icon: const Icon(Icons.sms_outlined),
+                label: const Text('Share with rider'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Done'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -490,28 +611,60 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: order.stage == KitchenStage.ready
-                ? Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: brand.success.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(brand.radiusMd),
-                    ),
-                    child: Text(
-                      order.isPickup
-                          ? 'Waiting at the counter'
-                          : (order.rider?.isWaiting == true
-                              ? '${order.rider!.name} is waiting for handoff'
-                              : (order.rider == null
-                                  ? 'Waiting for a delivery partner'
-                                  : 'Rider assigned: ${order.rider!.name}')),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: brand.success,
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: brand.success.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(brand.radiusMd),
+                        ),
+                        child: Text(
+                          order.isPickup
+                              ? 'Waiting at the counter'
+                              : (order.rider?.isWaiting == true
+                                  ? '${order.rider!.name} is waiting for handoff'
+                                  : (order.rider == null
+                                      ? 'Waiting for a delivery partner'
+                                      : 'Rider assigned: ${order.rider!.name}')),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: brand.success,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (order.canSharePickupCode) ...[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: _busy ? null : _sharePickupCode,
+                            icon: _busy
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.share_rounded),
+                            label: Text(
+                              _busy ? 'Preparing code…' : 'Share pickup code',
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: brand.primary,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size.fromHeight(48),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   )
                 : Row(
                     children: [

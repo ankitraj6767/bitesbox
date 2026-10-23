@@ -94,6 +94,22 @@ keys are application contracts: edit their values or rollout percentages, but
 do not delete the keys. Every such change is audited. Do not mutate these tables
 directly in SQL.
 
+## Pickup-code handoff
+
+When a delivery order is ready and has an active assigned rider, use **Share
+pickup code** at the bottom of its Ready card in the kitchen app. The server
+issues a fresh code for that rider assignment and invalidates any earlier code.
+**Copy code** copies only the code; **Share with rider** opens a prefilled SMS to
+the assigned rider, and kitchen staff still confirms sending it in the messaging
+app. The plaintext code is returned only for this authorized request and is not
+written to the audit trail.
+
+After a rider is reassigned, issue a new code from the Ready card before pickup;
+the previous assignment's code cannot verify for the new rider. If the action is
+missing, confirm the order is a ready delivery, the rider is accepted or waiting
+at the outlet, and the signed-in staff member has `kitchen.operate` for that
+outlet. A code cannot be issued when there is no active assignment.
+
 ## Stale rider location
 
 `DELIVERY_LOCATION_STALE` means an active rider-enabled assignment has no accepted

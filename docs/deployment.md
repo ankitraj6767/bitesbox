@@ -49,7 +49,7 @@ flutter run --dart-define-from-file=env/local.json
 cd apps/storefront && npm run dev          # http://localhost:3001
 ```
 
-`db:reset` applies all 63 migrations to an empty database and then the seven seed
+`db:reset` applies all 65 migrations to an empty database and then the seven seed
 files in order. It is the only supported way to get a working local database —
 there is no snapshot to restore.
 

@@ -78,11 +78,35 @@ class KitchenRider {
 
   bool get isWaiting => arrivedStoreAt != null && assignmentStatus == 'AT_STORE';
 
+  bool get isActiveForHandoff =>
+      assignmentStatus == 'ACCEPTED' || assignmentStatus == 'AT_STORE';
+
   factory KitchenRider.fromJson(Map<String, dynamic> json) => KitchenRider(
         name: asString(json['name']),
         phone: asStringOrNull(json['phone']),
         assignmentStatus: asStringOrNull(json['assignment_status']),
         arrivedStoreAt: asDate(json['arrived_store_at']),
+      );
+}
+
+class PickupHandoffCode {
+  const PickupHandoffCode({
+    required this.code,
+    required this.riderName,
+    this.riderPhone,
+    this.expiresAt,
+  });
+
+  final String code;
+  final String riderName;
+  final String? riderPhone;
+  final DateTime? expiresAt;
+
+  factory PickupHandoffCode.fromJson(Map<String, dynamic> json) => PickupHandoffCode(
+        code: asString(json['code']),
+        riderName: asString(json['rider_name']),
+        riderPhone: asStringOrNull(json['rider_phone']),
+        expiresAt: asDate(json['expires_at']),
       );
 }
 
@@ -151,6 +175,8 @@ class KitchenOrder {
   bool get isScheduled => timing == 'SCHEDULED';
   bool get isCod => paymentMode == 'COD' || paymentMode == 'SPLIT_WALLET_COD';
   bool get needsAttention => isDelayed || isLateInStage;
+  bool get canSharePickupCode =>
+      !isPickup && stage == KitchenStage.ready && rider?.isActiveForHandoff == true;
 
   bool get hasSpecialInstructions =>
       (customerNote ?? '').trim().isNotEmpty || items.any((item) => item.hasInstructions);

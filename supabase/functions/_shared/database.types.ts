@@ -6988,6 +6988,10 @@ export type Database = {
         Args: { p_branch_id: string; p_idempotency_key: string; p_lines: Json };
         Returns: Json;
       };
+      issue_pickup_handoff_code: {
+        Args: { p_order_id: string };
+        Returns: Json;
+      };
       kitchen_availability: { Args: { p_branch_id?: string }; Returns: Json };
       kitchen_queue: { Args: { p_branch_id?: string }; Returns: Json };
       launch_campaign: { Args: { p_campaign_id: string }; Returns: Json };
