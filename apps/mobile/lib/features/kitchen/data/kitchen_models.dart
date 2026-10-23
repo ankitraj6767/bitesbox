@@ -161,6 +161,11 @@ class KitchenOrder {
         'STORE_ACCEPTED' => KitchenStage.accepted,
         'PREPARING' => KitchenStage.preparing,
         'READY_FOR_PICKUP' => KitchenStage.ready,
+        // Delivery assignment can move the order's top-level status before
+        // kitchen work is finished. Keep the kitchen stage anchored to readiness.
+        'RIDER_ASSIGNED' || 'RIDER_ARRIVED_STORE' => readyAt != null
+            ? KitchenStage.ready
+            : KitchenStage.preparing,
         _ => KitchenStage.newOrders,
       };
 

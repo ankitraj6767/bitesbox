@@ -167,6 +167,62 @@ select tap.as_user(tap.seed('kitchen'));
 select tap.no_throw('select public.kitchen_queue()', 'kitchen_queue');
 select tap.no_throw('select public.kitchen_availability()', 'kitchen_availability');
 
+-- Delivery status changes must not remove a ticket while kitchen work remains.
+select tap.remember('kitchen_preparing_order', tap.seed_order(4)::text);
+select tap.remember('kitchen_ready_order', tap.seed_order(5)::text);
+select tap.reset();
+
+select tap.as_user(tap.seed('operations'));
+select tap.no_throw(
+  format('select public.assign_rider(%L, %L)',
+         tap.recall_uuid('kitchen_preparing_order'), tap.seed('dp_rahul')),
+  'an accepted rider assignment can start before the kitchen finishes'
+);
+select tap.no_throw(
+  format('select public.assign_rider(%L, %L)',
+         tap.recall_uuid('kitchen_ready_order'), tap.seed('dp_amit')),
+  'a ready order can be assigned for a rider handoff'
+);
+select tap.remember('kitchen_ready_assignment', da.id::text)
+from public.delivery_assignments da
+where da.order_id = tap.recall_uuid('kitchen_ready_order')
+  and da.status = 'ACCEPTED';
+select tap.reset();
+
+select tap.as_user(tap.seed('rider_amit'));
+select tap.no_throw(
+  format('select public.rider_arrived_at_store(%L)', tap.recall_uuid('kitchen_ready_assignment')),
+  'rider arrival does not remove a ready order from kitchen handoff'
+);
+select tap.reset();
+
+select tap.as_user(tap.seed('kitchen'));
+select tap.ok(
+  exists (
+    select 1 from jsonb_array_elements(public.kitchen_queue() -> 'orders') as q
+    where q ->> 'id' = tap.recall('kitchen_preparing_order')
+      and q ->> 'status' = 'RIDER_ASSIGNED'
+  ),
+  'an order assigned before readiness remains on the kitchen board'
+);
+select tap.ok(
+  (public.kitchen_queue() -> 'counts' ->> 'preparing')::int >= 1,
+  'assigned but unfinished orders count in Preparing'
+);
+select tap.ok(
+  exists (
+    select 1 from jsonb_array_elements(public.kitchen_queue() -> 'orders') as q
+    where q ->> 'id' = tap.recall('kitchen_ready_order')
+      and q ->> 'status' = 'RIDER_ARRIVED_STORE'
+      and q -> 'rider' ->> 'assignment_status' = 'AT_STORE'
+  ),
+  'an arrived rider remains visible on the ready handoff ticket'
+);
+select tap.ok(
+  (public.kitchen_queue() -> 'counts' ->> 'ready')::int >= 1,
+  'rider-arrived ready orders count in Ready'
+);
+
 select tap.reset();
 
 -- ─── Rider ──────────────────────────────────────────────────────────────────

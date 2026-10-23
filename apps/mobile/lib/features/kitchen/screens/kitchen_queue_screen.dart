@@ -500,9 +500,11 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                     child: Text(
                       order.isPickup
                           ? 'Waiting at the counter'
-                          : (order.rider == null
-                              ? 'Waiting for a delivery partner'
-                              : 'With ${order.rider!.name}'),
+                          : (order.rider?.isWaiting == true
+                              ? '${order.rider!.name} is waiting for handoff'
+                              : (order.rider == null
+                                  ? 'Waiting for a delivery partner'
+                                  : 'Rider assigned: ${order.rider!.name}')),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
