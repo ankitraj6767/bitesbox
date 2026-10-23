@@ -1,9 +1,11 @@
 # Release status
 
-Last updated: 23 October 2026. This source release adds complete edit/archive
-controls for operator-managed settings, with local database and application
-verification. No production website or mobile build was published, and no
-hosted Supabase migration was applied.
+Last updated: 23 October 2026. This source release includes the delivery-zone,
+kitchen handoff, and settings fixes, and bumps the workspace/mobile source to
+1.2.4 / 1.2.4+17. The signed Android update 1.2.4+36 was built and published by
+[GitHub Actions run 39974820119](https://github.com/ankitraj6767/bitesbox/actions/runs/39974820119).
+No hosted Supabase migration was applied. The admin deployment workflow was not
+dispatched; any separate Vercel Git integration deployment is unverified.
 
 ## Settings and outlet controls
 
@@ -40,15 +42,17 @@ history through `20261023114100`; that older observation has not been refreshed
 for this release, so migrations after it must be checked before any hosted
 deployment.
 
-Supabase deployment and production admin/mobile release workflows remain
-manual. This source-only change does not deploy the admin site, apply migrations,
-or publish an APK. No production credentials were used for local build checks.
+Supabase database migration pushes and admin deployments remain manual. The
+Android release workflow was manually dispatched for this version and published
+the signed split APKs and update manifest. No local APK build or hosted database
+migration was performed. The admin deployment workflow was not dispatched.
 
 ## Version
 
-Workspace, admin, storefront, and shared-types packages: **1.2.2**. Flutter
-source version: **1.2.2+15**. This is a source version bump, not a signed mobile
-release. No APK was built locally and no signed iOS release was run.
+Workspace, admin, storefront, and shared-types packages: **1.2.4**. Flutter
+source version: **1.2.4+17**. Signed Android update published: **1.2.4+36**;
+the build and publish ran in GitHub Actions, not locally. No signed iOS release
+was run.
 
 ## Verification record
 
@@ -65,7 +69,8 @@ Local results on 23 October 2026:
 | Admin build | Passed | `npm run admin:build` with a local placeholder Supabase URL/key |
 | Edge Function checks | Passed | `npm run fn:check`, `npm run fn:lint`; Deno lint checked 29 files and Deno format checked 30 |
 | Flutter analysis and tests | Passed | `npm run mobile:analyze`, `npm run mobile:test`; 144 tests |
-| GitHub workflow for this source-only change | Not run locally | Check the repository Actions page after pushing; no GitHub status is claimed here |
+| Android release workflow | Passed | [Run 39974820119](https://github.com/ankitraj6767/bitesbox/actions/runs/39974820119); built split APKs and published manifest for 1.2.4+36 |
+| Admin deployment | Not dispatched | Separate Vercel Git integration status is unverified |
 | Hosted migration | Unverified | No hosted inspection or migration write was performed for this release |
 | Device/store behavior | Not verified | No physical device or signed store build was run |
 
