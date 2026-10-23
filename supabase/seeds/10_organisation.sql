@@ -138,7 +138,7 @@ insert into public.settings (key, value, value_type, "group", label, description
   ('brand.color_primary_dark', '"#E86C0A"', 'string', 'branding', 'Primary dark', null, true),
   ('brand.color_secondary', '"#3D4152"', 'string', 'branding', 'Secondary colour', 'Deep slate for strong contrast.', true),
   ('brand.color_accent', '"#F7A552"', 'string', 'branding', 'Accent colour', 'Warm amber highlight.', true),
-  ('brand.color_background', '"#F3F3F5"', 'string', 'branding', 'Background', null, true),
+  ('brand.color_background', '"#FFFFFF"', 'string', 'branding', 'Background', null, true),
   ('brand.color_surface', '"#FFFFFF"', 'string', 'branding', 'Surface', null, true),
   ('brand.color_success', '"#1BA672"', 'string', 'branding', 'Success', null, true),
   ('brand.color_warning', '"#CF8700"', 'string', 'branding', 'Warning', null, true),

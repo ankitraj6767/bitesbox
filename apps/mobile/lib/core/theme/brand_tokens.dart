@@ -15,7 +15,7 @@ class BrandTokens {
     this.primaryDark = const Color(0xFFE86C0A),
     this.secondary = const Color(0xFF3D4152),
     this.accent = const Color(0xFFF7A552),
-    this.canvas = const Color(0xFFF3F3F5),
+    this.canvas = Colors.white,
     this.surface = Colors.white,
     this.surfaceMuted = const Color(0xFFF7F7F8),
     this.hairline = const Color(0xFFE9E9EB),

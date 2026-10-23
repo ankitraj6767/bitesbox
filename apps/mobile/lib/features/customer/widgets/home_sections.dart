@@ -128,10 +128,9 @@ class _BannerCarousel extends StatefulWidget {
 }
 
 class _BannerCarouselState extends State<_BannerCarousel> {
-  // Leave equal breathing room on both sides of every banner. A full-width
-  // page with asymmetric child padding made the right edge look clipped on
-  // phones and tablets with wider viewports.
-  final _controller = PageController(viewportFraction: 0.94);
+  // Keep generous outer margins while giving each page the full width of its
+  // rail, so the previous and next banners never peek into the current slide.
+  final _controller = PageController(viewportFraction: 1.0);
   int _page = 0;
 
   @override
@@ -149,87 +148,92 @@ class _BannerCarouselState extends State<_BannerCarousel> {
     return Column(
       children: [
         const SizedBox(height: 14),
-        SizedBox(
-          height: 152,
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: banners.length,
-            padEnds: true,
-            onPageChanged: (page) => setState(() => _page = page),
-            itemBuilder: (context, index) {
-              final banner = banners[index];
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SizedBox(
+            height: 152,
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: banners.length,
+              padEnds: false,
+              onPageChanged: (page) => setState(() => _page = page),
+              itemBuilder: (context, index) {
+                final banner = banners[index];
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: InkWell(
-                  onTap: () => _openBanner(context, banner),
-                  borderRadius: BorderRadius.circular(brand.radiusLg),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      FoodImage(
-                        path: banner.imagePathWide ?? banner.imagePath,
-                        radius: brand.radiusLg,
-                        placeholderAsset: FoodImage.assetForBanner(
-                          title: banner.title,
-                          path: banner.imagePath,
-                        ),
-                      ),
-                      if ((banner.title ?? '').isNotEmpty)
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(brand.radiusLg),
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomLeft,
-                              end: Alignment.topRight,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.62),
-                                Colors.black.withValues(alpha: 0.05),
-                              ],
-                            ),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: InkWell(
+                    onTap: () => _openBanner(context, banner),
+                    borderRadius: BorderRadius.circular(brand.radiusLg),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        FoodImage(
+                          path: banner.imagePathWide ?? banner.imagePath,
+                          radius: brand.radiusLg,
+                          placeholderAsset: FoodImage.assetForBanner(
+                            title: banner.title,
+                            path: banner.imagePath,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if ((banner.badgeText ?? '').isNotEmpty)
-                                  AppPill(
-                                    label: banner.badgeText!,
-                                    dense: true,
-                                    background: brand.accent,
-                                    foreground: Colors.black,
-                                  ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  banner.title!,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.4,
-                                  ),
-                                ),
-                                if ((banner.subtitle ?? '').isNotEmpty)
+                        ),
+                        if ((banner.title ?? '').isNotEmpty)
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(
+                                brand.radiusLg,
+                              ),
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomLeft,
+                                end: Alignment.topRight,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.62),
+                                  Colors.black.withValues(alpha: 0.05),
+                                ],
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if ((banner.badgeText ?? '').isNotEmpty)
+                                    AppPill(
+                                      label: banner.badgeText!,
+                                      dense: true,
+                                      background: brand.accent,
+                                      foreground: Colors.black,
+                                    ),
+                                  const SizedBox(height: 6),
                                   Text(
-                                    banner.subtitle!,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.92,
-                                      ),
-                                      fontSize: 13,
+                                    banner.title!,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.4,
                                     ),
                                   ),
-                              ],
+                                  if ((banner.subtitle ?? '').isNotEmpty)
+                                    Text(
+                                      banner.subtitle!,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.92,
+                                        ),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
         if (banners.length > 1) ...[

@@ -151,7 +151,7 @@ abstract final class AppTheme {
     final base = customer(brand);
 
     return base.copyWith(
-      scaffoldBackgroundColor: const Color(0xFFF4F5F7),
+      scaffoldBackgroundColor: brand.canvas,
       textTheme: base.textTheme.apply(fontSizeFactor: 1.08),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
