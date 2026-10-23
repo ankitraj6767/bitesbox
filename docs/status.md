@@ -2,12 +2,12 @@
 
 Last updated: 23 October 2026. This source release includes the delivery-zone,
 kitchen handoff, and settings fixes, plus rider-bound pickup-code sharing. It
-bumps workspace/mobile source to **1.2.5 / 1.2.5+37**. The latest recorded signed
-Android update remains **1.2.4+36**, built and published by [GitHub Actions run
-39974820119](https://github.com/ankitraj6767/bitesbox/actions/runs/39974820119);
-the 1.2.5 source has not been published as an Android update. The new pickup-code
-migration has not been applied to hosted Supabase. The admin deployment workflow
-was not dispatched; any separate Vercel Git integration deployment is unverified.
+bumps workspace/mobile source to **1.2.5 / 1.2.5+37**. Signed Android update
+**1.2.5+57** was built and published by [GitHub Actions run
+39981155832](https://github.com/ankitraj6767/bitesbox/actions/runs/39981155832).
+The pickup-code migration is present in hosted migration history through
+`20261023151817`; the admin deployment workflow was not dispatched and any
+separate Vercel Git integration deployment is unverified.
 
 ## Settings and outlet controls
 
@@ -39,23 +39,21 @@ This checkout contains **65 migration files**. Migration
 `20261023135427_settings_crud_audit_and_public_sync.sql` was applied to the
 local Supabase stack and passed its SQL/RLS suite. The new
 `20261023151817_kitchen_pickup_handoff_code.sql` was applied to the local stack
-and passed `npm run db:lint` with no error-level findings. No hosted migration
-was pushed; hosted state is **unverified**. The last recorded read-only hosted
-check before the previous source release reported history through
-`20261023114100`; that older observation has not been refreshed. Check hosted
-migration history and apply the pending migration before releasing a mobile
-client that calls its RPC.
+and passed `npm run db:lint` with no error-level findings. A read-only hosted
+query confirmed that this migration is also recorded as applied in
+`supabase_migrations.schema_migrations` for the `bitesbox` project. No hosted
+migration write was performed in this release.
 
-Supabase migration pushes, admin deployments, and Android releases remain manual.
-The Android release workflow has not been dispatched for 1.2.5+37, and no local
-APK was built. The new migration was applied only to the local Supabase stack;
-no hosted database migration or admin deployment was performed.
+Mobile source changes pushed to `main` now trigger the signed Android release
+workflow automatically; manual dispatch from `main` remains available. Supabase
+migration pushes and admin deployments remain separately gated. No local APK
+was built.
 
 ## Version
 
 Workspace, admin, storefront, and shared-types packages: **1.2.5**. Flutter
 source version: **1.2.5+37**. Latest signed Android update published:
-**1.2.4+36**. No signed iOS release was run.
+**1.2.5+57**. No signed iOS release was run.
 
 ## Verification record
 
@@ -72,10 +70,11 @@ Previously recorded local results on 23 October 2026 (before pickup-code sharing
 | Admin build | Passed | `npm run admin:build` with a local placeholder Supabase URL/key |
 | Edge Function checks | Passed | `npm run fn:check`, `npm run fn:lint`; Deno lint checked 29 files and Deno format checked 30 |
 | Flutter analysis and tests | Passed | `npm run mobile:analyze`, `npm run mobile:test`; 144 tests |
-| Android release workflow | Passed | [Run 39974820119](https://github.com/ankitraj6767/bitesbox/actions/runs/39974820119); built split APKs and published manifest for 1.2.4+36 |
-| Pickup-code sharing change | Passed in CI | [Run 39978939242](https://github.com/ankitraj6767/bitesbox/actions/runs/39978939242): database migration reset, SQL/RLS suite, generated-type check, Flutter analysis/tests, and CI debug APK all passed. Local Flutter analysis and database lint also passed. No signed Android release or hosted migration was run. |
+| Android release workflow | Passed | [Run 39981155832](https://github.com/ankitraj6767/bitesbox/actions/runs/39981155832); signed split APKs built and published as 1.2.5+57; public manifest and all ABI download links verified |
+| Automatic Android release policy | Implemented | Mobile changes on `main` now trigger `.github/workflows/android-auto-release.yml`; it reruns Flutter analysis/tests and publishes only after they pass. |
+| Pickup-code sharing change | Passed in CI | [Run 39978939242](https://github.com/ankitraj6767/bitesbox/actions/runs/39978939242): database migration reset, SQL/RLS suite, generated-type check, Flutter analysis/tests, and CI debug APK all passed. Local Flutter analysis and database lint also passed. Hosted migration history was separately verified read-only through `20261023151817`. |
 | Admin deployment | Not dispatched | Separate Vercel Git integration status is unverified |
-| Hosted migration | Unverified | No hosted inspection or migration write was performed for this release |
+| Hosted migration | Verified applied | Read-only query of `supabase_migrations.schema_migrations` shows `20261023151817_kitchen_pickup_handoff_code`; no hosted migration write was performed in this release |
 | Device/store behavior | Not verified | No physical device or signed store build was run |
 
 See [testing.md](testing.md), [deployment.md](deployment.md), and

@@ -1,10 +1,12 @@
 # Android auto-updates
 
-Bites Box now follows the LedgerPro release pattern:
+Bites Box publishes direct-distributed Android updates automatically when mobile
+app source changes reach `main`. A manual workflow dispatch remains available
+for an intentional republish.
 
-1. An operator explicitly dispatches `.github/workflows/android-auto-release.yml`
-   after reviewing the source version and release notes. Pushing to `main` does not
-   publish an update.
+1. A push to `main` that changes `apps/mobile/**` starts
+   `.github/workflows/android-auto-release.yml`; it can also be dispatched
+   manually from `main` with release notes.
 2. CI runs Flutter analysis and tests.
 3. The workflow takes the release name from `apps/mobile/pubspec.yaml` and
    creates a monotonically increasing Android build number by adding the
@@ -38,9 +40,16 @@ customers. If the installed APK was signed with a different key, Android will
 reject the update; distribute one correctly signed baseline APK once, then all
 later releases can update in place.
 
-For each release, update the `version:` value in `apps/mobile/pubspec.yaml`
-(for example, from `1.2.3+10` to `1.2.4+11`), push the source change to `main`,
-then explicitly dispatch the release workflow. No local APK build is needed.
+For a normal mobile release, update the `version:` value in
+`apps/mobile/pubspec.yaml` when the product version changes, then push the app
+change to `main`. GitHub Actions builds and publishes the update; no local APK
+build or manual dispatch is needed. The run number keeps Android build numbers
+increasing even when a product change does not require a version-name bump.
+
+The app checks the published manifest on launch and displays an update prompt.
+The workflow does not silently install APKs: users must tap **Update now** and
+confirm Android's system installer. The automatic step is the build and
+publication of the update.
 
 The Supabase `app-releases` bucket is public-read but write-only from CI using
 the service role. The service role is never included in the APK. Split APKs are

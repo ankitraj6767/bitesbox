@@ -259,11 +259,12 @@ prefix is what puts a value in the browser bundle.
 a decision, not a consequence of merging.
 
 For direct-distributed Android builds, `.github/workflows/android-auto-release.yml`
-is a manually dispatched release channel. A source push does not publish APKs or
-change the hosted manifest. When explicitly dispatched, it builds ABI-split APKs,
+automatically builds and publishes ABI-split APKs when `apps/mobile/**` changes
+reach `main`; manual dispatch from `main` remains available. The workflow
 publishes a versioned manifest to the public `app-releases` Supabase bucket, and
-the installed app checks that manifest on launch. See
-`docs/android-auto-updates.md` for the required signing and service-role secrets.
+the installed app checks that manifest on launch. Android still requires the
+user to approve installation. See `docs/android-auto-updates.md` for required
+signing and service-role secrets.
 
 Inputs: `target` (staging / production) and `artefact` (appbundle / apk / both).
 
