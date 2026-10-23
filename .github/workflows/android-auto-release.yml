@@ -30,6 +30,9 @@ permissions:
 jobs:
   release:
     name: Build and publish Android update
+    # A source version bump must not publish APKs or mutate the hosted manifest.
+    # Those side effects require an explicit workflow dispatch.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

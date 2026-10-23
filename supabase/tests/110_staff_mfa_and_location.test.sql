@@ -5,6 +5,17 @@ select tap.suite('Staff MFA and signed assurance');
 select tap.reset();
 
 select tap.eq(
+  has_schema_privilege('anon', 'app', 'USAGE'),
+  true,
+  'guest RLS policies can resolve private app helpers'
+);
+select tap.eq(
+  has_schema_privilege('authenticated', 'app', 'USAGE'),
+  true,
+  'signed-in RLS policies can resolve private app helpers'
+);
+
+select tap.eq(
   (select column_default from information_schema.columns
     where table_schema = 'public' and table_name = 'profiles' and column_name = 'marketing_opt_in'),
   'false',
@@ -32,6 +43,11 @@ select tap.no_throw(
 select tap.reset();
 
 select tap.as_user_aal(tap.seed('owner'), 'aal1');
+select tap.eq(
+  public.has_permission('branch.manage', '11111111-1111-1111-1111-111111111111'),
+  false,
+  'an owner at AAL1 still needs MFA before changing delivery zones'
+);
 select tap.eq(public.has_permission('refund.approve'), false, 'AAL1 owner is denied refund approval');
 select tap.eq(public.has_permission('payment.reconcile'), false, 'AAL1 owner is denied payment reconciliation');
 select tap.eq(public.has_permission('role.assign'), false, 'AAL1 owner is denied role changes');
@@ -52,6 +68,25 @@ select tap.throws(
   'select public.launch_campaign(''00000000-0000-4000-8000-000000000000'')',
   'PERMISSION_DENIED',
   'campaign RPC guard rejects AAL1'
+);
+select tap.reset();
+
+select tap.as_user(tap.seed('owner'));
+select tap.no_throw(
+  'update public.delivery_zones
+   set dynamic_surcharge = 23
+   where branch_id = ''11111111-1111-1111-1111-111111111111''
+     and name = ''Zone A — Bakhtiyarpur Town''',
+  'an AAL2 owner can update delivery zones through the RLS policy'
+);
+select tap.eq(
+  tap.visible_count(
+    'select 1 from public.delivery_zones
+     where branch_id = ''11111111-1111-1111-1111-111111111111''
+       and name = ''Zone A — Bakhtiyarpur Town'' and dynamic_surcharge = 23'
+  ),
+  1::bigint,
+  'the owner zone update is applied'
 );
 select tap.reset();
 

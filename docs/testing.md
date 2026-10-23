@@ -13,8 +13,8 @@ Unit-testing a Dart function that formats a duration is cheap and worth having;
 it is not where the risk lives.
 
 ```
-supabase/tests/      12 suites · 428 assertion calls in source   ← the security boundary
-apps/admin/           7 unit files · 72 tests; 10 deterministic Playwright tests
+supabase/tests/      12 suites · 433 assertion calls in source   ← the security boundary
+apps/admin/           9 unit files · 76 tests; 10 deterministic Playwright tests
 apps/storefront/      1 unit file · 4 tests; deterministic customer journeys
 apps/mobile/test/     16 files · see final run record below
 supabase/functions/   Deno checks · lint · fmt · logger/provider contracts
@@ -29,7 +29,7 @@ schema                db-lint.sh — fails on error-level findings
 npm run db:test                  # same thing
 ```
 
-The 428 SQL assertion calls are counted from the checked-in SQL test files. The
+The 433 SQL assertion calls are counted from the checked-in SQL test files. The
 full suite passed against the local Supabase/Postgres stack on 23 October 2026;
 this is local verification only and says nothing about a hosted project's schema.
 No hosted migration was pushed. See [status.md](status.md) for release state.
@@ -46,7 +46,7 @@ No hosted migration was pushed. See [status.md](status.md) for release state.
 | `080_campaigns_and_reviews` | 33 | Audience resolution, opt-out honouring, review moderation |
 | `090_read_surfaces` | 65 | Every client-callable read RPC actually executes, as a role allowed to call it |
 | `100_group_orders` | 10 | Invite privacy, membership checks, host authority, server-validated merge and participant-cart clearing |
-| `110_staff_mfa_and_location` | 23 | Signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
+| `110_staff_mfa_and_location` | 28 | Private-schema helper access, owner zone updates, signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
 | `120_customer_growth_localization_outlets` | 37 | Two active outlets, hidden-branch exclusion, Hindi search, favorites ownership/availability, referral rollout and reward idempotency, localized notification/channel preferences, partial-refund wallet preservation, guest-cart import retries, analytics permissions |
 
 ### Why 090 exists
@@ -176,8 +176,8 @@ proves that pickup is what issues it.
 npm run test --workspace=@bitesbox/admin
 ```
 
-Vitest with jsdom. The suite contains **7 files and 72 tests**;
-`npm run test --workspace=@bitesbox/admin` passed all 72 on 23 October 2026.
+Vitest with jsdom. The suite contains **9 files and 76 tests**;
+`npm run test --workspace=@bitesbox/admin` passed all 76 on 23 October 2026.
 
 | File | Tests | Covers |
 | --- | --- | --- |
@@ -188,6 +188,8 @@ Vitest with jsdom. The suite contains **7 files and 72 tests**;
 | `src/lib/mfa-policy.test.ts` | 3 | Back-office AAL2 routing, customer exemption, safe next path |
 | `src/lib/telemetry/scrub.test.ts` | 1 | PII, credentials, request content, and image redaction |
 | `src/features/settings/delivery-zone-schema.test.ts` | 5 | Radius/polygon bounds, valid coordinate pairs, dynamic surcharge inputs, and time-window validation |
+| `src/features/settings/delivery-zone-errors.test.ts` | 2 | Stable delivery-zone error copy, including database authorization failures |
+| `src/lib/vercel-ignore-deploy.test.ts` | 2 | Source-only deployment marker skips Vercel; normal commits continue to deploy |
 
 `toCsv` and `csvEscape` are tested because CSV export is where a comma in a
 customer's address quietly corrupts a finance report.
@@ -208,8 +210,9 @@ Auth/REST fake and covers valid and invalid staff login, refund approval, missin
 refund permission, the AAL1 challenge gate, session-scoped branch switching,
 owner referral-term configuration while the feature rollout flag stays off,
 support-ticket detail with the refund FK explicitly selected, and branch-scoped
-delivery-zone create/edit/status/archive operations. The current suite contains
-nine browser tests, uses no hosted account, and does not call the Razorpay gateway.
+delivery-zone create/edit/status/archive operations, including the owner flow. The
+current suite contains ten browser tests, uses no hosted account, and does not call
+the Razorpay gateway.
 
 ### Lint
 

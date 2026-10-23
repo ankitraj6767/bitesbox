@@ -9,6 +9,7 @@ import {
   deliveryZoneIdSchema,
   deliveryZoneStatusSchema,
 } from "./delivery-zone-schema";
+import { messageForDeliveryZoneDatabaseError } from "./delivery-zone-errors";
 
 export type DeliveryZoneActionResult =
   | { ok: true; id: string }
@@ -60,7 +61,10 @@ export async function saveDeliveryZone(
         .single();
 
   if (mutation.error)
-    return { ok: false, message: messageForDatabaseError(mutation.error.code) };
+    return {
+      ok: false,
+      message: messageForDeliveryZoneDatabaseError(mutation.error.code),
+    };
   if (!mutation.data) {
     return {
       ok: false,
@@ -102,7 +106,11 @@ export async function updateDeliveryZoneStatus(
     .select("id")
     .maybeSingle();
 
-  if (error) return { ok: false, message: messageForDatabaseError(error.code) };
+  if (error)
+    return {
+      ok: false,
+      message: messageForDeliveryZoneDatabaseError(error.code),
+    };
   if (!data)
     return {
       ok: false,
@@ -144,7 +152,11 @@ export async function deleteDeliveryZone(
     .select("id")
     .maybeSingle();
 
-  if (error) return { ok: false, message: messageForDatabaseError(error.code) };
+  if (error)
+    return {
+      ok: false,
+      message: messageForDeliveryZoneDatabaseError(error.code),
+    };
   if (!data)
     return {
       ok: false,
@@ -154,19 +166,6 @@ export async function deleteDeliveryZone(
 
   revalidatePath("/settings");
   return { ok: true, id: data.id };
-}
-
-function messageForDatabaseError(code: string | undefined): string {
-  switch (code) {
-    case "23505":
-      return "A delivery zone with this name already exists for the selected outlet.";
-    case "42501":
-      return "Outlet access changed while you were editing. Refresh the page; if this continues, ask an owner to review your access for this outlet.";
-    case "23514":
-      return "Some delivery zone values are outside the allowed range. Review the form and try again.";
-    default:
-      return "The delivery zone could not be saved. Please try again.";
-  }
 }
 
 async function branchPermissionError(

@@ -2,8 +2,9 @@
 
 Bites Box now follows the LedgerPro release pattern:
 
-1. A push to `main` that changes `apps/mobile/**` triggers
-   `.github/workflows/android-auto-release.yml`.
+1. An operator explicitly dispatches `.github/workflows/android-auto-release.yml`
+   after reviewing the source version and release notes. Pushing to `main` does not
+   publish an update.
 2. CI runs Flutter analysis and tests.
 3. The workflow takes the release name from `apps/mobile/pubspec.yaml` and
    creates a monotonically increasing Android build number by adding the
@@ -38,8 +39,8 @@ reject the update; distribute one correctly signed baseline APK once, then all
 later releases can update in place.
 
 For each release, update the `version:` value in `apps/mobile/pubspec.yaml`
-(for example, from `1.2.3+10` to `1.2.4+11`) and push the change to `main`.
-The workflow builds and publishes the APKs; no local APK build is needed.
+(for example, from `1.2.3+10` to `1.2.4+11`), push the source change to `main`,
+then explicitly dispatch the release workflow. No local APK build is needed.
 
 The Supabase `app-releases` bucket is public-read but write-only from CI using
 the service role. The service role is never included in the APK. Split APKs are

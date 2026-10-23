@@ -269,7 +269,7 @@ test('support ticket detail resolves its explicit refund relationship', async ({
     await expect(page.getByText('Support Tester').first()).toBeVisible();
 });
 
-test('branch manager can create, edit, dynamically pause, and delete delivery zones', async ({
+test('owner can create, edit, dynamically pause, and delete delivery zones', async ({
     page,
 }) => {
     const secondBranchId = '00000000-0000-4000-8000-000000000102';

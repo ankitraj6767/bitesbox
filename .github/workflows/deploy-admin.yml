@@ -31,6 +31,8 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Vercel (${{ github.event.inputs.target || 'preview' }})
+    # Source pushes are not deployment approval; deploy through an explicit dispatch.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: ${{ github.event.inputs.target == 'production' && 'production' || 'staging' }}
@@ -99,6 +101,8 @@ jobs:
             ${{ github.event.inputs.target == 'production' && '--prod' || '' }} \
             --token=${{ secrets.VERCEL_TOKEN }})
 
-          echo "### Admin dashboard deployed" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Admin dashboard deployed"
+            echo ""
+            echo "$url"
+          } >> "$GITHUB_STEP_SUMMARY"

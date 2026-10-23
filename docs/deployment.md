@@ -49,7 +49,7 @@ flutter run --dart-define-from-file=env/local.json
 cd apps/storefront && npm run dev          # http://localhost:3001
 ```
 
-`db:reset` applies all 61 migrations to an empty database and then the seven seed
+`db:reset` applies all 62 migrations to an empty database and then the seven seed
 files in order. It is the only supported way to get a working local database —
 there is no snapshot to restore.
 
@@ -135,9 +135,10 @@ See [testing.md](testing.md#ci) for what each gate is protecting.
 
 ## Deploying Supabase
 
-`.github/workflows/deploy-supabase.yml`. Triggered by a push to `main` touching
-`supabase/migrations/**`, `supabase/functions/**` or `config.toml`, or manually
-with a `staging` / `production` choice.
+`.github/workflows/deploy-supabase.yml`. Pushes to `main` run migration
+verification only. Applying migrations or deploying functions requires an explicit
+workflow dispatch with a `staging` / `production` choice, followed by the selected
+GitHub Environment's review gate.
 
 Migrations and functions deploy **together**, because a function almost always
 depends on a schema change that must land first.
@@ -163,9 +164,9 @@ verification on.
 ### Gate it
 
 Configure `staging` and `production` as GitHub Environments with **required
-reviewers**. The `deploy` job declares `environment:`, so with reviewers set a
-schema change to a live restaurant becomes a deliberate act rather than a side
-effect of merging.
+reviewers**. The `deploy` job only runs for `workflow_dispatch` and declares the
+selected `environment:`, so applying a schema change is a deliberate action rather
+than a side effect of pushing source.
 
 Required secrets per environment:
 
@@ -230,10 +231,11 @@ forever. See [payment-flow.md](payment-flow.md#razorpay-webhook).
 
 ## Deploying the admin dashboard
 
-Vercel's Git integration is the usual route. `.github/workflows/deploy-admin.yml`
-exists for the case where deployment should be gated on CI passing rather than on
-a push landing — the safer default for a dashboard that can cancel orders and
-issue refunds.
+Vercel's Git integration is connected to this repository. Normal tracked commits
+can deploy automatically. The project `ignoreCommand` honors the `[source-only]`
+commit marker to skip a source-only push without changing deployment behavior for
+later commits. `.github/workflows/deploy-admin.yml` is a manual alternative for a
+deployment that should be gated on its checks.
 
 It skips itself entirely when `VERCEL_TOKEN` is absent, so a fork does not carry a
 permanently red workflow.
@@ -257,9 +259,10 @@ prefix is what puts a value in the browser bundle.
 a decision, not a consequence of merging.
 
 For direct-distributed Android builds, `.github/workflows/android-auto-release.yml`
-is the automatic channel. It runs on relevant pushes to `main`, builds ABI-split
-APKs, publishes a versioned manifest to the public `app-releases` Supabase bucket,
-and the installed app checks that manifest on launch. See
+is a manually dispatched release channel. A source push does not publish APKs or
+change the hosted manifest. When explicitly dispatched, it builds ABI-split APKs,
+publishes a versioned manifest to the public `app-releases` Supabase bucket, and
+the installed app checks that manifest on launch. See
 `docs/android-auto-updates.md` for the required signing and service-role secrets.
 
 Inputs: `target` (staging / production) and `artefact` (appbundle / apk / both).

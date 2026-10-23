@@ -1,6 +1,6 @@
 {
     "name": "bitesbox-platform",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "private": true,
     "description": "Bites Box — restaurant digital operating system (monorepo root)",
     "workspaces": [

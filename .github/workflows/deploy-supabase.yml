@@ -50,6 +50,9 @@ jobs:
 
   deploy:
     name: Deploy to ${{ github.event.inputs.target || 'staging' }}
+    # Pushes verify migrations but never change a hosted project. Deploy only after
+    # an operator explicitly dispatches this workflow and passes environment review.
+    if: github.event_name == 'workflow_dispatch'
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 20

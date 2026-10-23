@@ -86,6 +86,13 @@ Migration `20260819090000` grants those ten helpers to `anon`. Safe by
 construction: with no JWT, `auth.uid()` is null and every one of them returns
 false.
 
+RLS helper access also needs `USAGE` on the schema containing the functions.
+Hosted PostgREST logs showed delivery-zone updates failing with SQLSTATE `42501`
+(`permission denied for schema app`) even though the owner held `branch.manage`.
+Migration `20261023132322` grants schema usage to `anon` and `authenticated`;
+function execution remains explicitly granted, and `app` stays outside the
+Data API exposed-schema list. The staff MFA and RLS tests cover this path.
+
 ### Append-only tables
 
 `app.make_append_only(table)` installs a trigger that raises on UPDATE and DELETE.
