@@ -180,6 +180,24 @@ void main() {
       expect(DeliveryAssignment.fromJson(assignmentJson(status: 'ACCEPTED')).isCarrying, isFalse);
     });
 
+    test('allows release only before the parcel is picked up', () {
+      for (final status in ['ACCEPTED', 'AT_STORE']) {
+        expect(
+          DeliveryAssignment.fromJson(assignmentJson(status: status)).canReleaseBeforePickup,
+          isTrue,
+          reason: status,
+        );
+      }
+
+      for (final status in ['OFFERED', 'PICKED_UP', 'AT_CUSTOMER', 'COMPLETED']) {
+        expect(
+          DeliveryAssignment.fromJson(assignmentJson(status: status)).canReleaseBeforePickup,
+          isFalse,
+          reason: status,
+        );
+      }
+    });
+
     test('flags a cash order by the amount to collect, not the payment mode', () {
       expect(DeliveryAssignment.fromJson(assignmentJson(codAmount: 632)).order.isCod, isTrue);
       expect(DeliveryAssignment.fromJson(assignmentJson()).order.isCod, isFalse);

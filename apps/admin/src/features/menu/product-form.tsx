@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Save, Trash2 } from 'lucide-react';
+import { ImagePlus, Save, Trash2, Upload } from 'lucide-react';
+import Image from 'next/image';
 import { Card, CardContent, CardToolbar } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/overlays';
@@ -26,6 +27,7 @@ import {
 import { InlineNotice } from '@/components/ui/states';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
+import { storageUrl } from '@/lib/utils';
 import type { FoodType, SpiceLevel } from '@bitesbox/shared-types';
 
 const schema = z.object({
@@ -36,6 +38,8 @@ const schema = z.object({
         .min(2, 'A URL slug is required')
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Lowercase letters, numbers and hyphens only'),
     category_id: z.string().uuid('Choose a category'),
+    thumbnail_path: z.string().optional().or(z.literal('')),
+    hero_image_path: z.string().optional().or(z.literal('')),
     short_description: z.string().max(180).optional().or(z.literal('')),
     short_description_hi: z.string().max(180).optional().or(z.literal('')),
     description: z.string().max(2000).optional().or(z.literal('')),
@@ -43,13 +47,13 @@ const schema = z.object({
     food_type: z.enum(['VEG', 'NON_VEG', 'EGG', 'VEGAN']),
     spice_level: z.enum(['NONE', 'MILD', 'MEDIUM', 'HOT', 'EXTRA_HOT']),
     base_price: z.coerce.number().min(0, 'Price cannot be negative'),
-    compare_price: z.coerce.number().min(0).optional(),
+    compare_price: z.number().min(0).optional(),
     packaging_charge: z.coerce.number().min(0),
     preparation_minutes: z.coerce.number().int().min(1).max(240),
-    serves_count: z.coerce.number().int().min(1).max(20).optional(),
-    calories: z.coerce.number().int().min(0).max(10000).optional(),
+    serves_count: z.number().int().min(1).max(20).optional(),
+    calories: z.number().int().min(0).max(10000).optional(),
     tax_category_id: z.string().uuid().optional().or(z.literal('')),
-    max_quantity_per_order: z.coerce.number().int().min(1).max(100).optional(),
+    max_quantity_per_order: z.number().int().min(1).max(100).optional(),
     is_active: z.boolean(),
     is_featured: z.boolean(),
     is_best_seller: z.boolean(),
@@ -99,6 +103,9 @@ export function ProductForm({
 }) {
     const router = useRouter();
     const [deleteOpen, setDeleteOpen] = React.useState(false);
+    const [imageFile, setImageFile] = React.useState<File | null>(null);
+    const [imageError, setImageError] = React.useState<string | null>(null);
+    const [localImageUrl, setLocalImageUrl] = React.useState<string | null>(null);
 
     const {
         register,
@@ -113,6 +120,8 @@ export function ProductForm({
             name_hi: '',
             slug: '',
             category_id: categories[0]?.id ?? '',
+            thumbnail_path: '',
+            hero_image_path: '',
             short_description: '',
             short_description_hi: '',
             description: '',
@@ -134,15 +143,52 @@ export function ProductForm({
         },
     });
 
+    React.useEffect(() => {
+        if (!imageFile) {
+            setLocalImageUrl(null);
+            return;
+        }
+
+        const url = URL.createObjectURL(imageFile);
+        setLocalImageUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [imageFile]);
+
     const save = useMutation({
         mutationFn: async (values: ProductFormValues) => {
             const supabase = createSupabaseBrowserClient();
+
+            let uploadedPath: string | null = null;
+            if (imageFile) {
+                const extensionByType: Record<string, string> = {
+                    'image/avif': 'avif',
+                    'image/jpeg': 'jpg',
+                    'image/png': 'png',
+                    'image/webp': 'webp',
+                };
+                const extension = extensionByType[imageFile.type];
+                if (!extension) throw new Error('Choose a JPG, PNG, WebP or AVIF image.');
+                if (imageFile.size > 8 * 1024 * 1024) {
+                    throw new Error('Dish images must be 8 MB or smaller.');
+                }
+
+                const objectPath = `products/${values.slug.trim()}/${crypto.randomUUID()}.${extension}`;
+                const { error } = await supabase.storage.from('menu-images').upload(objectPath, imageFile, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: imageFile.type,
+                });
+                if (error) throw error;
+                uploadedPath = `menu-images/${objectPath}`;
+            }
 
             const payload = {
                 name: values.name.trim(),
                 name_hi: values.name_hi?.trim() || null,
                 slug: values.slug.trim(),
                 category_id: values.category_id,
+                thumbnail_path: (uploadedPath ?? values.thumbnail_path?.trim()) || null,
+                hero_image_path: (uploadedPath ?? values.hero_image_path?.trim()) || null,
                 short_description: values.short_description?.trim() || null,
                 short_description_hi: values.short_description_hi?.trim() || null,
                 description: values.description?.trim() || null,
@@ -172,15 +218,25 @@ export function ProductForm({
                 meta_description: values.meta_description?.trim() || null,
             };
 
-            if (productId) {
-                const { error } = await supabase.from('products').update(payload).eq('id', productId);
-                if (error) throw error;
-                return productId;
-            }
+            try {
+                if (productId) {
+                    const { error } = await supabase.from('products').update(payload).eq('id', productId);
+                    if (error) throw error;
+                    return productId;
+                }
 
-            const { data, error } = await supabase.from('products').insert(payload).select('id').single();
-            if (error) throw error;
-            return data.id;
+                const { data, error } = await supabase.from('products').insert(payload).select('id').single();
+                if (error) throw error;
+                return data.id;
+            } catch (error) {
+                // Remove a just-uploaded file when the product row fails, so a
+                // permission or validation error does not strand an unused image.
+                if (uploadedPath) {
+                    const objectPath = uploadedPath.replace(/^menu-images\//, '');
+                    await supabase.storage.from('menu-images').remove([objectPath]).catch(() => undefined);
+                }
+                throw error;
+            }
         },
         onSuccess: (id) => {
             toast.success(productId ? 'Dish updated' : 'Dish created');
@@ -209,6 +265,26 @@ export function ProductForm({
     });
 
     const name = watch('name');
+    const savedImageUrl = storageUrl(watch('thumbnail_path') || watch('hero_image_path'));
+    const imagePreviewUrl = localImageUrl ?? savedImageUrl;
+
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0] ?? null;
+        setImageError(null);
+        if (file && !['image/avif', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            setImageFile(null);
+            setImageError('Choose a JPG, PNG, WebP or AVIF image.');
+            event.target.value = '';
+            return;
+        }
+        if (file && file.size > 8 * 1024 * 1024) {
+            setImageFile(null);
+            setImageError('Dish images must be 8 MB or smaller.');
+            event.target.value = '';
+            return;
+        }
+        setImageFile(file);
+    };
 
     // Suggest a slug while creating, never overwrite one on an existing dish.
     React.useEffect(() => {
@@ -356,7 +432,9 @@ export function ProductForm({
                                     min={0}
                                     disabled={!canChangePrice}
                                     className="tnum"
-                                    {...register('compare_price')}
+                                    {...register('compare_price', {
+                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
+                                    })}
                                 />
                             </Field>
 
@@ -426,11 +504,26 @@ export function ProductForm({
                             </Field>
 
                             <Field label="Serves" error={errors.serves_count?.message}>
-                                <Input type="number" min={1} max={20} className="tnum" {...register('serves_count')} />
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    max={20}
+                                    className="tnum"
+                                    {...register('serves_count', {
+                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
+                                    })}
+                                />
                             </Field>
 
                             <Field label="Calories" error={errors.calories?.message}>
-                                <Input type="number" min={0} className="tnum" {...register('calories')} />
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    className="tnum"
+                                    {...register('calories', {
+                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
+                                    })}
+                                />
                             </Field>
 
                             <Field
@@ -438,7 +531,15 @@ export function ProductForm({
                                 error={errors.max_quantity_per_order?.message}
                                 hint="Protects the kitchen from unrealistic orders."
                             >
-                                <Input type="number" min={1} max={100} className="tnum" {...register('max_quantity_per_order')} />
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    max={100}
+                                    className="tnum"
+                                    {...register('max_quantity_per_order', {
+                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
+                                    })}
+                                />
                             </Field>
                         </CardContent>
                     </Card>
@@ -464,6 +565,51 @@ export function ProductForm({
                 </div>
 
                 <div className="space-y-4">
+                    <Card>
+                        <CardToolbar
+                            title="Dish image"
+                            description="Used on menu cards and the dish page in the app and website."
+                        />
+                        <CardContent className="space-y-3">
+                            {imagePreviewUrl ? (
+                                <Image
+                                    src={imagePreviewUrl}
+                                    alt={`${name || 'Dish'} preview`}
+                                    width={720}
+                                    height={480}
+                                    unoptimized
+                                    className="aspect-[3/2] w-full rounded-lg border border-hairline object-cover"
+                                />
+                            ) : (
+                                <div className="flex aspect-[3/2] items-center justify-center rounded-lg border border-dashed border-hairline bg-surface-muted text-ink-muted">
+                                    <span className="flex items-center gap-2 text-[13px]">
+                                        <ImagePlus className="size-4" aria-hidden />
+                                        No dish image yet
+                                    </span>
+                                </div>
+                            )}
+                            <Field
+                                label="Upload image"
+                                error={imageError}
+                                hint="JPG, PNG, WebP or AVIF · up to 8 MB. A new upload replaces the current menu image."
+                            >
+                                <Input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/avif"
+                                    aria-label="Upload dish image"
+                                    disabled={save.isPending}
+                                    onChange={handleImageChange}
+                                />
+                            </Field>
+                            {imageFile ? (
+                                <p className="flex items-center gap-1.5 text-[11.5px] text-ink-muted">
+                                    <Upload className="size-3.5" aria-hidden />
+                                    {imageFile.name}
+                                </p>
+                            ) : null}
+                        </CardContent>
+                    </Card>
+
                     <Card>
                         <CardToolbar title="Visibility" />
                         <CardContent className="space-y-3">
@@ -523,7 +669,7 @@ export function ProductForm({
 
                     {productId ? (
                         <InlineNotice tone="info">
-                            Variants, add-ons and images are managed from the dish page once saved. Availability is
+                            Variants and add-ons are managed from the dish page once saved. Availability is
                             controlled from the Availability screen so the kitchen can change it mid-service.
                         </InlineNotice>
                     ) : null}
@@ -532,7 +678,7 @@ export function ProductForm({
 
             <div className="sticky bottom-0 -mx-4 flex items-center justify-between gap-3 border-t border-hairline bg-canvas/90 px-4 py-3 backdrop-blur-md lg:-mx-6 lg:px-6">
                 <p className="text-[12.5px] text-ink-muted">
-                    {isDirty ? 'You have unsaved changes.' : 'Everything is saved.'}
+                    {isDirty || imageFile ? 'You have unsaved changes.' : 'Everything is saved.'}
                 </p>
 
                 <div className="flex items-center gap-2">

@@ -80,13 +80,15 @@ class _RiderDeliveryScreenState extends ConsumerState<RiderDeliveryScreen> {
         () => _controller.respond(assignmentId: widget.assignmentId, accept: true),
       );
 
-  Future<void> _decline() async {
+  Future<void> _decline({bool accepted = false}) async {
     final reason = await showRiderReasonSheet(
       context,
-      title: 'Why are you declining?',
-      subtitle: 'Operations will see this and reassign the order.',
+      title: accepted ? 'Why are you releasing this delivery?' : 'Why are you declining?',
+      subtitle: accepted
+          ? 'You have not picked up the parcel. Operations will reassign it to another delivery partner.'
+          : 'Operations will see this and reassign the order.',
       reasons: DeliveryRepository.declineReasons,
-      confirmLabel: 'Decline delivery',
+      confirmLabel: accepted ? 'Release delivery' : 'Decline delivery',
     );
 
     if (reason == null || !mounted) return;
@@ -100,7 +102,12 @@ class _RiderDeliveryScreenState extends ConsumerState<RiderDeliveryScreen> {
       if (mounted) {
         _finished = true;
         context.go(Routes.rider);
-        AppFeedback.showInfo(context, 'Declined. It has gone back to dispatch.');
+        AppFeedback.showInfo(
+          context,
+          accepted
+              ? 'Delivery released. It has gone back to dispatch.'
+              : 'Declined. It has gone back to dispatch.',
+        );
       }
     });
   }
@@ -286,6 +293,17 @@ class _RiderDeliveryScreenState extends ConsumerState<RiderDeliveryScreen> {
                       onPressed: _busy ? null : _decline,
                       style: TextButton.styleFrom(foregroundColor: brand.inkMuted),
                       child: const Text('I cannot take this one'),
+                    ),
+                  )
+                else if (job.canReleaseBeforePickup)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: TextButton.icon(
+                      onPressed: _busy ? null : () => _decline(accepted: true),
+                      style: TextButton.styleFrom(foregroundColor: brand.error),
+                      icon: const Icon(Icons.assignment_return_outlined, size: 18),
+                      label: const Text('Release delivery before pickup'),
                     ),
                   )
                 else

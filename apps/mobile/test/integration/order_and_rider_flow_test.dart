@@ -104,7 +104,7 @@ void main() {
       final api = testClient.api;
 
       final repository = DeliveryRepository(api);
-      await repository.respondToOffer(
+      await repository.respondToAssignment(
         assignmentId: 'assignment-1',
         accept: true,
       );
@@ -136,6 +136,38 @@ void main() {
         'p_manager_override': false,
         'p_otp': '654321',
         'p_cash_collected': 640,
+      });
+    },
+  );
+
+  test(
+    'rider releases an accepted pre-pickup assignment through the server RPC',
+    () async {
+      final requests = <http.Request>[];
+      final testClient = _testClient((request) async {
+        requests.add(request);
+        expect(request.url.path, '/rest/v1/rpc/respond_to_assignment');
+        return _response(request, {
+          'assignment_id': 'assignment-accepted',
+          'status': 'REJECTED',
+          'order_id': 'order-1',
+          'order_status': 'READY_FOR_PICKUP',
+          'changed': true,
+        });
+      });
+      addTearDown(testClient.dispose);
+
+      await DeliveryRepository(testClient.api).respondToAssignment(
+        assignmentId: 'assignment-accepted',
+        accept: false,
+        rejectionReason: 'Vehicle problem',
+      );
+
+      expect(requests, hasLength(1));
+      expect(jsonDecode(requests.single.body), {
+        'p_assignment_id': 'assignment-accepted',
+        'p_accept': false,
+        'p_rejection_reason': 'Vehicle problem',
       });
     },
   );

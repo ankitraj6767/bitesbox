@@ -269,6 +269,7 @@ class DeliveryAssignment {
   bool get isOffer => status == 'OFFERED';
   bool get isHeadedToStore => status == 'ACCEPTED';
   bool get isAtStore => status == 'AT_STORE';
+  bool get canReleaseBeforePickup => isHeadedToStore || isAtStore;
   bool get isCarrying => status == 'PICKED_UP' || status == 'AT_CUSTOMER';
   bool get isAtCustomer => status == 'AT_CUSTOMER';
 

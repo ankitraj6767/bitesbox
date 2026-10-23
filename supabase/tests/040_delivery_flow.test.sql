@@ -401,6 +401,126 @@ select tap.eq(
 );
 select tap.reset();
 
+-- ─── An accepted rider can release an order before pickup ──────────────────
+-- The kitchen stage is preserved, dispatch can assign another rider, and a
+-- pickup code issued to the first rider cannot be reused by the replacement.
+select tap.remember('release_order_id', tap.seed_order(3)::text);
+select tap.as_user(tap.seed('kitchen'));
+select tap.no_throw(
+  format('select public.accept_order(%L)', tap.recall_uuid('release_order_id')),
+  'kitchen can accept the replacement test order'
+);
+select tap.no_throw(
+  format('select public.start_preparing(%L)', tap.recall_uuid('release_order_id')),
+  'kitchen can start preparing the replacement test order'
+);
+select tap.reset();
+
+select tap.as_user(tap.seed('operations'));
+select tap.no_throw(
+  format('select public.assign_rider(%L, %L)',
+         tap.recall_uuid('release_order_id'), tap.seed('dp_rahul')),
+  'operations can assign the first rider'
+);
+select tap.remember('release_assignment_id', da.id::text)
+from public.delivery_assignments da
+where da.order_id = tap.recall_uuid('release_order_id') and da.status = 'ACCEPTED';
+select tap.reset();
+
+select tap.as_service();
+insert into public.verification_codes (purpose, subject, code_hash, salt, order_id, user_id, expires_at)
+select 'PICKUP_CODE', 'PICKUP_CODE:' || tap.recall('release_assignment_id'),
+       app.hash_code('111111', 'release-test-salt'), 'release-test-salt',
+       orders.id, orders.user_id, now() + interval '1 hour'
+from public.orders
+where orders.id = tap.recall_uuid('release_order_id');
+select tap.remember('first_rider_pickup_code', '111111');
+select tap.reset();
+
+select tap.as_user(tap.seed('rider_rahul'));
+select tap.no_throw(
+  format('select public.respond_to_assignment(%L, false, %L)',
+         tap.recall_uuid('release_assignment_id'), 'vehicle issue'),
+  'an accepted rider can release an order before pickup'
+);
+select tap.reset();
+
+select tap.eq(
+  (select status::text from public.delivery_assignments
+    where id = tap.recall_uuid('release_assignment_id')),
+  'REJECTED',
+  'the released rider assignment is retained as history'
+);
+select tap.eq(
+  (select status::text from public.orders where id = tap.recall_uuid('release_order_id')),
+  'PREPARING',
+  'the order returns to its actual kitchen stage instead of becoming delivery failed'
+);
+select tap.ok(
+  (select consumed_at is not null from public.verification_codes
+    where purpose = 'PICKUP_CODE'
+      and subject = 'PICKUP_CODE:' || tap.recall('release_assignment_id')
+    order by created_at desc limit 1),
+  'the first rider pickup code is retired on release'
+);
+
+select tap.as_user(tap.seed('kitchen'));
+select tap.no_throw(
+  format('select public.mark_order_ready(%L)', tap.recall_uuid('release_order_id')),
+  'kitchen can still mark the released order ready'
+);
+select tap.reset();
+
+select tap.as_user(tap.seed('operations'));
+select tap.no_throw(
+  format('select public.assign_rider(%L, %L)',
+         tap.recall_uuid('release_order_id'), tap.seed('dp_amit')),
+  'operations can reassign the same order after a rider releases it'
+);
+select tap.remember('replacement_assignment_id', da.id::text)
+from public.delivery_assignments da
+where da.order_id = tap.recall_uuid('release_order_id') and da.status = 'ACCEPTED';
+select tap.reset();
+
+select tap.eq(
+  (select attempt_number from public.delivery_assignments
+    where id = tap.recall_uuid('replacement_assignment_id')),
+  2::smallint,
+  'replacement assignments keep a monotonic attempt number'
+);
+
+select tap.as_user(tap.seed('kitchen'));
+with handoff as materialized (
+  select public.issue_pickup_handoff_code(tap.recall_uuid('release_order_id')) as value
+)
+select tap.remember('replacement_pickup_code', handoff.value ->> 'code'),
+       tap.eq(length(handoff.value ->> 'code'), 6, 'the replacement pickup code matches the rider six-digit entry'),
+       tap.eq(
+         handoff.value ->> 'rider_name',
+         'Amit Sharma',
+         'the kitchen receives handoff details for the currently assigned replacement rider'
+       )
+from handoff;
+select tap.reset();
+
+select tap.as_user(tap.seed('rider_amit'));
+select tap.no_throw(
+  format('select public.rider_arrived_at_store(%L)', tap.recall_uuid('replacement_assignment_id')),
+  'the replacement rider can arrive at the kitchen'
+);
+select tap.throws(
+  format('select public.verify_pickup(%L, %L)',
+         tap.recall_uuid('replacement_assignment_id'), tap.recall('first_rider_pickup_code')),
+  'PICKUP_CODE_INVALID',
+  'the replacement rider cannot use the previous rider pickup code'
+);
+select tap.no_throw(
+  format('select public.verify_pickup(%L, %L)',
+         tap.recall_uuid('replacement_assignment_id'), tap.recall('replacement_pickup_code')),
+  'the replacement rider can use the fresh kitchen code'
+);
+select tap.reset();
+
 -- ─── Location publishing is scoped to riders ────────────────────────────────
 select tap.as_user(tap.seed('customer_a'));
 

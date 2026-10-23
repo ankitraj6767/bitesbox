@@ -281,7 +281,7 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Share this code with ${handoff.riderName} so they can verify the parcel before leaving.',
+                'Share this code with ${handoff.riderName} so they can verify the parcel before leaving. It is valid only for the currently assigned rider.',
                 style: const TextStyle(height: 1.4),
               ),
               const SizedBox(height: 16),
@@ -305,7 +305,7 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Valid for 6 hours. Generating a new code invalidates any earlier code.',
+                'Valid for 6 hours. If dispatch assigns a replacement rider, issue a fresh code; the earlier code is invalidated.',
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted, height: 1.35),
               ),
             ],
@@ -654,7 +654,7 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                                   )
                                 : const Icon(Icons.share_rounded),
                             label: Text(
-                              _busy ? 'Preparing code…' : 'Share pickup code',
+                              _busy ? 'Preparing code…' : 'Share pickup code with rider',
                             ),
                             style: FilledButton.styleFrom(
                               backgroundColor: brand.primary,

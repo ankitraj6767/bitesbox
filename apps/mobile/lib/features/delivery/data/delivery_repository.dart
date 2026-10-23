@@ -80,7 +80,9 @@ class DeliveryRepository {
     await _api.rpc<dynamic>('stop_my_delivery_location_sharing');
   }
 
-  Future<void> respondToOffer({
+  /// Accepts an offer or declines/releases an assignment before pickup. The
+  /// server refuses a release once the rider has collected the parcel.
+  Future<void> respondToAssignment({
     required String assignmentId,
     required bool accept,
     String? rejectionReason,

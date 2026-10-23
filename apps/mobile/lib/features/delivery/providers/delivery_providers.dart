@@ -63,7 +63,7 @@ class RiderDashboardController extends AsyncNotifier<RiderDashboard> {
   }) async {
     await ref
         .read(deliveryRepositoryProvider)
-        .respondToOffer(
+        .respondToAssignment(
           assignmentId: assignmentId,
           accept: accept,
           rejectionReason: reason,

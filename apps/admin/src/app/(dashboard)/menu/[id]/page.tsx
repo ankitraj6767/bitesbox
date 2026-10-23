@@ -40,7 +40,7 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
             : supabase
                 .from('products')
                 .select(
-                    `id, name, name_hi, slug, category_id, short_description, short_description_hi, description, description_hi, food_type, spice_level,
+                    `id, name, name_hi, slug, category_id, thumbnail_path, hero_image_path, short_description, short_description_hi, description, description_hi, food_type, spice_level,
              base_price, compare_price, packaging_charge, preparation_minutes, serves_count,
              calories, tax_category_id, max_quantity_per_order, is_active, is_featured,
              is_best_seller, is_new, is_recommended, is_combo, allows_special_instructions,
@@ -103,6 +103,8 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
                             name_hi: product.name_hi ?? '',
                             slug: product.slug,
                             category_id: product.category_id,
+                            thumbnail_path: product.thumbnail_path ?? '',
+                            hero_image_path: product.hero_image_path ?? '',
                             short_description: product.short_description ?? '',
                             short_description_hi: product.short_description_hi ?? '',
                             description: product.description ?? '',
