@@ -73,7 +73,7 @@ Previously recorded local results on 23 October 2026 (before pickup-code sharing
 | Edge Function checks | Passed | `npm run fn:check`, `npm run fn:lint`; Deno lint checked 29 files and Deno format checked 30 |
 | Flutter analysis and tests | Passed | `npm run mobile:analyze`, `npm run mobile:test`; 144 tests |
 | Android release workflow | Passed | [Run 39974820119](https://github.com/ankitraj6767/bitesbox/actions/runs/39974820119); built split APKs and published manifest for 1.2.4+36 |
-| Pickup-code sharing change | Static checks passed | `npm run mobile:analyze` found no issues; local migration applied; `npm run db:lint` found no error-level issues. No automated tests or mobile build were run for 1.2.5+37; hosted migration remains unverified. |
+| Pickup-code sharing change | Passed in CI | [Run 39978939242](https://github.com/ankitraj6767/bitesbox/actions/runs/39978939242): database migration reset, SQL/RLS suite, generated-type check, Flutter analysis/tests, and CI debug APK all passed. Local Flutter analysis and database lint also passed. No signed Android release or hosted migration was run. |
 | Admin deployment | Not dispatched | Separate Vercel Git integration status is unverified |
 | Hosted migration | Unverified | No hosted inspection or migration write was performed for this release |
 | Device/store behavior | Not verified | No physical device or signed store build was run |
