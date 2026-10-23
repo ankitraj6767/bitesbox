@@ -257,7 +257,7 @@ export function TopProductsChart({ data }: { data: DashboardCharts['top_products
                     content={<TooltipCard formatter={(value, key) => (key === 'revenue' ? money(Number(value)) : String(value))} />}
                     cursor={{ fill: 'rgba(26,22,20,0.04)' }}
                 />
-                <Bar dataKey="units" name="Units" fill={TURMERIC} radius={[0, 4, 4, 0]} maxBarSize={18} />
+                <Bar dataKey="units" name="Units" fill={ACCENT} radius={[0, 4, 4, 0]} maxBarSize={18} />
             </BarChart>
         </ChartFrame>
     );
