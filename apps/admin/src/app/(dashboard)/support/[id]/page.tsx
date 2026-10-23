@@ -46,7 +46,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
          satisfaction_rating, wallet_credit_amount, order_id, refund_id,
          profiles!support_tickets_user_profile_fkey(id, full_name, phone, email, completed_orders, lifetime_value),
          orders(id, order_number, status, grand_total, refunded_amount),
-         refunds(id, amount, status, destination)`,
+         refunds!support_tickets_refund_id_fkey(id, amount, status, destination)`,
             )
             .eq('id', id)
             .maybeSingle(),
@@ -57,7 +57,22 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
             .order('created_at'),
     ]);
 
-    if (ticketResult.error || !ticketResult.data) notFound();
+    if (ticketResult.error) {
+        return (
+            <>
+                <PageHeader breadcrumbs={[{ label: 'Support', href: '/support' }]} title="Support ticket" />
+                <Card>
+                    <CardToolbar title="Could not load this support ticket" />
+                    <CardContent>
+                        <p className="text-[13px] text-ink-muted">
+                            There was a problem loading this ticket. Refresh the page or return to the support queue.
+                        </p>
+                    </CardContent>
+                </Card>
+            </>
+        );
+    }
+    if (!ticketResult.data) notFound();
 
     const ticket = ticketResult.data;
     const messages = (messagesResult.data ?? []) as unknown as TicketMessage[];
@@ -111,6 +126,11 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
                         canRespond={hasPermission(session, PERMISSIONS.SUPPORT_RESPOND)}
                         canClose={hasPermission(session, PERMISSIONS.SUPPORT_CLOSE)}
                     />
+                    {messagesResult.error ? (
+                        <InlineNotice tone="critical">
+                            The conversation could not be loaded. Refresh this page to try again.
+                        </InlineNotice>
+                    ) : null}
 
                     {ticket.resolution_note ? (
                         <Card>

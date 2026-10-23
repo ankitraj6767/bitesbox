@@ -7,6 +7,66 @@ const secondBranchId = '00000000-0000-4000-8000-000000000102';
 const refundId = '00000000-0000-4000-8000-000000000201';
 const ownerId = '00000000-0000-4000-8000-000000000001';
 const operationsId = '00000000-0000-4000-8000-000000000002';
+const supportTicketId = '00000000-0000-4000-8000-000000000501';
+const supportTicketNumber = 'BB-T-E2E-001';
+let zoneSequence = 0;
+
+const zones = [
+    {
+        id: '00000000-0000-4000-8000-000000000401',
+        branch_id: branchId,
+        name: 'Bakhtiyarpur Town',
+        description: 'Town core',
+        kind: 'RADIUS',
+        min_distance_km: 0,
+        max_distance_km: 3,
+        polygon: null,
+        delivery_fee: 20,
+        min_order_amount: 99,
+        free_delivery_threshold: 349,
+        per_km_surcharge: 0,
+        surcharge_after_km: null,
+        peak_surcharge: 10,
+        peak_starts_at: '19:30:00',
+        peak_ends_at: '22:00:00',
+        dynamic_surcharge: 0,
+        base_eta_minutes: 25,
+        extra_eta_minutes: 0,
+        cod_enabled: true,
+        max_cod_amount: 2000,
+        is_serviceable: true,
+        is_active: true,
+        priority: 10,
+        deleted_at: null,
+    },
+    {
+        id: '00000000-0000-4000-8000-000000000402',
+        branch_id: secondBranchId,
+        name: 'Patna outlet zone',
+        description: 'Second outlet test zone',
+        kind: 'RADIUS',
+        min_distance_km: 0,
+        max_distance_km: 5,
+        polygon: null,
+        delivery_fee: 30,
+        min_order_amount: 149,
+        free_delivery_threshold: null,
+        per_km_surcharge: 0,
+        surcharge_after_km: null,
+        peak_surcharge: 0,
+        peak_starts_at: null,
+        peak_ends_at: null,
+        dynamic_surcharge: 0,
+        base_eta_minutes: 35,
+        extra_eta_minutes: 0,
+        cod_enabled: true,
+        max_cod_amount: null,
+        is_serviceable: true,
+        is_active: true,
+        priority: 10,
+        deleted_at: null,
+    },
+];
 
 const ownerPermissions = [
     'refund.view',
@@ -17,6 +77,12 @@ const ownerPermissions = [
     'payment.view',
     'audit.view',
     'referral.manage',
+    'support.view',
+    'support.respond',
+    'support.close',
+    'settings.view',
+    'settings.update',
+    'branch.manage',
 ];
 
 const order = {
@@ -31,7 +97,8 @@ function send(response, status, body) {
         'cache-control': 'no-store',
         'access-control-allow-origin': '*',
         'access-control-allow-headers': '*',
-        'access-control-allow-methods': 'GET, POST, PATCH, DELETE, HEAD, OPTIONS',
+        'access-control-allow-methods':
+            'GET, POST, PATCH, DELETE, HEAD, OPTIONS',
     });
     response.end(body === undefined ? '' : JSON.stringify(body));
 }
@@ -70,7 +137,14 @@ function getUser(claims) {
             full_name: isNoRefund ? 'Operations Tester' : 'Owner Tester',
         },
         factors: hasAal1Factor
-            ? [{ id: 'factor-e2e-1', factor_type: 'totp', status: 'verified', friendly_name: 'Test authenticator' }]
+            ? [
+                  {
+                      id: 'factor-e2e-1',
+                      factor_type: 'totp',
+                      status: 'verified',
+                      friendly_name: 'Test authenticator',
+                  },
+              ]
             : [],
         identities: [],
     };
@@ -101,26 +175,43 @@ function sessionFor(claims) {
             whatsapp_enabled: false,
         },
         primary_role: role,
-        roles: [{
-            role,
-            label: role === 'OWNER' ? 'Owner' : 'Operations',
-            branch_id: branchId,
-            is_primary: true,
-            surfaces: ['admin'],
-        }],
+        roles: [
+            {
+                role,
+                label: role === 'OWNER' ? 'Owner' : 'Operations',
+                branch_id: branchId,
+                is_primary: true,
+                surfaces: ['admin'],
+            },
+        ],
         permissions,
         branches: [
             { id: branchId, code: 'BKP', name: 'Bakhtiyarpur', status: 'OPEN' },
-            { id: secondBranchId, code: 'PAT', name: 'Patna Test Outlet', status: 'OPEN' },
+            {
+                id: secondBranchId,
+                code: 'PAT',
+                name: 'Patna Test Outlet',
+                status: 'OPEN',
+            },
         ],
         account_active: true,
         test_factor_pending: isAal1,
     };
 }
 
+function singularOrArray(request, rows) {
+    return request.headers.accept?.includes('application/vnd.pgrst.object+json')
+        ? (rows[0] ?? null)
+        : rows;
+}
+
 function jwtFor(email) {
     const isAal1 = email === 'aal1@bitesbox.test';
-    const sub = isAal1 ? ownerId : email === 'operations@bitesbox.test' ? operationsId : ownerId;
+    const sub = isAal1
+        ? ownerId
+        : email === 'operations@bitesbox.test'
+          ? operationsId
+          : ownerId;
     const payload = {
         sub,
         email,
@@ -129,24 +220,42 @@ function jwtFor(email) {
         exp: Math.floor(Date.now() / 1000) + 3600,
         amr: [{ method: 'password', timestamp: Math.floor(Date.now() / 1000) }],
     };
-    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-    const signature = Buffer.from('deterministic-e2e-signature').toString('base64url');
+    const header = Buffer.from(
+        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
+    ).toString('base64url');
+    const signature = Buffer.from('deterministic-e2e-signature').toString(
+        'base64url',
+    );
     return `${header}.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.${signature}`;
 }
 
 const server = createServer(async (request, response) => {
-    const url = new URL(request.url ?? '/', `http://${request.headers.host ?? `${host}:${port}`}`);
+    const url = new URL(
+        request.url ?? '/',
+        `http://${request.headers.host ?? `${host}:${port}`}`,
+    );
     if (request.method === 'OPTIONS') return send(response, 204);
     if (url.pathname === '/health') return send(response, 200, { ok: true });
+    if (url.pathname === '/__e2e/delivery-zones') {
+        return send(response, 200, zones);
+    }
 
-    if (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'password') {
+    if (
+        url.pathname === '/auth/v1/token' &&
+        url.searchParams.get('grant_type') === 'password'
+    ) {
         const body = await jsonBody(request);
         if (body.password !== 'test-password') {
-            return send(response, 400, { code: 'invalid_credentials', msg: 'Invalid login credentials' });
+            return send(response, 400, {
+                code: 'invalid_credentials',
+                msg: 'Invalid login credentials',
+            });
         }
         const email = String(body.email ?? '').toLowerCase();
         const accessToken = jwtFor(email);
-        const claims = getClaims({ headers: { authorization: `Bearer ${accessToken}` } });
+        const claims = getClaims({
+            headers: { authorization: `Bearer ${accessToken}` },
+        });
         const now = Math.floor(Date.now() / 1000);
         return send(response, 200, {
             access_token: accessToken,
@@ -162,32 +271,59 @@ const server = createServer(async (request, response) => {
         const user = getUser(getClaims(request));
         return user
             ? send(response, 200, user)
-            : send(response, 401, { code: 'no_session', message: 'No session' });
+            : send(response, 401, {
+                  code: 'no_session',
+                  message: 'No session',
+              });
     }
 
     if (url.pathname === '/auth/v1/aal') {
         const claims = getClaims(request);
         return claims
             ? send(response, 200, {
-                currentLevel: claims.aal,
-                nextLevel: claims.email === 'aal1@bitesbox.test' ? 'aal2' : claims.aal,
-            })
-            : send(response, 401, { code: 'no_session', message: 'No session' });
+                  currentLevel: claims.aal,
+                  nextLevel:
+                      claims.email === 'aal1@bitesbox.test'
+                          ? 'aal2'
+                          : claims.aal,
+              })
+            : send(response, 401, {
+                  code: 'no_session',
+                  message: 'No session',
+              });
     }
 
     if (url.pathname === '/auth/v1/factors') {
         const claims = getClaims(request);
-        const factors = claims?.email === 'aal1@bitesbox.test'
-            ? [{ id: 'factor-e2e-1', factor_type: 'totp', status: 'verified', friendly_name: 'Test authenticator' }]
-            : [];
+        const factors =
+            claims?.email === 'aal1@bitesbox.test'
+                ? [
+                      {
+                          id: 'factor-e2e-1',
+                          factor_type: 'totp',
+                          status: 'verified',
+                          friendly_name: 'Test authenticator',
+                      },
+                  ]
+                : [];
         return claims
             ? send(response, 200, { all: factors, totp: factors, phone: [] })
-            : send(response, 401, { code: 'no_session', message: 'No session' });
+            : send(response, 401, {
+                  code: 'no_session',
+                  message: 'No session',
+              });
     }
 
-    if (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'refresh_token') {
+    if (
+        url.pathname === '/auth/v1/token' &&
+        url.searchParams.get('grant_type') === 'refresh_token'
+    ) {
         const claims = getClaims(request);
-        if (!claims) return send(response, 401, { code: 'no_session', message: 'No session' });
+        if (!claims)
+            return send(response, 401, {
+                code: 'no_session',
+                message: 'No session',
+            });
         const now = Math.floor(Date.now() / 1000);
         const accessToken = jwtFor(claims.email);
         return send(response, 200, {
@@ -196,7 +332,11 @@ const server = createServer(async (request, response) => {
             expires_in: 3600,
             expires_at: now + 3600,
             refresh_token: `test-refresh-${claims.sub}`,
-            user: getUser(getClaims({ headers: { authorization: `Bearer ${accessToken}` } })),
+            user: getUser(
+                getClaims({
+                    headers: { authorization: `Bearer ${accessToken}` },
+                }),
+            ),
         });
     }
 
@@ -206,7 +346,10 @@ const server = createServer(async (request, response) => {
         if (name === 'my_session') {
             return claims
                 ? send(response, 200, sessionFor(claims))
-                : send(response, 401, { code: 'no_session', message: 'No session' });
+                : send(response, 401, {
+                      code: 'no_session',
+                      message: 'No session',
+                  });
         }
         if (name === 'branch_ordering_state') return send(response, 200, null);
         if (name === 'referral_admin_overview') {
@@ -220,7 +363,12 @@ const server = createServer(async (request, response) => {
                     reward_expiry_days: null,
                 },
                 feature_flag_enabled: false,
-                metrics: { attributed: 0, qualified: 0, rewarded: 0, reversed: 0 },
+                metrics: {
+                    attributed: 0,
+                    qualified: 0,
+                    rewarded: 0,
+                    reversed: 0,
+                },
                 activity: [],
             });
         }
@@ -239,10 +387,16 @@ const server = createServer(async (request, response) => {
         if (name === 'approve_refund' && request.method === 'POST') {
             const body = await jsonBody(request);
             if (!claims || claims.email !== 'owner@bitesbox.test') {
-                return send(response, 403, { code: 'permission_denied', message: 'Permission denied' });
+                return send(response, 403, {
+                    code: 'permission_denied',
+                    message: 'Permission denied',
+                });
             }
             if (body.p_refund_id !== refundId) {
-                return send(response, 404, { code: 'refund_not_found', message: 'Refund not found' });
+                return send(response, 404, {
+                    code: 'refund_not_found',
+                    message: 'Refund not found',
+                });
             }
             return send(response, 200, {
                 refund_id: refundId,
@@ -255,22 +409,165 @@ const server = createServer(async (request, response) => {
     }
 
     if (url.pathname === '/rest/v1/refunds' && request.method === 'GET') {
-        return send(response, 200, [{
-            id: refundId,
-            order_id: '00000000-0000-4000-8000-000000000301',
-            status: 'APPROVAL_PENDING',
-            kind: 'FULL_REFUND',
-            reason: 'QUALITY_ISSUE',
-            reason_note: null,
-            destination: 'ORIGINAL_PAYMENT_METHOD',
-            amount: 250,
-            amount_processed: 0,
+        return send(response, 200, [
+            {
+                id: refundId,
+                order_id: '00000000-0000-4000-8000-000000000301',
+                status: 'APPROVAL_PENDING',
+                kind: 'FULL_REFUND',
+                reason: 'QUALITY_ISSUE',
+                reason_note: null,
+                destination: 'ORIGINAL_PAYMENT_METHOD',
+                amount: 250,
+                amount_processed: 0,
+                created_at: '2026-10-23T08:00:00.000Z',
+                completed_at: null,
+                requested_by: '00000000-0000-4000-8000-000000000004',
+                orders: order,
+                requester: { full_name: 'Support Tester' },
+            },
+        ]);
+    }
+
+    if (url.pathname === '/rest/v1/delivery_zones') {
+        if (request.method === 'HEAD') {
+            response.writeHead(200, {
+                'content-range': `0-0/${zones.filter((zone) => zone.deleted_at === null).length}`,
+            });
+            return response.end();
+        }
+
+        if (request.method === 'GET') {
+            const branchFilter = url.searchParams.get('branch_id');
+            const branch = branchFilter?.startsWith('eq.')
+                ? branchFilter.slice(3)
+                : null;
+            const rows = zones
+                .filter(
+                    (zone) =>
+                        zone.deleted_at === null &&
+                        (!branch || zone.branch_id === branch),
+                )
+                .sort((left, right) => left.priority - right.priority);
+            return send(response, 200, singularOrArray(request, rows));
+        }
+
+        if (request.method === 'POST') {
+            const body = await jsonBody(request);
+            const insert = Array.isArray(body) ? body[0] : body;
+            zoneSequence += 1;
+            const created = {
+                ...insert,
+                id: `00000000-0000-4000-8000-${String(500 + zoneSequence).padStart(12, '0')}`,
+                deleted_at: null,
+            };
+            zones.push(created);
+            return send(response, 201, singularOrArray(request, [created]));
+        }
+
+        if (request.method === 'PATCH') {
+            const body = await jsonBody(request);
+            const idFilter = url.searchParams.get('id');
+            const branchFilter = url.searchParams.get('branch_id');
+            const id = idFilter?.startsWith('eq.') ? idFilter.slice(3) : null;
+            const branch = branchFilter?.startsWith('eq.')
+                ? branchFilter.slice(3)
+                : null;
+            const found = zones.filter(
+                (zone) =>
+                    zone.id === id &&
+                    zone.branch_id === branch &&
+                    zone.deleted_at === null,
+            );
+            for (const zone of found) Object.assign(zone, body);
+            return send(response, 200, singularOrArray(request, found));
+        }
+    }
+
+    if (
+        url.pathname === '/rest/v1/support_tickets' &&
+        request.method === 'GET'
+    ) {
+        const select = url.searchParams.get('select') ?? '';
+        if (
+            select.includes('refunds(') &&
+            !select.includes('refunds!support_tickets_refund_id_fkey(')
+        ) {
+            return send(response, 400, {
+                code: 'PGRST201',
+                message:
+                    'Could not embed because more than one relationship was found for refunds and support_tickets.',
+                details:
+                    'Use the explicit support_tickets_refund_id_fkey relationship.',
+            });
+        }
+
+        const ticket = {
+            id: supportTicketId,
+            ticket_number: supportTicketNumber,
+            category: 'MISSING_ITEM',
+            subject: 'Missing item from delivery',
+            description: 'One item was missing from my order.',
+            status: 'OPEN',
+            priority: 'NORMAL',
             created_at: '2026-10-23T08:00:00.000Z',
-            completed_at: null,
-            requested_by: '00000000-0000-4000-8000-000000000004',
-            orders: order,
-            requester: { full_name: 'Support Tester' },
-        }]);
+            last_message_at: '2026-10-23T08:05:00.000Z',
+            first_response_due_at: '2026-10-23T09:00:00.000Z',
+            first_response_at: null,
+            resolved_at: null,
+            resolution_note: null,
+            satisfaction_rating: null,
+            wallet_credit_amount: 0,
+            order_id: '00000000-0000-4000-8000-000000000301',
+            refund_id: refundId,
+            assigned_to: null,
+            profiles: {
+                id: '00000000-0000-4000-8000-000000000004',
+                full_name: 'Support Tester',
+                phone: '+919900000004',
+                email: 'support-tester@bitesbox.test',
+                completed_orders: 2,
+                lifetime_value: 900,
+            },
+            orders: {
+                id: '00000000-0000-4000-8000-000000000301',
+                order_number: 'BB-E2E-001',
+                status: 'DELIVERED',
+                grand_total: 500,
+                refunded_amount: 0,
+            },
+            refunds: {
+                id: refundId,
+                amount: 250,
+                status: 'APPROVAL_PENDING',
+                destination: 'ORIGINAL_PAYMENT_METHOD',
+            },
+        };
+
+        const idFilter = url.searchParams.get('id');
+        const statusFilter = url.searchParams.get('status');
+        const isDetail =
+            idFilter?.startsWith('eq.') &&
+            idFilter.slice(3) === supportTicketId;
+        const isOpen = statusFilter?.includes('OPEN');
+        const rows = isDetail || isOpen ? [ticket] : [];
+        return send(response, 200, singularOrArray(request, rows));
+    }
+
+    if (
+        url.pathname === '/rest/v1/support_messages' &&
+        request.method === 'GET'
+    ) {
+        return send(response, 200, [
+            {
+                id: '00000000-0000-4000-8000-000000000601',
+                author_kind: 'CUSTOMER',
+                body: 'One item was missing from my order.',
+                is_internal: false,
+                created_at: '2026-10-23T08:05:00.000Z',
+                author: { full_name: 'Support Tester' },
+            },
+        ]);
     }
 
     if (url.pathname.startsWith('/rest/v1/')) {
@@ -281,7 +578,9 @@ const server = createServer(async (request, response) => {
         return send(response, 200, []);
     }
 
-    send(response, 404, { message: 'Not found in deterministic E2E Supabase fake' });
+    send(response, 404, {
+        message: 'Not found in deterministic E2E Supabase fake',
+    });
 });
 
 server.listen(port, host);

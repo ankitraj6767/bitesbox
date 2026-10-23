@@ -20,6 +20,11 @@ select tap.ok(
   'a guest can browse the menu'
 );
 
+select tap.ok(
+  tap.visible_count('select 1 from public.delivery_zones where is_active') > 0,
+  'a guest can read active delivery pricing zones'
+);
+
 select tap.eq(
   tap.visible_count('select 1 from public.orders'),
   0::bigint,
@@ -79,6 +84,19 @@ select tap.eq(
   tap.visible_count('select 1 from public.verification_codes'),
   0::bigint,
   'nobody reads OTP hashes — not even their own'
+);
+
+select tap.no_throw(
+  'update public.delivery_zones
+   set dynamic_surcharge = 999
+   where id = (select id from public.delivery_zones where is_active limit 1)',
+  'a customer cannot change delivery pricing'
+);
+
+select tap.eq(
+  tap.visible_count('select 1 from public.delivery_zones where dynamic_surcharge = 999'),
+  0::bigint,
+  'the customer pricing update is filtered out by row security'
 );
 
 -- Financial tables are read-only to clients; all writes go through functions.
@@ -300,6 +318,29 @@ select tap.as_user(tap.seed('owner'));
 select tap.ok(
   tap.visible_count('select 1 from public.orders') >= 10,
   'the owner sees every order'
+);
+
+select tap.reset();
+
+-- Branch managers can change delivery operations on their assigned outlet.
+select tap.as_user(tap.seed('manager'));
+
+select tap.no_throw(
+  'update public.delivery_zones
+   set dynamic_surcharge = 17
+   where branch_id = ''11111111-1111-1111-1111-111111111111''
+     and name = ''Zone A — Bakhtiyarpur Town''',
+  'a branch manager can adjust live delivery surcharge in their outlet'
+);
+
+select tap.eq(
+  tap.visible_count(
+    'select 1 from public.delivery_zones
+     where branch_id = ''11111111-1111-1111-1111-111111111111''
+       and name = ''Zone A — Bakhtiyarpur Town'' and dynamic_surcharge = 17'
+  ),
+  1::bigint,
+  'the authorized zone update is applied in the branch'
 );
 
 select tap.reset();
