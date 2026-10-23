@@ -1,8 +1,9 @@
 # Release status
 
-Last updated: 23 October 2026. This is a focused owner delivery-zone access fix
-and source version bump on `main`, based on commit `79c84ee`. It does not deploy the
-admin site, publish an Android update, or apply a hosted Supabase migration.
+Last updated: 23 October 2026. The owner delivery-zone access fix and source
+version bump are on `main` in implementation commit `a1392a4`. The production
+admin site was not replaced, no Android update was published, and no hosted
+Supabase migration was applied.
 
 ## Delivery-zone owner error
 
@@ -38,12 +39,12 @@ subsequent commits.
 ## Version
 
 Workspace, admin, storefront, and shared-types packages: **1.2.1**. Flutter source
-version: **1.2.1+14**. This is a source version bump, not a signed release. No local
-APK was built. No signed iOS build was run.
+version: **1.2.1+14**. This is a source version bump, not a signed release. No APK
+was built locally; GitHub CI's debug APK check passed. No signed iOS build was run.
 
 ## Verification record
 
-Local results on 23 October 2026:
+Local and GitHub results on 23 October 2026:
 
 | Area | Result | Evidence / limitation |
 | --- | --- | --- |
@@ -54,7 +55,9 @@ Local results on 23 October 2026:
 | Admin unit tests | Passed: 76 tests | `npm run admin:test`, 9 files |
 | Admin browser journey | Passed: 10 tests | `npm run e2e --workspace=@bitesbox/admin`; owner delivery-zone create/edit/pause/delete covered with deterministic local fakes |
 | Admin build | Passed | `npm run admin:build` with placeholder Supabase configuration; no hosted credentials |
-| GitHub CI | Pending this main push | Runs independently; no hosted deployment should be triggered by the source push |
+| GitHub CI | Passed: 6 jobs | [Run 39962577075](https://github.com/ankitraj6767/bitesbox/actions/runs/39962577075), commit `a1392a4` |
+| Supabase workflow | Verification passed; deploy skipped | [Run 39962577056](https://github.com/ankitraj6767/bitesbox/actions/runs/39962577056); no hosted write occurred |
+| Vercel Git deployment | Canceled | Source-only marker prevented publishing a deployment for commit `a1392a4` |
 | Hosted migration | Pending | Requires a separately authorized workflow dispatch and environment review |
 | Device/store behavior | Not verified | No physical device or signed store build was run |
 
