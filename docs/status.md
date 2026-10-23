@@ -19,9 +19,9 @@ site when Vercel credentials are configured; and `android-auto-release.yml` can
 publish a signed Android update when release secrets exist. The attached brief
 requires review before any of those side effects, so this release is pushed to the
 `codex/five-product-features` review branch and is not pushed to `main`. The CI
-workflow runs for `codex/**`; its result for this release must be checked after
-the branch push. A CI pass does not mean that hosted migrations or application
-deployments ran.
+workflow for commit `aae6d5c21e547ebf2d8e654d5961ac0c48eda7c3` passed all six jobs
+on 23 October 2026 ([run 39944038121](https://github.com/ankitraj6767/bitesbox/actions/runs/39944038121)).
+A CI pass does not mean that hosted migrations or application deployments ran.
 
 ## Product scope
 
@@ -51,9 +51,8 @@ workflow runs; that is not store release evidence. No signed iOS build was run.
 
 ## Verification record
 
-These are local commands completed on this checkout. A workflow run for the final
-commit was not available when this document was written; GitHub CI should be
-reviewed before merging.
+These are local commands completed on this checkout, followed by the successful
+GitHub CI run for commit `aae6d5c21e547ebf2d8e654d5961ac0c48eda7c3`.
 
 | Area | Result | Evidence / limitation |
 | --- | --- | --- |
@@ -70,9 +69,9 @@ reviewed before merging.
 | Storefront production build | Passed | Next.js production build with placeholder Supabase configuration |
 | Flutter static analysis | Passed | `npm run mobile:analyze` |
 | Flutter unit/widget tests | Passed: 144 tests | `npm run mobile:test`; does not replace device validation |
+| GitHub CI | Passed: 6 jobs | [Run 39944038121](https://github.com/ankitraj6767/bitesbox/actions/runs/39944038121); database, Edge Functions, admin, storefront, mobile, and secret scan |
 | Device behavior | Not verified | No physical Android/iOS location, notification, deep-link, or Devanagari layout run |
 | Hosted migration/configuration state | Unverified | No hosted project was inspected or modified |
-| GitHub CI for final commit | Pending | Run after pushing the review branch |
 
 ## Release gates and known limits
 
