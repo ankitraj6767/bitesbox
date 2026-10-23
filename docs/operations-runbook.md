@@ -66,6 +66,50 @@ completion, cancellation, or reassignment. If a rider is offline when they stop,
 the phone stops publishing immediately and the app retries the server-side stop
 when connectivity returns. Do not interpret the last stored point as current.
 
+## Referral attribution and reward reversals
+
+The referral program has two independent gates: an OWNER or ADMIN must configure
+and enable terms through Admin → Referrals with AAL2, and the referrals feature
+flag must be enabled separately. Both gates start off. Confirm the approved
+reward amounts, minimum eligible order, cap, and wallet expiry before opening the
+flag. Do not take commercial values from test data or sample copy.
+
+If a customer reports a missing referral, check the server-side attribution row
+and its status in the referral activity view. Qualification requires the referred
+customer's first eligible delivered/completed order, captured payment, no refund,
+the configured minimum amount, and COD settlement where applicable. Retries use
+ledger idempotency keys. A completed partial or full refund reverses unspent
+referral credits; the refund's own wallet credit is preserved. The audit event
+records any reward amount that could not be recovered. Never edit a wallet balance
+or referral status directly. Stop new attributions by disabling the flag while
+finance reviews an incident.
+
+Each newly issued reward also queues a localized transactional notification.
+The profile's saved language selects Hindi or English; push opt-out suppresses
+push, while the in-app account notice remains available. If the wallet credit is
+present but the customer did not receive a push, check that customer's push
+preference and active device token. This notification does not use campaign or
+marketing consent because it reports an earned account credit and contains no
+offer.
+
+## Guest cart recovery
+
+After phone verification, the storefront shows items still saved on the device and
+offers an explicit import into the selected outlet's account cart. Import submits
+only product/variant/modifier/quantity intent; Postgres rechecks current menu
+availability and prices. A stable per-cart idempotency key makes a retry safe if
+the browser lost the import response. If import fails, keep the device cart and
+ask the customer to retry after choosing an outlet with current availability. Do
+not clear browser cart data until the database confirms the import.
+
+## Hindi content maintenance
+
+Canonical English content remains the fallback. Only staff with the existing
+menu/CMS/coupon permissions can edit Hindi fields, and product translation edits
+go through the audited translation RPC. A Hindi field being present does not mean
+the food, allergen, or offer claim has been reviewed. Have a fluent reviewer
+compare it with English and check small-screen rendering before publication.
+
 ## Telemetry setup and privacy
 
 Configure Sentry separately per environment:

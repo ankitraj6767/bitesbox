@@ -13,7 +13,7 @@ export default async function EditCouponPage({ params }: { params: Promise<{ id:
     await requirePermission(PERMISSIONS.COUPON_UPDATE);
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from('coupons').select('id, code, title, description, discount_kind, discount_value, min_order_amount, max_discount_amount, starts_at, ends_at, is_visible, is_active').eq('id', id).maybeSingle();
+    const { data, error } = await supabase.from('coupons').select('id, code, title, title_hi, description, description_hi, discount_kind, discount_value, min_order_amount, max_discount_amount, starts_at, ends_at, is_visible, is_active').eq('id', id).maybeSingle();
     if (error || !data) notFound();
     return (
         <>

@@ -8,6 +8,7 @@ import '../../../shared/format.dart';
 import '../../../shared/widgets/common.dart';
 import '../data/menu_models.dart';
 import '../providers/cart_controller.dart';
+import 'favorite_button.dart';
 import 'product_sheet.dart';
 
 /// A dish on the menu list.
@@ -197,6 +198,11 @@ class _ImageWithAction extends ConsumerWidget {
                     ),
                   ),
                 ),
+              Positioned(
+                right: 5,
+                top: 5,
+                child: FavoriteButton(productId: product.id),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -342,6 +348,11 @@ class ProductRailCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  Positioned(
+                    right: 5,
+                    top: 5,
+                    child: FavoriteButton(productId: product.id),
+                  ),
                   if (quantity > 0)
                     Positioned(
                       right: 8,

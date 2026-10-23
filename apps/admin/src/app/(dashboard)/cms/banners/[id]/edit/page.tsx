@@ -23,7 +23,7 @@ export default async function EditCmsBannerPage({
       supabase
         .from("cms_banners")
         .select(
-          "id, section_id, title, subtitle, badge_text, image_path, image_path_wide, alt_text, background_color, link_kind, link_category_id, link_product_id, link_coupon_id, link_collection_id, link_url, link_route, display_order, is_active, starts_at, ends_at",
+          "id, section_id, title, title_hi, subtitle, subtitle_hi, badge_text, badge_text_hi, image_path, image_path_wide, alt_text, alt_text_hi, background_color, link_kind, link_category_id, link_product_id, link_coupon_id, link_collection_id, link_url, link_route, display_order, is_active, starts_at, ends_at",
         )
         .eq("id", id)
         .maybeSingle(),

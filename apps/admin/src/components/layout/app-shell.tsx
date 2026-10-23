@@ -16,10 +16,12 @@ import type { BranchOrderingState, Session } from '@bitesbox/shared-types';
 export function AppShell({
     session,
     branch,
+    activeBranchId,
     children,
 }: {
     session: Session;
     branch: BranchOrderingState | null;
+    activeBranchId: string | null;
     children: React.ReactNode;
 }) {
     const [navOpen, setNavOpen] = React.useState(false);
@@ -48,7 +50,7 @@ export function AppShell({
             const result: SidebarCounts = {};
 
             if (permissions.includes('order.view')) {
-                const { count } = await supabase
+                let query = supabase
                     .from('orders')
                     .select('id', { count: 'exact', head: true })
                     .in('status', [
@@ -62,22 +64,28 @@ export function AppShell({
                         'OUT_FOR_DELIVERY',
                         'RIDER_ARRIVED_CUSTOMER',
                     ]);
+                if (branch?.branch_id) query = query.eq('branch_id', branch.branch_id);
+                const { count } = await query;
                 result.live_orders = count ?? 0;
             }
 
             if (permissions.includes('refund.view')) {
-                const { count } = await supabase
+                let query = supabase
                     .from('refunds')
-                    .select('id', { count: 'exact', head: true })
+                    .select('id, orders!inner(branch_id)', { count: 'exact', head: true })
                     .in('status', ['REQUESTED', 'APPROVAL_PENDING']);
+                if (branch?.branch_id) query = query.eq('orders.branch_id', branch.branch_id);
+                const { count } = await query;
                 result.pending_refunds = count ?? 0;
             }
 
             if (permissions.includes('support.view')) {
-                const { count } = await supabase
+                let query = supabase
                     .from('support_tickets')
                     .select('id', { count: 'exact', head: true })
                     .in('status', ['OPEN', 'IN_PROGRESS', 'ESCALATED']);
+                if (branch?.branch_id) query = query.eq('branch_id', branch.branch_id);
+                const { count } = await query;
                 result.open_tickets = count ?? 0;
             }
 
@@ -96,7 +104,7 @@ export function AppShell({
             />
 
             <div className="flex min-w-0 flex-1 flex-col">
-                <Topbar session={session} branch={branch} onOpenNav={() => setNavOpen(true)} />
+                <Topbar session={session} branch={branch} activeBranchId={activeBranchId} onOpenNav={() => setNavOpen(true)} />
                 <main id="main" className="min-w-0 flex-1 px-4 py-5 lg:px-6 lg:py-6">
                     {children}
                 </main>

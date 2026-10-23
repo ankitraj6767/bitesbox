@@ -43,6 +43,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     ]);
 
     const supabase = await createSupabaseServerClient();
+    const branchId = await activeBranchId(session);
 
     const [detailResult, eligibilityResult] = await Promise.all([
         supabase.rpc('order_detail', { p_order_id: id }),
@@ -83,7 +84,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         refundable={refundable}
                         gatewayRefundPossible={eligibility?.gateway_refund_possible ?? false}
                         permissions={permissions}
-                        branchId={activeBranchId(session)}
+                        branchId={branchId}
                     />
                 }
             />

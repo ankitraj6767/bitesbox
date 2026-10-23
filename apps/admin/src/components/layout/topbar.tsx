@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LogOut, Menu, ShieldCheck, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,15 +21,28 @@ import type { BranchOrderingState, Session } from '@bitesbox/shared-types';
 export function Topbar({
     session,
     branch,
+    activeBranchId,
     onOpenNav,
 }: {
     session: Session;
     branch: BranchOrderingState | null;
+    activeBranchId: string | null;
     onOpenNav: () => void;
 }) {
     const profile = session.profile;
     const permissions = session.permissions ?? [];
     const canManageBranch = permissions.includes('branch.manage');
+    const branches = session.branches ?? [];
+    const router = useRouter();
+
+    async function selectBranch(nextBranchId: string) {
+        const response = await fetch('/api/active-branch', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ branchId: nextBranchId }),
+        });
+        if (response.ok) router.refresh();
+    }
 
     return (
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-hairline bg-canvas/85 px-4 backdrop-blur-md lg:px-6">
@@ -45,6 +59,23 @@ export function Topbar({
             <div className="flex-1">
                 <CommandPalette permissions={permissions} />
             </div>
+
+            {branches.length > 1 ? (
+                <label className="hidden items-center gap-2 rounded-md border border-hairline bg-surface px-2.5 py-1.5 text-xs text-ink-muted sm:flex">
+                    <span className="sr-only">Selected outlet</span>
+                    <span aria-hidden>Outlet</span>
+                    <select
+                        aria-label="Selected outlet"
+                        className="max-w-44 bg-transparent font-medium text-ink outline-none"
+                        value={activeBranchId ?? ''}
+                        onChange={(event) => void selectBranch(event.target.value)}
+                    >
+                        {branches.map((item) => (
+                            <option key={item.id} value={item.id}>{item.name}</option>
+                        ))}
+                    </select>
+                </label>
+            ) : null}
 
             {branch && canManageBranch ? <BranchStatusControl branch={branch} /> : null}
 

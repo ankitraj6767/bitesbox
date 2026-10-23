@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/format.dart';
 import '../../../shared/widgets/states.dart';
@@ -105,7 +106,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       // The order exists and is payable: tracking is where they can retry.
       AppFeedback.showInfo(
         context,
-        'Your order is saved. Finish the payment to confirm it.',
+        AppLocalizations.of(context).orderSavedPaymentPending,
       );
       controller.reset();
       context.go(Routes.order(orderId));
@@ -122,21 +123,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
+      appBar: AppBar(title: Text(l10n.checkout)),
       body: AsyncValueView<CheckoutQuote>(
         value: cart,
         onRetry: () => ref.read(cartProvider.notifier).refresh(),
         data: (quote) {
           if (quote.isEmpty) {
             return AppEmptyState(
-              title: 'Your cart is empty',
-              message: 'Add something delicious before checking out.',
+              title: l10n.cartEmptyForCheckout,
+              message: l10n.emptyCartMessage,
               icon: Icons.shopping_bag_outlined,
               action: FilledButton(
                 onPressed: () => context.go(Routes.menu),
-                child: const Text('Browse the menu'),
+                child: Text(l10n.browseMenu),
               ),
             );
           }
@@ -261,20 +263,21 @@ class _FulfilmentPicker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(appConfigProvider).valueOrNull;
+    final l10n = AppLocalizations.of(context);
     final pickupEnabled = config?.flag('self_pickup', fallback: true) ?? true;
 
     return _SectionCard(
-      title: 'How would you like it?',
+      title: l10n.fulfilmentChoice,
       child: SegmentedButton<String>(
         segments: [
-          const ButtonSegment(
+          ButtonSegment(
             value: 'DELIVERY',
-            label: Text('Delivery'),
+            label: Text(l10n.delivery),
             icon: Icon(Icons.delivery_dining_rounded, size: 18),
           ),
           ButtonSegment(
             value: 'PICKUP',
-            label: const Text('Pick up'),
+            label: Text(l10n.pickUp),
             icon: const Icon(Icons.storefront_rounded, size: 18),
             enabled: pickupEnabled,
           ),
@@ -295,13 +298,14 @@ class _AddressCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final addresses = ref.watch(addressesProvider);
 
     return _SectionCard(
-      title: 'Deliver to',
+      title: l10n.deliverTo,
       trailing: TextButton(
         onPressed: () => context.push(Routes.addresses),
-        child: Text(quote.addressId == null ? 'Add' : 'Change'),
+        child: Text(quote.addressId == null ? l10n.add : l10n.change),
       ),
       child: addresses.maybeWhen(
         data: (list) {
@@ -315,14 +319,14 @@ class _AddressCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Choose where we should deliver this order.',
+                  l10n.deliveryAddressInstruction,
                   style: TextStyle(fontSize: 13.5, color: brand.inkMuted),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () => context.push(Routes.addresses),
                   icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                  label: const Text('Choose an address'),
+                  label: Text(l10n.chooseAddress),
                 ),
               ],
             );
@@ -389,12 +393,13 @@ class _TimingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final config = ref.watch(appConfigProvider).valueOrNull;
     final schedulingEnabled =
         config?.flag('scheduled_orders', fallback: true) ?? true;
 
     return _SectionCard(
-      title: 'When?',
+      title: l10n.whenToOrder,
       child: RadioGroup<String>(
         groupValue: quote.timing,
         // Choosing "later" opens the slot picker; the server still validates the
@@ -409,9 +414,9 @@ class _TimingCard extends ConsumerWidget {
               value: 'NOW',
               contentPadding: EdgeInsets.zero,
               dense: true,
-              title: const Text('As soon as possible'),
+              title: Text(l10n.asSoonAsPossible),
               subtitle: Text(
-                'Ready in about ${Fmt.duration(quote.timingEstimate.totalMinutes)}',
+                l10n.readyInAbout(Fmt.duration(quote.timingEstimate.totalMinutes)),
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
             ),
@@ -420,10 +425,10 @@ class _TimingCard extends ConsumerWidget {
                 value: 'SCHEDULED',
                 contentPadding: EdgeInsets.zero,
                 dense: true,
-                title: const Text('Schedule for later'),
+                title: Text(l10n.scheduleForLater),
                 subtitle: Text(
                   quote.scheduledFor == null
-                      ? 'Pick a slot at least 30 minutes from now'
+                      ? l10n.pickFutureSlot
                       : Fmt.dayTime(quote.scheduledFor),
                   style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                 ),
@@ -434,7 +439,7 @@ class _TimingCard extends ConsumerWidget {
                 child: TextButton.icon(
                   onPressed: () => _pickSlot(context, ref),
                   icon: const Icon(Icons.schedule_rounded, size: 16),
-                  label: const Text('Change slot'),
+                  label: Text(l10n.changeSlot),
                 ),
               ),
           ],
@@ -511,6 +516,7 @@ class _PaymentPicker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
 
     // COD availability is decided by the server (zone rules, value caps, pickup);
     // its verdict arrives as a blocking issue on the quote.
@@ -525,7 +531,7 @@ class _PaymentPicker extends ConsumerWidget {
     const onlineAvailable = true;
 
     return _SectionCard(
-      title: 'Payment',
+      title: l10n.payment,
       child: RadioGroup<String>(
         groupValue: selected,
         onChanged: (value) {
@@ -539,9 +545,9 @@ class _PaymentPicker extends ConsumerWidget {
               contentPadding: EdgeInsets.zero,
               dense: true,
               enabled: onlineAvailable,
-              title: const Text('Pay online'),
+              title: Text(l10n.payOnline),
               subtitle: Text(
-                'UPI, cards, netbanking and wallets',
+                l10n.onlinePaymentMethods,
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
             ),
@@ -550,11 +556,11 @@ class _PaymentPicker extends ConsumerWidget {
                 value: 'COD',
                 contentPadding: EdgeInsets.zero,
                 dense: true,
-                title: const Text('Cash on delivery'),
+                title: Text(l10n.cashOnDelivery),
                 subtitle: Text(
                   codBlocked
                       ? codIssue.message
-                      : 'Pay the delivery partner when your order arrives',
+                      : l10n.payDeliveryPartner,
                   style: TextStyle(
                     fontSize: 12.5,
                     color: codBlocked ? brand.error : brand.inkMuted,
@@ -566,9 +572,9 @@ class _PaymentPicker extends ConsumerWidget {
                 value: 'PAY_AT_STORE',
                 contentPadding: EdgeInsets.zero,
                 dense: true,
-                title: const Text('Pay at the counter'),
+                title: Text(l10n.payAtCounter),
                 subtitle: Text(
-                  'Settle the bill when you collect your order',
+                  l10n.payWhenCollecting,
                   style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                 ),
               ),
@@ -587,6 +593,7 @@ class _WalletCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final wallet = ref.watch(walletProvider).valueOrNull;
 
     if (wallet == null || !wallet.enabled || wallet.balance <= 0) {
@@ -596,24 +603,24 @@ class _WalletCard extends ConsumerWidget {
     final applied = quote.totals.walletApplied > 0;
 
     return _SectionCard(
-      title: 'Bites Box wallet',
+      title: l10n.wallet,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (wallet.isFrozen)
             Text(
-              'Your wallet is on hold. Please contact support.',
+              l10n.walletOnHold,
               style: TextStyle(fontSize: 13, color: brand.warning),
             )
           else
             SwitchListTile.adaptive(
               value: applied,
               contentPadding: EdgeInsets.zero,
-              title: Text('Use my ${Fmt.moneySmart(wallet.balance)} balance'),
+              title: Text(l10n.useWalletBalance(Fmt.moneySmart(wallet.balance))),
               subtitle: Text(
                 applied
-                    ? '${Fmt.moneySmart(quote.totals.walletApplied)} applied to this order'
-                    : 'Applied to the order total first',
+                    ? l10n.walletAppliedToOrder(Fmt.moneySmart(quote.totals.walletApplied))
+                    : l10n.walletAppliedFirst,
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
               onChanged: (value) => _toggle(context, ref, value),
@@ -646,14 +653,15 @@ class _TipPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
 
     return _SectionCard(
-      title: 'Tip your delivery partner',
+      title: l10n.tipDeliveryPartner,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'The full tip goes to your delivery partner.',
+            l10n.tipGoesToRider,
             style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
           ),
           const SizedBox(height: 10),
@@ -663,7 +671,7 @@ class _TipPicker extends StatelessWidget {
                 .map(
                   (amount) => ChoiceChip(
                     label: Text(
-                      amount == 0 ? 'No tip' : Fmt.moneySmart(amount),
+                      amount == 0 ? l10n.noTip : Fmt.moneySmart(amount),
                     ),
                     selected: selected == amount,
                     onSelected: (_) => onChanged(amount),
@@ -685,13 +693,14 @@ class _CouponTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final applied = quote.appliedCouponCode;
 
     return _SectionCard(
-      title: 'Offers',
+      title: l10n.offers,
       trailing: TextButton(
         onPressed: () => CouponSheet.show(context),
-        child: Text(applied == null ? 'View offers' : 'Change'),
+        child: Text(applied == null ? l10n.viewOffers : l10n.change),
       ),
       child: Row(
         children: [
@@ -705,9 +714,9 @@ class _CouponTile extends StatelessWidget {
             child: Text(
               applied == null
                   ? (quote.promotion?.applied == true
-                        ? '${quote.promotion!.headline ?? 'An offer'} applied automatically'
-                        : 'No coupon applied')
-                  : '$applied · saving ${Fmt.moneySmart(quote.totals.couponDiscount)}',
+                        ? l10n.automaticOfferApplied(quote.promotion!.headline ?? l10n.offers)
+                        : l10n.noCouponApplied)
+                  : '$applied · ${l10n.savingAmount(Fmt.moneySmart(quote.totals.couponDiscount))}',
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: applied == null ? FontWeight.w500 : FontWeight.w700,
@@ -801,6 +810,7 @@ class _CheckoutFooter extends ConsumerWidget {
     final brand = context.brand;
     final value = quote;
     final checkout = ref.watch(checkoutControllerProvider);
+    final l10n = AppLocalizations.of(context);
 
     if (value == null || value.isEmpty) return const SizedBox.shrink();
 
@@ -835,10 +845,10 @@ class _CheckoutFooter extends ConsumerWidget {
                     ),
                     Text(
                       paymentMode == 'ONLINE'
-                          ? 'Pay now'
+                          ? l10n.payNow
                           : paymentMode == 'PAY_AT_STORE'
-                          ? 'Pay at counter'
-                          : 'Pay on delivery',
+                          ? l10n.payAtCounter
+                          : l10n.cashOnDelivery,
                       style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                     ),
                   ],
@@ -865,8 +875,8 @@ class _CheckoutFooter extends ConsumerWidget {
                           )
                         : Text(
                             paymentMode == 'ONLINE'
-                                ? 'Pay ${Fmt.moneySmart(value.totals.payableAmount)}'
-                                : 'Place order',
+                                ? '${l10n.payNow} ${Fmt.moneySmart(value.totals.payableAmount)}'
+                                : l10n.placeOrder,
                           ),
                   ),
                 ),

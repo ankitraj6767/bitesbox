@@ -1,89 +1,92 @@
 # Release status
 
-Last updated: 23 October 2026. This release is being prepared on
-`codex/reliability-production-readiness`. The implementation has **not** been
-applied to a hosted Supabase project and has **not** been deployed.
+Last updated: 23 October 2026. The customer-growth release is on review branch
+`codex/five-product-features`, based on `76d99d40419ea58e47265f1235c12abd7b1a93e3`.
+Source changes are prepared for review. No hosted Supabase project, website, DNS,
+payment provider, or app store has been changed by this work.
 
-## Source and hosted-state observations
+## Source and hosted state
 
-The local migration directory contains **56 migration files**. A read-only
-`npx supabase migration list --linked` check on 23 October 2026 showed 54 remote
-migrations through `20261023045839_serialize_cart_line_mutations_for_group_merge`
-and two local migrations not recorded remotely:
+The checkout contains **61 migration files**. A local Supabase stack reset applied
+the migrations and seed successfully, and the SQL/RLS suite passed against that
+local database. This proves local schema setup only. Hosted migration state is
+**unverified**: no linked project state was read during this release, and no
+hosted migration was pushed.
 
-- `20261023053104_storefront_white_background.sql`
-- `20261023065006_production_readiness_preferences_tracking_mfa.sql`
+The repository's `deploy-supabase.yml` runs a hosted staging migration/function
+deployment on matching pushes to `main`; `deploy-admin.yml` can deploy the admin
+site when Vercel credentials are configured; and `android-auto-release.yml` can
+publish a signed Android update when release secrets exist. The attached brief
+requires review before any of those side effects, so this release is pushed to the
+`codex/five-product-features` review branch and is not pushed to `main`. The CI
+workflow runs for `codex/**`; its result for this release must be checked after
+the branch push. A CI pass does not mean that hosted migrations or application
+deployments ran.
 
-No migration was pushed. This read-only result is a point-in-time observation;
-current hosted state after that check is **unverified**. It does not establish
-whether a database schema has drifted or whether the development, staging, or
-production projects match each other.
+## Product scope
 
-The local SQL stack could not be started because Docker/Colima was unavailable in
-this environment. Therefore local reset, schema lint, SQL/RLS suites, and generated
-database type comparison remain unverified here. The linked project's hosted
-advisors were not run because no database password was available. The new
-migration is forward-only; do not apply it to a hosted project until the database
-CI job passes and the staged MFA rollout checklist in
-[operations-runbook.md](operations-runbook.md) is reviewed.
+The source adds server-configured referrals, generated English/Hindi Flutter
+resources, Hindi database content fields, a separate public customer storefront,
+cross-device favorites, and customer/admin outlet selection. The existing
+single-brand order, payment, wallet, and staff authorization paths remain the
+authority for customer-visible and money-moving outcomes.
 
-## Product and release notes
+Referral rewards remain disabled until an authorized owner approves and saves
+actual program terms and separately enables the feature flag. Guest cart import
+uses a server-side idempotency record and revalidates each item through the
+existing cart RPC. New and high-traffic Flutter flows and the storefront use
+English/Hindi resources, but several legacy Flutter address, support, wallet,
+group-order, and tracking screens still contain English literals. Full extraction
+and translation of those remaining strings is a known localization gap, not a
+completed acceptance criterion. Human translation review and physical-device
+Devanagari layout review remain release gates. No Hindi food, allergen, or
+promotional claim was invented.
 
-Bites Box remains a single-brand ordering and delivery product. The release closes
-known preference, location-sharing, staff assurance, telemetry, payment-provider
-and CI coverage gaps without adding marketplace, grocery, dine-in, or dispatch
-business models. The Swiggy comparison records deliberate product boundaries in
-[swiggy-comparison.md](swiggy-comparison.md).
+## Version
 
-Hindi strings exist in profile data, but the repository does not establish Hindi
-UI as a launch promise. Full Flutter localization remains a separate product
-decision; this reliability release does not represent it as complete.
-
-App version: **1.1.4+12**. This is a source version bump, not a signed store
-release. No local APK build or iOS release build is claimed.
+Workspace and web packages: **1.2.0**. Flutter source version: **1.2.0+13**.
+This is a source version bump, not a signed release. No local APK was built at the
+request of the project owner. CI's mobile job may build a debug APK when the
+workflow runs; that is not store release evidence. No signed iOS build was run.
 
 ## Verification record
 
-This section is updated from commands actually run on this release branch. A
-GitHub workflow result will be recorded after CI runs for the pushed branch. A
-passing workflow on an earlier commit is not evidence for this release.
+These are local commands completed on this checkout. A workflow run for the final
+commit was not available when this document was written; GitHub CI should be
+reviewed before merging.
 
 | Area | Result | Evidence / limitation |
 | --- | --- | --- |
-| Flutter unit and widget tests | Passed: 139 tests | `flutter test --reporter compact` |
-| Flutter static analysis | Passed | `flutter analyze` |
-| Admin unit/component tests | Passed: 67 tests | `npm run test --workspace=@bitesbox/admin` |
-| Admin browser journey | Passed: 5 tests | Playwright deterministic local Auth/REST fakes; no hosted credentials |
+| Local database reset | Passed | All 61 migrations and seed applied to local Supabase/Postgres |
+| SQL/RLS tests | Passed: 12 suites | `npm run db:test`; includes growth, referral, favorites, branch, and guest-cart cases |
+| Database lint | Passed | `npm run db:lint`; warning-level advisories remain documented by the tool |
+| Generated database types | Refreshed | `npm run db:types`; generated types include the five new migrations |
+| Edge Functions | Passed | `npm run fn:check`, `npm run fn:lint`, and `npm run secrets:check` |
+| Admin unit tests | Passed: 67 tests | `npm run admin:test` |
+| Admin browser journey | Passed: 7 tests | Deterministic local Auth/REST fake; includes two authorized branches, rejection of an out-of-scope branch, AAL2 referral terms, and refund gates |
 | Admin build | Passed | Next.js production build with placeholder Supabase configuration |
-| Edge Functions | Passed | Deno checks, lint, formatting, logger and Razorpay contracts |
-| SQL/RLS tests and generated types | Not run locally | Docker/Colima socket unavailable |
-| Secret scan | Passed | `npm run secrets:check`; no committed credentials found |
-| Android/iOS background location | Not device-verified | Follow physical-device plan in `docs/testing.md` |
-| Hosted migration state | Unverified after read-only check | No hosted write was made |
-| Store release signing | Not run | Requires release signing material and human review |
+| Storefront lint, typecheck, unit tests | Passed: 4 unit tests | Playwright/build rerun sequentially after a temporary artifact collision |
+| Storefront browser journey | Passed: 5 tests | Guest browsing/outlet/language, referral OTP attribution, guest-cart import → server-priced COD order → tracking, fake online-payment callback, favorites |
+| Storefront production build | Passed | Next.js production build with placeholder Supabase configuration |
+| Flutter static analysis | Passed | `npm run mobile:analyze` |
+| Flutter unit/widget tests | Passed: 144 tests | `npm run mobile:test`; does not replace device validation |
+| Device behavior | Not verified | No physical Android/iOS location, notification, deep-link, or Devanagari layout run |
+| Hosted migration/configuration state | Unverified | No hosted project was inspected or modified |
+| GitHub CI for final commit | Pending | Run after pushing the review branch |
 
-## Operational inventory
+## Release gates and known limits
 
-The checked-in schema contains 56 migrations. The application has customer,
-kitchen, delivery-partner, and admin surfaces; the admin dashboard contains 29
-page modules. Current test counts and exact command results are recorded in
-[testing.md](testing.md). Local database execution remains blocked by the
-unavailable Docker/Colima service; GitHub CI is the remaining migration/schema
-verification for this branch.
+- Keep the `referrals` flag disabled until owner-approved reward terms and finance
+  review are recorded; verify the rollout with a non-production account first.
+- Set public storefront environment variables in a preview deployment and test
+  with non-production Supabase credentials. No website deployment or DNS update
+  is included.
+- Have a Hindi reviewer validate customer copy and test Android/iOS screen sizes,
+  text scaling, deep links, and offline behavior before release.
+- Multi-outlet authorization continues to come from session branch scope and
+  server serviceability. A client-selected branch never grants database access.
+- Hosted migration status, hosted feature flags, payment credentials, notification
+  configuration, store signing, and provider setup remain unverified.
 
-## Important design decisions
-
-- Marketing consent is independent of transactional channel delivery preferences;
-  new-account marketing and WhatsApp defaults are off.
-- GPS sharing is explicit, server-authorized, and tied to the current active
-  assignment. Capture timestamps are checked server-side, and the direct table
-  write paths are revoked. Location is not required to finish a delivery.
-- Back-office sessions need Supabase-signed AAL2 for sensitive operations. Role
-  and branch RBAC still apply. Hosted MFA settings and plan support are not
-  verified by this repository change.
-- A timed-out Razorpay write is treated as an unknown outcome, never replayed
-  automatically without documented provider idempotency. Refund reconciliation
-  is described in the operations runbook.
-- Sentry is optional and best-effort. Redaction removes account identifiers,
-  credentials, contact data, addresses, document paths, and image payloads before
-  transmission.
+See [testing.md](testing.md), [customer-growth.md](customer-growth.md), and
+[operations-runbook.md](operations-runbook.md) for detailed procedures.

@@ -29,7 +29,7 @@ export default async function PaymentsPage({
 
     const rangeKey = (params.range ?? '7d') as RangeKey;
     const { from, to, label } = resolveRange(rangeKey);
-    const branchId = activeBranchId(session);
+    const branchId = await activeBranchId(session);
     const supabase = await createSupabaseServerClient();
 
     const [reportResult, paymentsResult, unreconciledResult, codResult] = await Promise.all([

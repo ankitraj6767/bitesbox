@@ -20,9 +20,9 @@ enum AppRole {
   final String code;
 
   static AppRole fromCode(String? code) => AppRole.values.firstWhere(
-        (role) => role.code == code,
-        orElse: () => AppRole.customer,
-      );
+    (role) => role.code == code,
+    orElse: () => AppRole.customer,
+  );
 
   /// Roles that belong in the kitchen shell.
   bool get isKitchen => this == kitchenStaff;
@@ -35,17 +35,17 @@ enum AppRole {
       this == manager || this == operations || this == admin || this == owner;
 
   String get label => switch (this) {
-        customer => 'Customer',
-        deliveryPartner => 'Delivery Partner',
-        kitchenStaff => 'Kitchen',
-        manager => 'Manager',
-        operations => 'Operations',
-        finance => 'Finance',
-        support => 'Support',
-        marketing => 'Marketing',
-        admin => 'Administrator',
-        owner => 'Owner',
-      };
+    customer => 'Customer',
+    deliveryPartner => 'Delivery Partner',
+    kitchenStaff => 'Kitchen',
+    manager => 'Manager',
+    operations => 'Operations',
+    finance => 'Finance',
+    support => 'Support',
+    marketing => 'Marketing',
+    admin => 'Administrator',
+    owner => 'Owner',
+  };
 }
 
 class RoleGrant {
@@ -62,11 +62,11 @@ class RoleGrant {
   final bool isPrimary;
 
   factory RoleGrant.fromJson(Map<String, dynamic> json) => RoleGrant(
-        role: AppRole.fromCode(json['role'] as String?),
-        label: (json['label'] as String?) ?? '',
-        branchId: json['branch_id'] as String?,
-        isPrimary: json['is_primary'] as bool? ?? false,
-      );
+    role: AppRole.fromCode(json['role'] as String?),
+    label: (json['label'] as String?) ?? '',
+    branchId: json['branch_id'] as String?,
+    isPrimary: json['is_primary'] as bool? ?? false,
+  );
 }
 
 class UserProfile {
@@ -78,6 +78,7 @@ class UserProfile {
     this.avatarUrl,
     this.status = 'ACTIVE',
     this.preferredLanguage = 'en',
+    this.preferredBranchId,
     this.onboardingCompleted = false,
     this.totalOrders = 0,
     this.marketingOptIn = false,
@@ -94,6 +95,7 @@ class UserProfile {
   final String? avatarUrl;
   final String status;
   final String preferredLanguage;
+  final String? preferredBranchId;
   final bool onboardingCompleted;
   final int totalOrders;
   final bool marketingOptIn;
@@ -112,6 +114,7 @@ class UserProfile {
     String? avatarUrl,
     String? status,
     String? preferredLanguage,
+    String? preferredBranchId,
     bool? onboardingCompleted,
     int? totalOrders,
     bool? marketingOptIn,
@@ -120,21 +123,22 @@ class UserProfile {
     bool? emailEnabled,
     bool? whatsappEnabled,
   }) => UserProfile(
-        id: id,
-        phone: phone ?? this.phone,
-        email: email ?? this.email,
-        fullName: fullName ?? this.fullName,
-        avatarUrl: avatarUrl ?? this.avatarUrl,
-        status: status ?? this.status,
-        preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
-        totalOrders: totalOrders ?? this.totalOrders,
-        marketingOptIn: marketingOptIn ?? this.marketingOptIn,
-        pushEnabled: pushEnabled ?? this.pushEnabled,
-        smsEnabled: smsEnabled ?? this.smsEnabled,
-        emailEnabled: emailEnabled ?? this.emailEnabled,
-        whatsappEnabled: whatsappEnabled ?? this.whatsappEnabled,
-      );
+    id: id,
+    phone: phone ?? this.phone,
+    email: email ?? this.email,
+    fullName: fullName ?? this.fullName,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    status: status ?? this.status,
+    preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+    preferredBranchId: preferredBranchId ?? this.preferredBranchId,
+    onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+    totalOrders: totalOrders ?? this.totalOrders,
+    marketingOptIn: marketingOptIn ?? this.marketingOptIn,
+    pushEnabled: pushEnabled ?? this.pushEnabled,
+    smsEnabled: smsEnabled ?? this.smsEnabled,
+    emailEnabled: emailEnabled ?? this.emailEnabled,
+    whatsappEnabled: whatsappEnabled ?? this.whatsappEnabled,
+  );
 
   /// The greeting on the home screen prefers a first name.
   String get firstName {
@@ -144,21 +148,22 @@ class UserProfile {
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-        id: json['id'] as String,
-        phone: json['phone'] as String?,
-        email: json['email'] as String?,
-        fullName: json['full_name'] as String?,
-        avatarUrl: json['avatar_url'] as String?,
-        status: (json['status'] as String?) ?? 'ACTIVE',
-        preferredLanguage: (json['preferred_language'] as String?) ?? 'en',
-        onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
-        totalOrders: (json['total_orders'] as num?)?.toInt() ?? 0,
-        marketingOptIn: json['marketing_opt_in'] as bool? ?? false,
-        pushEnabled: json['push_enabled'] as bool? ?? true,
-        smsEnabled: json['sms_enabled'] as bool? ?? true,
-        emailEnabled: json['email_enabled'] as bool? ?? true,
-        whatsappEnabled: json['whatsapp_enabled'] as bool? ?? false,
-      );
+    id: json['id'] as String,
+    phone: json['phone'] as String?,
+    email: json['email'] as String?,
+    fullName: json['full_name'] as String?,
+    avatarUrl: json['avatar_url'] as String?,
+    status: (json['status'] as String?) ?? 'ACTIVE',
+    preferredLanguage: (json['preferred_language'] as String?) ?? 'en',
+    preferredBranchId: json['preferred_branch_id'] as String?,
+    onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
+    totalOrders: (json['total_orders'] as num?)?.toInt() ?? 0,
+    marketingOptIn: json['marketing_opt_in'] as bool? ?? false,
+    pushEnabled: json['push_enabled'] as bool? ?? true,
+    smsEnabled: json['sms_enabled'] as bool? ?? true,
+    emailEnabled: json['email_enabled'] as bool? ?? true,
+    whatsappEnabled: json['whatsapp_enabled'] as bool? ?? false,
+  );
 }
 
 class BranchSummary {
@@ -175,11 +180,11 @@ class BranchSummary {
   final String status;
 
   factory BranchSummary.fromJson(Map<String, dynamic> json) => BranchSummary(
-        id: json['id'] as String,
-        code: (json['code'] as String?) ?? '',
-        name: (json['name'] as String?) ?? '',
-        status: (json['status'] as String?) ?? 'CLOSED',
-      );
+    id: json['id'] as String,
+    code: (json['code'] as String?) ?? '',
+    name: (json['name'] as String?) ?? '',
+    status: (json['status'] as String?) ?? 'CLOSED',
+  );
 }
 
 /// Result of `public.my_session()` — identity, live permissions and branch scope
@@ -197,14 +202,14 @@ class AppSession {
   });
 
   const AppSession.guest()
-      : authenticated = false,
-        userId = null,
-        profile = null,
-        primaryRole = AppRole.customer,
-        roles = const [],
-        permissions = const {},
-        branches = const [],
-        accountActive = true;
+    : authenticated = false,
+      userId = null,
+      profile = null,
+      primaryRole = AppRole.customer,
+      roles = const [],
+      permissions = const {},
+      branches = const [],
+      accountActive = true;
 
   final bool authenticated;
   final String? userId;
@@ -231,21 +236,22 @@ class AppSession {
   bool canAny(Iterable<String> codes) => codes.any(permissions.contains);
 
   AppSession copyWith({UserProfile? profile}) => AppSession(
-        authenticated: authenticated,
-        userId: userId,
-        profile: profile ?? this.profile,
-        primaryRole: primaryRole,
-        roles: roles,
-        permissions: permissions,
-        branches: branches,
-        accountActive: accountActive,
-      );
+    authenticated: authenticated,
+    userId: userId,
+    profile: profile ?? this.profile,
+    primaryRole: primaryRole,
+    roles: roles,
+    permissions: permissions,
+    branches: branches,
+    accountActive: accountActive,
+  );
 
   /// Profile is complete enough to check out.
   bool get needsProfileSetup =>
       authenticated &&
       isCustomer &&
-      ((profile?.fullName ?? '').trim().isEmpty || !(profile?.onboardingCompleted ?? false));
+      ((profile?.fullName ?? '').trim().isEmpty ||
+          !(profile?.onboardingCompleted ?? false));
 
   factory AppSession.fromJson(Map<String, dynamic> json) {
     if (json['authenticated'] != true) return const AppSession.guest();
@@ -264,18 +270,23 @@ class AppSession {
       primaryRole: AppRole.fromCode(json['primary_role'] as String?),
       roles: rolesJson is List
           ? rolesJson
-              .whereType<Map>()
-              .map((role) => RoleGrant.fromJson(Map<String, dynamic>.from(role)))
-              .toList()
+                .whereType<Map>()
+                .map(
+                  (role) => RoleGrant.fromJson(Map<String, dynamic>.from(role)),
+                )
+                .toList()
           : const [],
       permissions: permissionsJson is List
           ? permissionsJson.whereType<String>().toSet()
           : const {},
       branches: branchesJson is List
           ? branchesJson
-              .whereType<Map>()
-              .map((branch) => BranchSummary.fromJson(Map<String, dynamic>.from(branch)))
-              .toList()
+                .whereType<Map>()
+                .map(
+                  (branch) =>
+                      BranchSummary.fromJson(Map<String, dynamic>.from(branch)),
+                )
+                .toList()
           : const [],
       accountActive: json['account_active'] as bool? ?? true,
     );

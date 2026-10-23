@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../data/account_models.dart';
@@ -10,6 +11,7 @@ import '../data/content_models.dart';
 import '../data/content_repository.dart';
 import '../data/group_order_models.dart';
 import '../data/group_order_repository.dart';
+import '../data/growth_repository.dart';
 import '../data/menu_models.dart';
 import '../data/menu_repository.dart';
 import '../data/order_models.dart';
@@ -49,6 +51,48 @@ final groupOrderRepositoryProvider = Provider<GroupOrderRepository>(
   (ref) => GroupOrderRepository(ref.watch(apiClientProvider)),
 );
 
+final growthRepositoryProvider = Provider<GrowthRepository>(
+  (ref) => GrowthRepository(ref.watch(apiClientProvider)),
+);
+
+final outletsProvider = FutureProvider<List<OutletSummary>>((ref) {
+  return ref.watch(growthRepositoryProvider).outlets();
+});
+
+/// Guest selections live in SharedPreferences; signed-in selections are also
+/// written to the profile through the server-validated RPC.
+final selectedOutletOverrideProvider = StateProvider<String?>((ref) => null);
+
+final persistedCustomerOutletProvider = FutureProvider<String?>((ref) async {
+  final preferences = await SharedPreferences.getInstance();
+  return preferences.getString('customer_active_branch');
+});
+
+final favoritesProvider = FutureProvider<List<FavoriteDish>>((ref) async {
+  final session = ref.watch(currentSessionProvider);
+  if (session.isGuest) return const [];
+  return ref
+      .watch(growthRepositoryProvider)
+      .favorites(
+        branchId: ref.watch(activeBranchIdProvider),
+        locale: session.profile?.preferredLanguage ?? 'en',
+      );
+});
+
+final favoriteIdsProvider = Provider<Set<String>>((ref) {
+  return ref
+          .watch(favoritesProvider)
+          .valueOrNull
+          ?.map((dish) => dish.id)
+          .toSet() ??
+      const {};
+});
+
+final referralSummaryProvider = FutureProvider<ReferralSummary?>((ref) async {
+  if (ref.watch(currentSessionProvider).isGuest) return null;
+  return ref.watch(growthRepositoryProvider).referralSummary();
+});
+
 final currentGroupOrderProvider = FutureProvider<GroupOrder?>((ref) async {
   final session = ref.watch(currentSessionProvider);
   if (session.isGuest) return null;
@@ -74,20 +118,42 @@ final publishedFaqsProvider = FutureProvider<List<CmsFaq>>((ref) {
 /// this is the configured default, and switching outlets means changing this one
 /// value rather than threading a branch id through every screen.
 final activeBranchIdProvider = Provider<String?>((ref) {
-  return ref
+  final session = ref.watch(currentSessionProvider);
+  final configured = ref
       .watch(appConfigProvider)
       .maybeWhen(data: (config) => config.branchId, orElse: () => null);
+  final selected =
+      session.profile?.preferredBranchId ??
+      ref.watch(selectedOutletOverrideProvider) ??
+      ref.watch(persistedCustomerOutletProvider).valueOrNull ??
+      configured;
+  final outlets = ref.watch(outletsProvider).valueOrNull;
+  if (outlets == null || outlets.any((outlet) => outlet.id == selected)) {
+    return selected;
+  }
+  if (configured != null && outlets.any((outlet) => outlet.id == configured)) {
+    return configured;
+  }
+  return outlets.isEmpty ? null : outlets.first.id;
 });
 
 // ── Menu ───────────────────────────────────────────────────────────────────
 final homeFeedProvider = FutureProvider<HomeFeed>((ref) async {
   final branchId = ref.watch(activeBranchIdProvider);
-  return ref.watch(menuRepositoryProvider).homeFeed(branchId: branchId);
+  final locale =
+      ref.watch(currentSessionProvider).profile?.preferredLanguage ?? 'en';
+  return ref
+      .watch(menuRepositoryProvider)
+      .homeFeed(branchId: branchId, locale: locale);
 });
 
 final menuCatalogProvider = FutureProvider<MenuCatalog>((ref) async {
   final branchId = ref.watch(activeBranchIdProvider);
-  return ref.watch(menuRepositoryProvider).catalog(branchId: branchId);
+  final locale =
+      ref.watch(currentSessionProvider).profile?.preferredLanguage ?? 'en';
+  return ref
+      .watch(menuRepositoryProvider)
+      .catalog(branchId: branchId, locale: locale);
 });
 
 final productDetailProvider = FutureProvider.family<ProductDetail, String>((
@@ -95,9 +161,11 @@ final productDetailProvider = FutureProvider.family<ProductDetail, String>((
   productId,
 ) async {
   final branchId = ref.watch(activeBranchIdProvider);
+  final locale =
+      ref.watch(currentSessionProvider).profile?.preferredLanguage ?? 'en';
   return ref
       .watch(menuRepositoryProvider)
-      .productDetail(productId: productId, branchId: branchId);
+      .productDetail(productId: productId, branchId: branchId, locale: locale);
 });
 
 final searchSuggestionsProvider = FutureProvider<SearchSuggestions>((
@@ -116,7 +184,11 @@ final searchResultsProvider = FutureProvider<SearchResults?>((ref) async {
   if (query.length < 2) return null;
 
   final branchId = ref.watch(activeBranchIdProvider);
-  return ref.watch(menuRepositoryProvider).search(query, branchId: branchId);
+  final locale =
+      ref.watch(currentSessionProvider).profile?.preferredLanguage ?? 'en';
+  return ref
+      .watch(menuRepositoryProvider)
+      .search(query, branchId: branchId, locale: locale);
 });
 
 /// Menu filters the customer can toggle. Purely a view concern: availability and
@@ -291,5 +363,6 @@ final availableCouponsProvider = FutureProvider<List<CustomerCoupon>>((
   if (session.isGuest) return const [];
 
   final branchId = ref.watch(activeBranchIdProvider);
-  return ref.watch(cartRepositoryProvider).availableCoupons(branchId: branchId);
+  final locale = session.profile?.preferredLanguage ?? 'en';
+  return ref.watch(cartRepositoryProvider).availableCoupons(branchId: branchId, locale: locale);
 });

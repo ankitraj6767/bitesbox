@@ -12,6 +12,7 @@ import {
     Megaphone,
     Palette,
     ReceiptText,
+    Gift,
     Settings,
     Star,
     Truck,
@@ -136,6 +137,13 @@ export const NAV_GROUPS: NavGroup[] = [
                 icon: Megaphone,
                 permissions: [PERMISSIONS.COUPON_VIEW, PERMISSIONS.PROMOTION_MANAGE],
                 description: 'Automatic offers with no code',
+            },
+            {
+                label: 'Referrals',
+                href: '/referrals',
+                icon: Gift,
+                permissions: [PERMISSIONS.REFERRAL_MANAGE],
+                description: 'Configure terms and review referral rewards',
             },
             {
                 label: 'Campaigns',

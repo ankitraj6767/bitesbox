@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardToolbar } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductForm } from '@/features/menu/product-form';
+import { CatalogTranslationEditor } from '@/features/menu/catalog-translation-editor';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { money, humanise } from '@/lib/utils';
 
@@ -39,13 +40,13 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
             : supabase
                 .from('products')
                 .select(
-                    `id, name, slug, category_id, short_description, description, food_type, spice_level,
+                    `id, name, name_hi, slug, category_id, short_description, short_description_hi, description, description_hi, food_type, spice_level,
              base_price, compare_price, packaging_charge, preparation_minutes, serves_count,
              calories, tax_category_id, max_quantity_per_order, is_active, is_featured,
              is_best_seller, is_new, is_recommended, is_combo, allows_special_instructions,
              search_keywords, meta_title, meta_description,
-             product_variants(id, name, option_group, price, availability, is_default, is_active),
-             product_modifier_groups(id, modifier_group_id, display_order, modifier_groups(name, selection, is_required))`,
+             product_variants(id, name, name_hi, option_group, option_group_hi, price, availability, is_default, is_active),
+             product_modifier_groups(id, modifier_group_id, display_order, modifier_groups(name, name_hi, description_hi, selection, is_required, modifiers(id, name, name_hi, description_hi)))`,
                 )
                 .eq('id', id)
                 .is('deleted_at', null)
@@ -99,10 +100,13 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
                     product
                         ? {
                             name: product.name,
+                            name_hi: product.name_hi ?? '',
                             slug: product.slug,
                             category_id: product.category_id,
                             short_description: product.short_description ?? '',
+                            short_description_hi: product.short_description_hi ?? '',
                             description: product.description ?? '',
+                            description_hi: product.description_hi ?? '',
                             food_type: product.food_type,
                             spice_level: product.spice_level,
                             base_price: Number(product.base_price),
@@ -202,6 +206,32 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
                             )}
                         </CardContent>
                     </Card>
+                </div>
+            ) : null}
+
+            {product && hasPermission(session, PERMISSIONS.MENU_UPDATE) ? (
+                <div className="mt-4">
+                    <CatalogTranslationEditor
+                        productId={product.id}
+                        variants={(product.product_variants ?? []).map((variant) => ({
+                            id: variant.id,
+                            name_hi: variant.name_hi ?? '',
+                            option_group_hi: variant.option_group_hi ?? '',
+                        }))}
+                        groups={(product.product_modifier_groups ?? []).flatMap((link) => {
+                            const group = link.modifier_groups;
+                            return group ? [{
+                                id: link.modifier_group_id,
+                                name_hi: group.name_hi ?? '',
+                                description_hi: group.description_hi ?? '',
+                                modifiers: (group.modifiers ?? []).map((modifier) => ({
+                                    id: modifier.id,
+                                    name_hi: modifier.name_hi ?? '',
+                                    description_hi: modifier.description_hi ?? '',
+                                })),
+                            }] : [];
+                        })}
+                    />
                 </div>
             ) : null}
         </>

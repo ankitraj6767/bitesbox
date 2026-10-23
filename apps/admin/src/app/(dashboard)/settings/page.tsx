@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 export default async function SettingsPage() {
     const session = await requirePermission(PERMISSIONS.SETTINGS_VIEW);
     const supabase = await createSupabaseServerClient();
-    const branchId = activeBranchId(session);
+    const branchId = await activeBranchId(session);
 
     const canEditSettings = hasPermission(session, PERMISSIONS.SETTINGS_UPDATE);
     const canEditFlags = hasPermission(session, PERMISSIONS.FEATURE_FLAG_UPDATE);

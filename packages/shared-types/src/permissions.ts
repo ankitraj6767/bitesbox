@@ -72,6 +72,7 @@ export const PERMISSIONS = {
     NOTIFICATION_SEND: 'notification.send',
     NOTIFICATION_TEMPLATE: 'notification.template',
     CAMPAIGN_MANAGE: 'campaign.manage',
+    REFERRAL_MANAGE: 'referral.manage',
 
     ANALYTICS_VIEW: 'analytics.view',
     REPORT_VIEW: 'report.view',

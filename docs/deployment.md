@@ -17,7 +17,7 @@ is taking orders through.
 
 ```
 Docker (or colima)   local Supabase stack
-Node                 >= 20.11.0
+Node                 >= 20.19.0
 Supabase CLI         >= 2.x
 Deno                 v2.x        Edge Functions
 Flutter              3.35.x      mobile
@@ -35,7 +35,7 @@ cp .env.example .env                       # fill in what you have
 # Backend
 npm run db:start                           # supabase start
 npm run db:reset                           # migrations + seeds, ~3 min
-npm run db:test                            # 11 suites, expect 11 passed
+npm run db:test                            # 12 suites, expect 12 passed
 
 # Admin
 cd apps/admin && cp ../../.env.example .env.local
@@ -44,9 +44,12 @@ npm run dev                                # http://localhost:3000
 # Mobile
 cd apps/mobile && flutter pub get
 flutter run --dart-define-from-file=env/local.json
+
+# Public customer storefront
+cd apps/storefront && npm run dev          # http://localhost:3001
 ```
 
-`db:reset` applies all 56 migrations to an empty database and then the seven seed
+`db:reset` applies all 61 migrations to an empty database and then the seven seed
 files in order. It is the only supported way to get a working local database —
 there is no snapshot to restore.
 
@@ -107,8 +110,8 @@ push will do. Read it. `db push` against a live restaurant is irreversible.
 
 ## CI
 
-`.github/workflows/ci.yml` — five parallel jobs on every push to `main`, every PR,
-and on demand. Concurrency is grouped per ref with `cancel-in-progress`, so a new
+`.github/workflows/ci.yml` — six parallel jobs on pushes to `main` and `codex/**`,
+every PR, and on demand. Concurrency is grouped per ref with `cancel-in-progress`, so a new
 push supersedes an in-flight run.
 
 | Job | Timeout | Does |
@@ -116,6 +119,7 @@ push supersedes an in-flight run.
 | Database | 25 min | `supabase start` → `db reset` → `db lint --level warning` → SQL suites → assert generated types are current |
 | Edge Functions | 15 min | `deno check` each entry point, `deno lint`, `deno fmt --check` |
 | Admin dashboard | 20 min | `npm ci` → lint → typecheck → vitest → deterministic Playwright staff/refund journey → `next build` |
+| Customer storefront | 20 min | lint → typecheck → unit tests → deterministic Playwright customer journey → production build |
 | Mobile app | 25 min | `pub get` → `analyze` → `test` → debug APK |
 | Secret scan | 10 min | `scripts/check-secrets.sh` |
 

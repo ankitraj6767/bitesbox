@@ -6,6 +6,7 @@ import '../../../core/notifications/push_providers.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/format.dart';
 import '../../../shared/launcher.dart';
@@ -19,12 +20,13 @@ class AccountScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final session = ref.watch(currentSessionProvider);
     final config = ref.watch(appConfigProvider).valueOrNull;
 
     if (session.isGuest) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Account')),
+        appBar: AppBar(title: Text(l10n.account)),
         body: AppEmptyState(
           title: 'Sign in to Bites Box',
           message: 'Save addresses, track orders and collect rewards.',
@@ -51,7 +53,7 @@ class AccountScreen extends ConsumerWidget {
     final unread = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Account')),
+      appBar: AppBar(title: Text(l10n.account)),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 28),
         children: [
@@ -178,6 +180,16 @@ class AccountScreen extends ConsumerWidget {
           _Group(
             title: 'Ordering',
             tiles: [
+              _Tile(
+                icon: Icons.favorite_border_rounded,
+                label: l10n.favorites,
+                onTap: () => context.push(Routes.favorites),
+              ),
+              _Tile(
+                icon: Icons.card_giftcard_rounded,
+                label: l10n.referrals,
+                onTap: () => context.push(Routes.referrals),
+              ),
               _Tile(
                 icon: Icons.location_on_outlined,
                 label: 'Delivery addresses',

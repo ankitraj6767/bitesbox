@@ -5,6 +5,7 @@ import '../../../core/auth/session.dart' show UserProfile;
 import '../../../core/errors/app_error.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/widgets/states.dart';
 import '../providers/customer_providers.dart';
@@ -35,6 +36,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _smsChanged = false;
   bool _whatsappChanged = false;
   bool _busy = false;
+  String _language = 'en';
+  bool _languageChanged = false;
 
   @override
   void initState() {
@@ -51,10 +54,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _push = profile.pushEnabled;
     _sms = profile.smsEnabled;
     _whatsapp = profile.whatsappEnabled;
+    _language = profile.preferredLanguage;
     _marketingChanged = false;
     _pushChanged = false;
     _smsChanged = false;
     _whatsappChanged = false;
+    _languageChanged = false;
     _preferencesReady = true;
   }
 
@@ -74,22 +79,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     setState(() => _busy = true);
 
     try {
-      await ref.read(accountRepositoryProvider).updateProfile(
+      await ref
+          .read(accountRepositoryProvider)
+          .updateProfile(
             fullName: _name.text,
             email: _email.text,
             marketingOptIn: _marketingChanged ? _marketingOptIn : null,
             pushEnabled: _pushChanged ? _push : null,
             smsEnabled: _smsChanged ? _sms : null,
             whatsappEnabled: _whatsappChanged ? _whatsapp : null,
+            preferredLanguage: _languageChanged ? _language : null,
           );
       final currentProfile = ref.read(currentSessionProvider).profile!;
       final savedProfile = currentProfile.copyWith(
         fullName: _name.text.trim(),
-        email: _email.text.trim().isEmpty ? null : _email.text.trim().toLowerCase(),
+        email: _email.text.trim().isEmpty
+            ? null
+            : _email.text.trim().toLowerCase(),
         marketingOptIn: _marketingChanged ? _marketingOptIn : null,
         pushEnabled: _pushChanged ? _push : null,
         smsEnabled: _smsChanged ? _sms : null,
         whatsappEnabled: _whatsappChanged ? _whatsapp : null,
+        preferredLanguage: _languageChanged ? _language : null,
       );
       ref.read(sessionProvider.notifier).updateProfile(savedProfile);
       if (!mounted) return;
@@ -106,6 +117,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final session = ref.watch(currentSessionProvider);
     final profile = session.profile;
 
@@ -117,7 +129,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (!session.authenticated || profile == null || !_preferencesReady) {
       final sessionState = ref.watch(sessionProvider);
       return Scaffold(
-        appBar: AppBar(title: const Text('Your profile')),
+        appBar: AppBar(title: Text(l10n.yourProfile)),
         body: sessionState.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => AppErrorState(
@@ -138,7 +150,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Your profile')),
+      appBar: AppBar(title: Text(l10n.yourProfile)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -169,8 +181,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               labelText: 'Mobile number',
               helperText: 'Sign in with a different number to change this',
               prefixIcon: const Icon(Icons.phone_outlined),
-              suffixIcon: Icon(Icons.verified_rounded, color: brand.success, size: 20),
+              suffixIcon: Icon(
+                Icons.verified_rounded,
+                color: brand.success,
+                size: 20,
+              ),
             ),
+          ),
+          const SizedBox(height: 24),
+          DropdownButtonFormField<String>(
+            initialValue: _language,
+            decoration: InputDecoration(
+              labelText: l10n.language,
+              prefixIcon: const Icon(Icons.translate_rounded),
+            ),
+            items: [
+              DropdownMenuItem(value: 'en', child: Text(l10n.english)),
+              DropdownMenuItem(value: 'hi', child: Text(l10n.hindi)),
+            ],
+            onChanged: _busy
+                ? null
+                : (value) => setState(() {
+                    _language = value ?? 'en';
+                    _languageChanged = _language != profile.preferredLanguage;
+                  }),
           ),
           const SizedBox(height: 24),
           Text(
@@ -183,8 +217,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Order-critical updates may still be sent when needed. These settings control your delivery channels; offers are separate.',
-            style: TextStyle(fontSize: 12.5, height: 1.4, color: brand.inkMuted),
+            l10n.orderCriticalMessages,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.4,
+              color: brand.inkMuted,
+            ),
           ),
           SwitchListTile.adaptive(
             value: _push,
@@ -217,7 +255,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           SwitchListTile.adaptive(
             value: _marketingOptIn,
             contentPadding: EdgeInsets.zero,
-            title: const Text('Offers and new dish alerts'),
+            title: Text(l10n.offersConsent),
             subtitle: Text(
               'Occasional messages about discounts and additions to the menu.',
               style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
@@ -230,7 +268,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _busy ? null : _save,
-            child: Text(_busy ? 'Saving…' : 'Save changes'),
+            child: Text(_busy ? 'Saving…' : l10n.saveChanges),
           ),
           const SizedBox(height: 24),
           if (session.roles.isNotEmpty) ...[

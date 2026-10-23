@@ -46,7 +46,7 @@ function dutyTone(state: RiderDutyState) {
 export default async function DeliveryPage() {
     const session = await requirePermission([PERMISSIONS.RIDER_VIEW, PERMISSIONS.DELIVERY_VIEW]);
     const supabase = await createSupabaseServerClient();
-    const branchId = activeBranchId(session);
+    const branchId = await activeBranchId(session);
 
     let ridersQuery = supabase
         .from('delivery_partners')

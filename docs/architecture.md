@@ -36,7 +36,7 @@ cannot be bypassed by a second client written later.
 │   app.*        private helpers, triggers, guards          │
 │   analytics.*  reporting helpers                          │
 │                                                           │
-│   87 tables · 57 enums · 155 RLS policies · 107 client RPCs│
+│   93 tables · 57 enums · 144 RLS policies · 130 client RPCs│
 └──────────┬────────────────────────────────────────────────┘
            │  PostgREST + service role (server-side only)
            ▼
@@ -45,6 +45,11 @@ cannot be bypassed by a second client written later.
 │   Owner · Admin · Manager · Operations ·                  │
 │   Finance · Support · Marketing                           │
 │   One application, RBAC decides what each operator sees   │
+└───────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│          NEXT.JS 15 CUSTOMER WEB STOREFRONT               │
+│   Public menu · search · account · cart · order tracking   │
+│   Anonymous browsing; authenticated RPCs for customer data │
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -185,10 +190,17 @@ grant with `branch_id IS NULL` as organisation-wide and a scoped grant as applyi
 to that branch only. A manager at a second outlet is a `user_roles` row, not a code
 change.
 
-What is deliberately absent is multi-branch *UI*. The customer app talks to
-`app.default_branch_id()`, and the dashboard shows one outlet. Adding a branch
-selector later is additive; retrofitting `branch_id` into a live orders table is
-not. That asymmetry is the whole argument for carrying the column early.
+Customer surfaces can select among active public outlets. A signed-in customer
+stores the preference on their profile; a guest stores it in a first-party cookie.
+Carts remain outlet-scoped, and serviceability and current price are checked by the
+existing server functions. Staff can select only a branch returned in their
+authenticated session scope. The admin cookie is a view preference and cannot
+grant branch access; SQL/RPC permission checks remain authoritative.
+
+Public outlet discovery omits inactive branches. The mobile picker checks a saved
+delivery address when one exists and explains pickup-only or unavailable states.
+The web storefront uses public outlet data and rechecks signed-in addresses before
+persisting a new preferred branch.
 
 ## Deliberate omissions
 

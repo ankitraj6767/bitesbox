@@ -57,8 +57,11 @@ export function CmsSectionEditor({
         kind: form.kind,
         section_key: form.section_key.trim().toLowerCase(),
         title: form.title.trim() || null,
+        title_hi: form.title_hi?.trim() || null,
         subtitle: form.subtitle.trim() || null,
+        subtitle_hi: form.subtitle_hi?.trim() || null,
         action_label: form.action_label.trim() || null,
+        action_label_hi: form.action_label_hi?.trim() || null,
         action_route: form.action_route.trim() || null,
         layout: form.layout,
         item_limit: Math.max(1, Math.min(50, Number(form.item_limit) || 1)),
@@ -72,6 +75,7 @@ export function CmsSectionEditor({
         text_color: form.text_color.trim() || null,
         image_path: form.image_path.trim() || null,
         rich_text: form.rich_text.trim() || null,
+        rich_text_hi: form.rich_text_hi?.trim() || null,
         starts_at: form.starts_at
           ? new Date(form.starts_at).toISOString()
           : null,
@@ -141,6 +145,9 @@ export function CmsSectionEditor({
               placeholder="What are you craving?"
             />
           </Field>
+          <Field label="Title (Hindi)" hint="Reviewed Hindi copy; English is the fallback.">
+            <Input value={form.title_hi ?? ""} onChange={(event) => set("title_hi", event.target.value)} lang="hi" />
+          </Field>
           <Field label="Subtitle">
             <Input
               value={form.subtitle}
@@ -148,12 +155,18 @@ export function CmsSectionEditor({
               placeholder="Browse by category"
             />
           </Field>
+          <Field label="Subtitle (Hindi)">
+            <Input value={form.subtitle_hi ?? ""} onChange={(event) => set("subtitle_hi", event.target.value)} lang="hi" />
+          </Field>
           <Field label="Action label">
             <Input
               value={form.action_label}
               onChange={(event) => set("action_label", event.target.value)}
               placeholder="See all"
             />
+          </Field>
+          <Field label="Action label (Hindi)">
+            <Input value={form.action_label_hi ?? ""} onChange={(event) => set("action_label_hi", event.target.value)} lang="hi" />
           </Field>
           <Field label="Action route" hint="Example: bitesbox://menu">
             <Input
@@ -290,6 +303,9 @@ export function CmsSectionEditor({
               rows={5}
               placeholder="Optional customer-facing text."
             />
+          </Field>
+          <Field label="Rich text (Hindi)" className="md:col-span-2">
+            <Textarea value={form.rich_text_hi ?? ""} onChange={(event) => set("rich_text_hi", event.target.value)} lang="hi" rows={5} />
           </Field>
           <label className="flex items-center gap-2 text-[13px] text-ink">
             <input

@@ -110,6 +110,7 @@ export interface SessionProfile {
     avatar_url: string | null;
     status: string;
     preferred_language: 'en' | 'hi';
+    preferred_branch_id?: string | null;
     onboarding_completed: boolean;
     total_orders: number;
     marketing_opt_in: boolean;

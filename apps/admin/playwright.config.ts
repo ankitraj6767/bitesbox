@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = 'http://127.0.0.1:3100';
+// Next's development middleware canonicalizes redirects to localhost. Keep the
+// browser origin and session-cookie origin identical so auth survives redirects.
+const baseURL = 'http://localhost:3100';
 
 export default defineConfig({
     testDir: './e2e',
@@ -17,7 +19,7 @@ export default defineConfig({
     webServer: [
         {
             command: 'node e2e/fake-supabase.mjs',
-            url: 'http://127.0.0.1:54321/health',
+            url: 'http://127.0.0.1:55320/health',
             reuseExistingServer: !process.env.CI,
             timeout: 30_000,
         },
@@ -27,7 +29,7 @@ export default defineConfig({
             reuseExistingServer: !process.env.CI,
             timeout: 120_000,
             env: {
-                NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321',
+                NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:55320',
                 NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_local_e2e_only',
                 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_local_e2e_only',
                 APP_ENV: 'test',

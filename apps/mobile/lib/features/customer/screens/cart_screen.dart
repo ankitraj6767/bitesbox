@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/format.dart';
 import '../../../shared/widgets/common.dart';
@@ -25,19 +26,20 @@ class CartScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final cart = ref.watch(cartProvider);
     final session = ref.watch(currentSessionProvider);
 
     if (session.isGuest) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Your cart')),
+        appBar: AppBar(title: Text(l10n.yourCart)),
         body: AppEmptyState(
-          title: 'Sign in to build your cart',
-          message: 'Your cart is saved to your account so you can pick up where you left off.',
+          title: l10n.signInToBuildCart,
+          message: l10n.cartSavedToAccount,
           icon: Icons.shopping_bag_outlined,
           action: FilledButton(
             onPressed: () => context.push(Routes.signIn),
-            child: const Text('Sign in'),
+            child: Text(l10n.signIn),
           ),
         ),
       );
@@ -45,12 +47,12 @@ class CartScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your cart'),
+        title: Text(l10n.yourCart),
         actions: [
           if ((cart.valueOrNull?.lines.isNotEmpty ?? false))
             TextButton(
               onPressed: () => _clear(context, ref),
-              child: Text('Clear', style: TextStyle(color: brand.error)),
+              child: Text(l10n.clear, style: TextStyle(color: brand.error)),
             ),
         ],
       ),
@@ -60,12 +62,12 @@ class CartScreen extends ConsumerWidget {
         data: (quote) {
           if (quote.isEmpty) {
             return AppEmptyState(
-              title: 'Your cart is empty',
-              message: 'Add a few dishes from the menu and they will show up here.',
+              title: l10n.emptyCartTitle,
+              message: l10n.emptyCartMessage,
               icon: Icons.shopping_bag_outlined,
               action: FilledButton(
                 onPressed: () => context.go(Routes.menu),
-                child: const Text('Browse the menu'),
+                child: Text(l10n.browseMenu),
               ),
             );
           }
@@ -122,9 +124,9 @@ class CartScreen extends ConsumerWidget {
   Future<void> _clear(BuildContext context, WidgetRef ref) async {
     final confirmed = await AppFeedback.confirm(
       context,
-      title: 'Clear your cart?',
-      message: 'This removes every item you have added.',
-      confirmLabel: 'Clear cart',
+      title: AppLocalizations.of(context).clearCartTitle,
+      message: AppLocalizations.of(context).clearCartMessage,
+      confirmLabel: AppLocalizations.of(context).clearCartAction,
       destructive: true,
     );
 
@@ -146,6 +148,7 @@ class _CartLineTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final busy = ref.watch(cartProvider).isLoading;
 
     return Padding(
@@ -208,7 +211,7 @@ class _CartLineTile extends ConsumerWidget {
                       Icon(Icons.error_outline_rounded, size: 14, color: brand.error),
                       const SizedBox(width: 5),
                       Text(
-                        'Unavailable — remove to continue',
+                        l10n.unavailableRemoveToContinue,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -277,6 +280,7 @@ class _CouponRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
     final applied = quote.appliedCouponCode;
+    final l10n = AppLocalizations.of(context);
 
     return InkWell(
       onTap: () => CouponSheet.show(context),
@@ -301,7 +305,7 @@ class _CouponRow extends ConsumerWidget {
             Expanded(
               child: applied == null
                   ? Text(
-                      'Apply a coupon',
+                      l10n.applyCoupon,
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w600,
@@ -329,7 +333,7 @@ class _CouponRow extends ConsumerWidget {
             if (applied != null)
               TextButton(
                 onPressed: () => _remove(context, ref),
-                child: const Text('Remove'),
+                child: Text(l10n.remove),
               )
             else
               Icon(Icons.chevron_right_rounded, size: 20, color: brand.inkMuted),
@@ -384,6 +388,7 @@ class _CartFooter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final value = quote;
 
     if (value == null || value.isEmpty) return const SizedBox.shrink();
@@ -422,7 +427,7 @@ class _CartFooter extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      '${value.unitCount} item${value.unitCount == 1 ? '' : 's'}',
+                      l10n.cartItemCount(value.unitCount),
                       style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                     ),
                   ],
@@ -435,7 +440,7 @@ class _CartFooter extends ConsumerWidget {
                     onPressed: canProceed || _fixableAtCheckout(value)
                         ? () => context.push(Routes.checkout)
                         : null,
-                    child: const Text('Continue'),
+                    child: Text(l10n.checkout),
                   ),
                 ),
               ],

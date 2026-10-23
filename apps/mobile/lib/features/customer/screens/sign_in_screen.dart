@@ -14,7 +14,9 @@ import '../../../shared/feedback.dart';
 /// The OTP provider is configured server-side, so switching SMS vendors never
 /// requires an app release. All this screen does is ask for a number.
 class SignInScreen extends ConsumerStatefulWidget {
-  const SignInScreen({super.key});
+  const SignInScreen({this.referralCode, super.key});
+
+  final String? referralCode;
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -49,7 +51,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     try {
       await ref.read(authRepositoryProvider).sendOtp(phone);
       if (!mounted) return;
-      context.push(Routes.verify, extra: phone);
+      context.push(
+        Routes.verify,
+        extra: {
+          'phone': phone,
+          if (widget.referralCode != null) 'referralCode': widget.referralCode,
+        },
+      );
     } catch (error) {
       if (!mounted) return;
       AppFeedback.showError(context, error);

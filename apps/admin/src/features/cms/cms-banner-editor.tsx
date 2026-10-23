@@ -84,11 +84,15 @@ export function CmsBannerEditor({
       const payload = {
         section_id: form.section_id || null,
         title: form.title.trim() || null,
+        title_hi: form.title_hi?.trim() || null,
         subtitle: form.subtitle.trim() || null,
+        subtitle_hi: form.subtitle_hi?.trim() || null,
         badge_text: form.badge_text.trim() || null,
+        badge_text_hi: form.badge_text_hi?.trim() || null,
         image_path: imagePath,
         image_path_wide: form.image_path_wide.trim() || null,
         alt_text: form.alt_text.trim() || null,
+        alt_text_hi: form.alt_text_hi?.trim() || null,
         background_color: form.background_color.trim() || null,
         link_kind: form.link_kind,
         link_category_id:
@@ -147,6 +151,9 @@ export function CmsBannerEditor({
               placeholder="Handi biryani, sealed and slow-cooked"
             />
           </Field>
+          <Field label="Title (Hindi)">
+            <Input value={form.title_hi ?? ""} onChange={(event) => set("title_hi", event.target.value)} lang="hi" />
+          </Field>
           <Field label="Badge text">
             <Input
               value={form.badge_text}
@@ -154,11 +161,17 @@ export function CmsBannerEditor({
               placeholder="SIGNATURE"
             />
           </Field>
+          <Field label="Badge text (Hindi)">
+            <Input value={form.badge_text_hi ?? ""} onChange={(event) => set("badge_text_hi", event.target.value)} lang="hi" />
+          </Field>
           <Field label="Subtitle">
             <Input
               value={form.subtitle}
               onChange={(event) => set("subtitle", event.target.value)}
             />
+          </Field>
+          <Field label="Subtitle (Hindi)">
+            <Input value={form.subtitle_hi ?? ""} onChange={(event) => set("subtitle_hi", event.target.value)} lang="hi" />
           </Field>
           <Field
             label="Alt text"
@@ -170,6 +183,9 @@ export function CmsBannerEditor({
               onChange={(event) => set("alt_text", event.target.value)}
               required
             />
+          </Field>
+          <Field label="Alt text (Hindi)" hint="Reviewed Hindi description for accessibility.">
+            <Input value={form.alt_text_hi ?? ""} onChange={(event) => set("alt_text_hi", event.target.value)} lang="hi" />
           </Field>
           <Field
             label="Banner image"

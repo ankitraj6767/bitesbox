@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../providers/cart_controller.dart';
 import '../providers/customer_providers.dart';
 
@@ -18,6 +19,7 @@ class CustomerShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final cartCount = ref.watch(cartUnitCountProvider);
     final unread = ref.watch(unreadNotificationCountProvider);
 
@@ -39,10 +41,10 @@ class CustomerShell extends ConsumerWidget {
             height: 64,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: [
-              const NavigationDestination(
+              NavigationDestination(
                 icon: Icon(Icons.home_outlined),
                 selectedIcon: Icon(Icons.home_rounded),
-                label: 'Home',
+                label: l10n.home,
               ),
               NavigationDestination(
                 icon: Badge(
@@ -57,12 +59,12 @@ class CustomerShell extends ConsumerWidget {
                   backgroundColor: brand.primary,
                   child: const Icon(Icons.restaurant_menu_rounded),
                 ),
-                label: 'Menu',
+                label: l10n.menu,
               ),
-              const NavigationDestination(
+              NavigationDestination(
                 icon: Icon(Icons.receipt_long_outlined),
                 selectedIcon: Icon(Icons.receipt_long_rounded),
-                label: 'Orders',
+                label: l10n.orders,
               ),
               NavigationDestination(
                 icon: Badge(
@@ -72,7 +74,7 @@ class CustomerShell extends ConsumerWidget {
                   child: const Icon(Icons.person_outline_rounded),
                 ),
                 selectedIcon: const Icon(Icons.person_rounded),
-                label: 'Account',
+                label: l10n.account,
               ),
             ],
           ),

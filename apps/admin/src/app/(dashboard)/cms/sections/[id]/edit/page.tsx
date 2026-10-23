@@ -23,7 +23,7 @@ export default async function EditCmsSectionPage({
       supabase
         .from("cms_sections")
         .select(
-          "id, kind, section_key, title, subtitle, action_label, action_route, layout, item_limit, display_order, is_active, requires_auth, category_id, collection_id, rule, background_color, text_color, image_path, rich_text, starts_at, ends_at, valid_days_of_week, valid_from_time, valid_to_time",
+          "id, kind, section_key, title, title_hi, subtitle, subtitle_hi, action_label, action_label_hi, action_route, layout, item_limit, display_order, is_active, requires_auth, category_id, collection_id, rule, background_color, text_color, image_path, rich_text, rich_text_hi, starts_at, ends_at, valid_days_of_week, valid_from_time, valid_to_time",
         )
         .eq("id", id)
         .maybeSingle(),

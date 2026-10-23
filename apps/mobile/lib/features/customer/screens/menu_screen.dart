@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/widgets/states.dart';
 import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
@@ -35,17 +36,18 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final catalog = ref.watch(menuCatalogProvider);
     final filters = ref.watch(menuFiltersProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Our menu'),
+        title: Text(l10n.ourMenu),
         actions: [
           IconButton(
             onPressed: () => context.push(Routes.search),
             icon: const Icon(Icons.search_rounded),
-            tooltip: 'Search the menu',
+          tooltip: l10n.searchMenu,
           ),
         ],
         bottom: PreferredSize(
@@ -63,9 +65,9 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               .toList();
 
           if (categories.isEmpty) {
-            return const AppEmptyState(
-              title: 'The menu is empty',
-              message: 'Dishes are being added. Please check back shortly.',
+            return AppEmptyState(
+              title: l10n.menuEmptyTitle,
+              message: l10n.menuEmptyMessage,
               icon: Icons.restaurant_menu_outlined,
             );
           }
@@ -97,10 +99,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               Expanded(
                 child: products.isEmpty
                     ? AppEmptyState(
-                        title: 'Nothing matches',
+                        title: l10n.nothingMatches,
                         message: filters.isActive
-                            ? 'Try clearing your filters to see more dishes.'
-                            : 'This category has no dishes right now.',
+                            ? l10n.clearFiltersMessage
+                            : l10n.categoryEmptyMessage,
                         icon: Icons.filter_alt_off_outlined,
                         action: filters.isActive
                             ? OutlinedButton(
@@ -111,7 +113,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                         categoryId: value.categoryId,
                                       ),
                                     ),
-                                child: const Text('Clear filters'),
+                                child: Text(l10n.clearFilters),
                               )
                             : null,
                       )

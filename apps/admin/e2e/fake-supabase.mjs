@@ -1,8 +1,9 @@
 import { createServer } from 'node:http';
 
 const host = '127.0.0.1';
-const port = 54321;
+const port = 55320;
 const branchId = '00000000-0000-4000-8000-000000000101';
+const secondBranchId = '00000000-0000-4000-8000-000000000102';
 const refundId = '00000000-0000-4000-8000-000000000201';
 const ownerId = '00000000-0000-4000-8000-000000000001';
 const operationsId = '00000000-0000-4000-8000-000000000002';
@@ -15,6 +16,7 @@ const ownerPermissions = [
     'customer.view',
     'payment.view',
     'audit.view',
+    'referral.manage',
 ];
 
 const order = {
@@ -107,7 +109,10 @@ function sessionFor(claims) {
             surfaces: ['admin'],
         }],
         permissions,
-        branches: [{ id: branchId, code: 'BKP', name: 'Bakhtiyarpur', status: 'OPEN' }],
+        branches: [
+            { id: branchId, code: 'BKP', name: 'Bakhtiyarpur', status: 'OPEN' },
+            { id: secondBranchId, code: 'PAT', name: 'Patna Test Outlet', status: 'OPEN' },
+        ],
         account_active: true,
         test_factor_pending: isAal1,
     };
@@ -204,6 +209,33 @@ const server = createServer(async (request, response) => {
                 : send(response, 401, { code: 'no_session', message: 'No session' });
         }
         if (name === 'branch_ordering_state') return send(response, 200, null);
+        if (name === 'referral_admin_overview') {
+            return send(response, 200, {
+                settings: {
+                    enabled: false,
+                    referrer_reward: null,
+                    referred_reward: null,
+                    minimum_order_amount: null,
+                    max_rewards_per_referrer: null,
+                    reward_expiry_days: null,
+                },
+                feature_flag_enabled: false,
+                metrics: { attributed: 0, qualified: 0, rewarded: 0, reversed: 0 },
+                activity: [],
+            });
+        }
+        if (name === 'update_referral_program' && request.method === 'POST') {
+            const body = await jsonBody(request);
+            return send(response, 200, {
+                id: true,
+                enabled: body.p_enabled,
+                referrer_reward: body.p_referrer_reward,
+                referred_reward: body.p_referred_reward,
+                minimum_order_amount: body.p_minimum_order_amount,
+                max_rewards_per_referrer: body.p_max_rewards_per_referrer,
+                reward_expiry_days: body.p_reward_expiry_days ?? null,
+            });
+        }
         if (name === 'approve_refund' && request.method === 'POST') {
             const body = await jsonBody(request);
             if (!claims || claims.email !== 'owner@bitesbox.test') {
