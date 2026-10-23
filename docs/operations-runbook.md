@@ -56,6 +56,11 @@ when zones overlap. Checkout reads these values from the database for each new
 quote, so saved changes take effect immediately; an order already placed keeps
 its confirmed delivery fee and zone snapshot.
 
+Permission is checked against the selected outlet, even for users whose role
+grants delivery-zone management in another outlet. If controls are unavailable,
+confirm the active outlet and ask an owner to review the staff role's branch
+assignment and `branch.manage` grant for that outlet.
+
 Use **Live** to remove a zone from matching new addresses, and **Accept orders**
 to keep its coverage visible while preventing new orders in that zone. Deleting
 a zone archives it and stops it matching future quotes; it preserves audit and
