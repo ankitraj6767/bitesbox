@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { visibleNavigation } from '@/lib/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import appPackage from '../../../package.json';
 
 export interface SidebarCounts {
     live_orders?: number;
@@ -130,7 +131,7 @@ export function Sidebar({
                     <p className="text-[11px] leading-relaxed text-ink-muted">
                         Bites Box Operations
                         <span className="mx-1.5 text-hairline">·</span>
-                        v1.2.2
+                        v{appPackage.version}
                     </p>
                 </div>
             </aside>

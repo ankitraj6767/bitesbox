@@ -2,7 +2,7 @@ import * as React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProductForm } from './product-form';
+import { optionalNumberFromInput, ProductForm } from './product-form';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const mocks = vi.hoisted(() => ({ routerPush: vi.fn(), routerRefresh: vi.fn() }));
@@ -48,6 +48,46 @@ describe('ProductForm image upload', () => {
         storageRemove.mockClear();
         productInsert.mockClear();
         productUpdate.mockClear();
+    });
+
+    it('mounts an existing dish with saved optional numeric values', () => {
+        const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+
+        const { container } = render(
+            <QueryClientProvider client={client}>
+                <ProductForm
+                    productId="product-1"
+                    defaults={{
+                        name: 'Chicken Dum Biryani',
+                        slug: 'chicken-dum-biryani',
+                        category_id: categoryId,
+                        base_price: 249,
+                        compare_price: 299,
+                        packaging_charge: 15,
+                        preparation_minutes: 25,
+                        serves_count: 2,
+                        calories: 720,
+                        max_quantity_per_order: 10,
+                    }}
+                    categories={[{ id: categoryId, label: 'Biryani' }]}
+                    taxCategories={[]}
+                    canDelete
+                    canChangePrice
+                />
+            </QueryClientProvider>,
+        );
+
+        expect(container.querySelector<HTMLInputElement>('input[name="compare_price"]')?.value).toBe('299');
+        expect(container.querySelector<HTMLInputElement>('input[name="serves_count"]')?.value).toBe('2');
+        expect(container.querySelector<HTMLInputElement>('input[name="calories"]')?.value).toBe('720');
+        expect(container.querySelector<HTMLInputElement>('input[name="max_quantity_per_order"]')?.value).toBe('10');
+    });
+
+    it('normalizes optional numeric inputs without assuming the value is a string', () => {
+        expect(optionalNumberFromInput(299)).toBe(299);
+        expect(optionalNumberFromInput(' 299 ')).toBe(299);
+        expect(optionalNumberFromInput('   ')).toBeUndefined();
+        expect(optionalNumberFromInput('not a number')).toBeNaN();
     });
 
     it('uploads an image to menu storage and saves it as both product image paths', async () => {

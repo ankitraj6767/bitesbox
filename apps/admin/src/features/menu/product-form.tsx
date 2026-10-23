@@ -80,6 +80,19 @@ export interface ProductFormOption {
 }
 
 /**
+ * React Hook Form can feed `setValueAs` either the raw input string or an
+ * already-parsed default value when a client-side route mounts. Keep saved
+ * numbers intact and only trim string input before converting it.
+ */
+export function optionalNumberFromInput(value: unknown): unknown {
+    if (typeof value === 'number') return value;
+    if (typeof value !== 'string') return value;
+
+    const trimmed = value.trim();
+    return trimmed === '' ? undefined : Number(trimmed);
+}
+
+/**
  * Product editor.
  *
  * Prices are validated here for a fast round trip, but the database is the real
@@ -432,9 +445,7 @@ export function ProductForm({
                                     min={0}
                                     disabled={!canChangePrice}
                                     className="tnum"
-                                    {...register('compare_price', {
-                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
-                                    })}
+                                    {...register('compare_price', { setValueAs: optionalNumberFromInput })}
                                 />
                             </Field>
 
@@ -509,9 +520,7 @@ export function ProductForm({
                                     min={1}
                                     max={20}
                                     className="tnum"
-                                    {...register('serves_count', {
-                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
-                                    })}
+                                    {...register('serves_count', { setValueAs: optionalNumberFromInput })}
                                 />
                             </Field>
 
@@ -520,9 +529,7 @@ export function ProductForm({
                                     type="number"
                                     min={0}
                                     className="tnum"
-                                    {...register('calories', {
-                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
-                                    })}
+                                    {...register('calories', { setValueAs: optionalNumberFromInput })}
                                 />
                             </Field>
 
@@ -536,9 +543,7 @@ export function ProductForm({
                                     min={1}
                                     max={100}
                                     className="tnum"
-                                    {...register('max_quantity_per_order', {
-                                        setValueAs: (value: string) => (value.trim() === '' ? undefined : Number(value)),
-                                    })}
+                                    {...register('max_quantity_per_order', { setValueAs: optionalNumberFromInput })}
                                 />
                             </Field>
                         </CardContent>
