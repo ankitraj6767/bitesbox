@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: 'Live operations' };
 
 export default async function OperationsPage() {
     const session = await requirePermission(PERMISSIONS.ORDER_VIEW);
+    const branchId = await activeBranchId(session);
 
     return (
         <>
@@ -17,7 +18,7 @@ export default async function OperationsPage() {
             />
 
             <OperationsBoard
-                branchId={activeBranchId(session)}
+                branchId={branchId}
                 canAssign={hasPermission(session, PERMISSIONS.DELIVERY_ASSIGN)}
                 canOperate={hasPermission(session, [
                     PERMISSIONS.ORDER_ACCEPT,

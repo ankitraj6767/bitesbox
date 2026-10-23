@@ -49,7 +49,7 @@ export default async function OverviewPage({
 
     const rangeKey = (params.range ?? 'today') as RangeKey;
     const { from, to, label } = resolveRange(rangeKey);
-    const branchId = activeBranchId(session) ?? undefined;
+    const branchId = (await activeBranchId(session)) ?? undefined;
     const supabase = await createSupabaseServerClient();
 
     const [overviewResult, chartsResult] = await Promise.all([

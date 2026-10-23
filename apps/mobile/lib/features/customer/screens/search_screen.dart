@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/widgets/states.dart';
 import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
@@ -64,6 +65,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final query = _controller.text.trim();
     final results = ref.watch(searchResultsProvider);
 
@@ -75,7 +77,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           focusNode: _focus,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
-            hintText: 'Search for biryani, litti, thali…',
+            hintText: l10n.searchHint,
             filled: false,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
@@ -89,7 +91,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       _onChanged('');
                     },
                     icon: const Icon(Icons.close_rounded, size: 20),
-                    tooltip: 'Clear',
+                    tooltip: l10n.clearSearch,
                   ),
           ),
           style: const TextStyle(fontSize: 16),
@@ -108,9 +110,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
                 if (data.products.isEmpty) {
                   return AppEmptyState(
-                    title: 'No dishes match "${data.query}"',
-                    message:
-                        'Check the spelling, or browse the menu to see everything we cook.',
+                    title: l10n.noDishesMatchQuery(data.query),
+                    message: l10n.searchSpellingHelp,
                     icon: Icons.search_off_rounded,
                   );
                 }
@@ -129,7 +130,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       return Padding(
                         padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
                         child: Text(
-                          '${data.count} result${data.count == 1 ? '' : 's'}',
+                          l10n.searchResults(data.count),
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -157,6 +158,7 @@ class _Suggestions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final l10n = AppLocalizations.of(context);
     final suggestions = ref.watch(searchSuggestionsProvider);
 
     return AsyncValueView<SearchSuggestions>(
@@ -167,14 +169,14 @@ class _Suggestions extends ConsumerWidget {
         children: [
           if (data.recent.isNotEmpty)
             _TermGroup(
-              title: 'Your recent searches',
+              title: l10n.recentSearches,
               terms: data.recent,
               icon: Icons.history_rounded,
               onPick: onPick,
             ),
           if (data.trending.isNotEmpty)
             _TermGroup(
-              title: 'Trending this week',
+              title: l10n.trendingThisWeek,
               terms: data.trending,
               icon: Icons.trending_up_rounded,
               onPick: onPick,
@@ -183,7 +185,7 @@ class _Suggestions extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 22, 16, 10),
               child: Text(
-                'Most ordered',
+                l10n.mostOrdered,
                 style: TextStyle(
                   fontSize: 15.5,
                   fontWeight: FontWeight.w700,
@@ -198,11 +200,11 @@ class _Suggestions extends ConsumerWidget {
           if (data.recent.isEmpty &&
               data.trending.isEmpty &&
               data.popularProducts.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 60),
               child: AppEmptyState(
-                title: 'What are you craving?',
-                message: 'Start typing to search our whole menu.',
+                title: l10n.cravingTitle,
+                message: l10n.startTypingSearch,
                 icon: Icons.search_rounded,
               ),
             ),

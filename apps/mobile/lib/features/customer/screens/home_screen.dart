@@ -10,6 +10,7 @@ import '../../../shared/widgets/states.dart';
 import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/cart_bar.dart';
+import '../widgets/customer_outlet_picker.dart';
 import '../widgets/home_sections.dart';
 import 'group_order_screen.dart';
 
@@ -189,6 +190,7 @@ class _TopBar extends ConsumerWidget {
               ),
             ],
           ),
+          const CustomerOutletPicker(),
           const SizedBox(height: 6),
           InkWell(
             onTap: () => context.push(Routes.search),

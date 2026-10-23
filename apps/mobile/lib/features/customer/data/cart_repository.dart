@@ -50,7 +50,8 @@ class CartRepository {
         'p_modifiers': modifiers.map((modifier) => modifier.toJson()).toList(),
         'p_replace_quantity': replaceQuantity,
         if (variantId != null) 'p_variant_id': variantId,
-        if (specialInstructions != null && specialInstructions.trim().isNotEmpty)
+        if (specialInstructions != null &&
+            specialInstructions.trim().isNotEmpty)
           'p_special_instructions': specialInstructions.trim(),
         if (branchId != null) 'p_branch_id': branchId,
       },
@@ -116,9 +117,12 @@ class CartRepository {
         if (fulfilmentType != null) 'p_fulfilment_type': fulfilmentType,
         if (addressId != null) 'p_address_id': addressId,
         if (timing != null) 'p_timing': timing,
-        if (scheduledFor != null) 'p_scheduled_for': scheduledFor.toUtc().toIso8601String(),
-        if (deliveryInstructions != null) 'p_delivery_instructions': deliveryInstructions,
-        if (cookingInstructions != null) 'p_cooking_instructions': cookingInstructions,
+        if (scheduledFor != null)
+          'p_scheduled_for': scheduledFor.toUtc().toIso8601String(),
+        if (deliveryInstructions != null)
+          'p_delivery_instructions': deliveryInstructions,
+        if (cookingInstructions != null)
+          'p_cooking_instructions': cookingInstructions,
         if (useWallet != null) 'p_use_wallet': useWallet,
       },
     );
@@ -128,7 +132,11 @@ class CartRepository {
 
   /// Applies a coupon. A rejected code throws with a specific reason
   /// (expired, min order, first order only…) which the sheet shows verbatim.
-  Future<CheckoutQuote> applyCoupon(String code, {String? cartId, String? branchId}) async {
+  Future<CheckoutQuote> applyCoupon(
+    String code, {
+    String? cartId,
+    String? branchId,
+  }) async {
     final result = await _api.rpc<dynamic>(
       'apply_coupon',
       params: {
@@ -151,11 +159,11 @@ class CartRepository {
   }
 
   /// Every visible coupon, each annotated with whether it applies to this cart.
-  Future<List<CustomerCoupon>> availableCoupons({String? branchId}) async {
+  Future<List<CustomerCoupon>> availableCoupons({String? branchId, String locale = 'en'}) async {
     final result = await _api.rpc<dynamic>(
-      'available_coupons',
-      params: {if (branchId != null) 'p_branch_id': branchId},
-      dedupeKey: 'available_coupons:$branchId',
+      'localized_available_coupons',
+      params: {if (branchId != null) 'p_branch_id': branchId, 'p_locale': locale},
+      dedupeKey: 'available_coupons:$branchId:$locale',
     );
 
     if (result is! List) return const [];

@@ -89,3 +89,54 @@ test('staff at AAL1 is routed to the authenticator challenge before console acce
     await expect(page.getByLabel('Authenticator code')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Refunds' })).toHaveCount(0);
 });
+
+test('branch selector accepts only a branch in the signed-in session scope', async ({ page }) => {
+    await page.context().addCookies([{ ...sessionCookie('owner@bitesbox.test', 'aal2'), url: 'http://localhost:3100' }]);
+    await page.goto('/referrals');
+    await expect(page.getByRole('heading', { name: 'Referrals' })).toBeVisible();
+    const selector = page.getByLabel('Selected outlet');
+    await expect(selector).toBeVisible();
+    await expect(selector.locator('option')).toHaveCount(2);
+
+    const selection = page.waitForResponse((response) =>
+        response.url().endsWith('/api/active-branch') && response.request().method() === 'POST',
+    );
+    await selector.selectOption('00000000-0000-4000-8000-000000000102');
+    expect((await selection).status()).toBe(200);
+    await expect.poll(async () => (await page.context().cookies()).find((cookie) => cookie.name === 'bb_active_branch')?.value)
+        .toBe('00000000-0000-4000-8000-000000000102');
+
+    const forbidden = await page.request.post('/api/active-branch', {
+        data: { branchId: '00000000-0000-4000-8000-000000000999' },
+    });
+    expect(forbidden.status()).toBe(403);
+});
+
+test('owner can configure referral terms while the independent rollout flag remains off', async ({ page }) => {
+    await page.context().addCookies([{ ...sessionCookie('owner@bitesbox.test', 'aal2'), url: 'http://localhost:3100' }]);
+    await page.goto('/referrals');
+    await expect(page.getByRole('heading', { name: 'Referrals' })).toBeVisible();
+    await expect(page.getByText('Rollout flag off')).toBeVisible();
+    await page.getByLabel('Referrer wallet reward (₹)').fill('25');
+    await page.getByLabel('Referred customer wallet reward (₹)').fill('30');
+    await page.getByLabel('Minimum qualifying order (₹)').fill('300');
+    await page.getByLabel('Maximum rewarded referrals per customer (optional)').fill('5');
+    await page.getByLabel('Reward expiry in days (optional)').fill('90');
+
+    const save = page.waitForResponse((response) =>
+        response.url().endsWith('/rest/v1/rpc/update_referral_program') && response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Save terms' }).click();
+    const response = await save;
+    expect(response.status()).toBe(200);
+    expect(response.request().postDataJSON()).toMatchObject({
+        p_enabled: false,
+        p_referrer_reward: 25,
+        p_referred_reward: 30,
+        p_minimum_order_amount: 300,
+        p_max_rewards_per_referrer: 5,
+        p_reward_expiry_days: 90,
+    });
+    await expect(page.getByText('Referral terms saved. The rollout flag remains independent.')).toBeVisible();
+    await expect(page.getByText('Rollout flag off')).toBeVisible();
+});

@@ -13,9 +13,10 @@ Unit-testing a Dart function that formats a duration is cheap and worth having;
 it is not where the risk lives.
 
 ```
-supabase/tests/      11 suites · 394 assertion calls in source   ← the security boundary
+supabase/tests/      12 suites · 438 assertion calls in source   ← the security boundary
 apps/admin/           6 unit files · 67 tests; deterministic Playwright journey
-apps/mobile/test/     14 files · see final run record below
+apps/storefront/      1 unit file · 4 tests; deterministic customer journeys
+apps/mobile/test/     16 files · see final run record below
 supabase/functions/   Deno checks · lint · fmt · logger/provider contracts
 schema                db-lint.sh — fails on error-level findings
 ```
@@ -28,11 +29,10 @@ schema                db-lint.sh — fails on error-level findings
 npm run db:test                  # same thing
 ```
 
-The 394 SQL assertion calls are counted from the checked-in SQL test files. They
-were **not executed for this release** because Docker/Colima was unavailable in
-the implementation environment. A read-only linked migration check observed two
-local migrations pending on 23 October 2026; no migration was pushed. See
-[status.md](status.md) for that observation and its limits.
+The 438 SQL assertion calls are counted from the checked-in SQL test files. The
+full suite passed against the local Supabase/Postgres stack on 23 October 2026;
+this is local verification only and says nothing about a hosted project's schema.
+No hosted migration was pushed. See [status.md](status.md) for release state.
 
 | Suite | Assertions | Covers |
 | --- | --- | --- |
@@ -47,6 +47,7 @@ local migrations pending on 23 October 2026; no migration was pushed. See
 | `090_read_surfaces` | 65 | Every client-callable read RPC actually executes, as a role allowed to call it |
 | `100_group_orders` | 10 | Invite privacy, membership checks, host authority, server-validated merge and participant-cart clearing |
 | `110_staff_mfa_and_location` | 23 | Signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
+| `120_customer_growth_localization_outlets` | 44 | Two active outlets, hidden-branch exclusion, Hindi search, favorites ownership/availability, referral rollout and reward idempotency, localized notification/channel preferences, partial-refund wallet preservation, guest-cart import retries, analytics permissions |
 
 ### Why 090 exists
 
@@ -203,8 +204,10 @@ type-checking every page against the generated database types.
 The Playwright browser suite runs separately with
 `npm run e2e --workspace=@bitesbox/admin`. It starts a local deterministic Supabase
 Auth/REST fake and covers valid and invalid staff login, refund approval, missing
-refund permission, and the AAL1 challenge gate. It uses no hosted account and does
-not call the Razorpay gateway.
+refund permission, the AAL1 challenge gate, session-scoped branch switching, and
+owner referral-term configuration while the feature rollout flag stays off. It
+contains seven browser tests, uses no hosted account, and does not call the
+Razorpay gateway.
 
 ### Lint
 
@@ -221,8 +224,8 @@ pages, all now removed.
 cd apps/mobile && flutter test
 ```
 
-The release branch has 14 test files. `flutter test --reporter compact` passed
-**139 tests** on 23 October 2026.
+The release branch has 16 test files. `flutter test --reporter compact` passed
+**144 tests** on 23 October 2026.
 
 | File | Covers |
 | --- | --- |
@@ -293,6 +296,24 @@ not buildable. Root causes:
 `flutter analyze` is now in CI and treats infos as findings, so it is a stricter
 gate than "it compiles".
 
+## Customer storefront
+
+```bash
+npm run lint --workspace=@bitesbox/storefront
+npm run typecheck --workspace=@bitesbox/storefront
+npm run test --workspace=@bitesbox/storefront
+npm run e2e --workspace=@bitesbox/storefront
+```
+
+The unit suite covers outlet-isolated guest cart storage, safe malformed-cart
+handling, retry-key rotation, and English/Hindi fallback selection. Four Playwright
+journeys run against a deterministic local Auth/REST/Edge fake: guest language and
+outlet switching with separate carts, referral attribution through OTP, an OTP
+guest-cart import into server-priced checkout and order tracking, and signed-in
+favorite removal. The checkout test uses COD; the fake does not charge money.
+Razorpay signature, retry, idempotency, mismatch and refund contracts remain in
+the Deno/provider and SQL suites rather than issuing a live browser payment.
+
 ## Edge Functions
 
 ```bash
@@ -343,24 +364,23 @@ npm run verify:db     # schema lint + SQL suites
 `mobile:test`. It needs no database. `verify:db` needs the local stack up. CI also
 runs the Deno logger/provider contract tests and the separate Playwright journey.
 
-On 23 October 2026, `npm run verify` passed end to end with placeholder Supabase
-configuration. A separate `deno test --allow-env _shared/logger_test.ts
-_shared/razorpay_test.ts` passed 4 tests across 5 steps, and
-`npm run e2e --workspace=@bitesbox/admin` passed all 5 browser tests. The attempted
-`npm run db:test` could not install its harness because the local Supabase stack
-was not running; Docker/Colima was unavailable. No SQL suite or generated database
-type comparison is reported as locally verified.
+The 23 October 2026 release verification record is tracked in
+[status.md](status.md). A separate `deno test --allow-env _shared/logger_test.ts
+_shared/razorpay_test.ts` passed 4 tests across 5 steps. The local DB reset, SQL
+suites, generated type check, mobile checks, storefront and admin browser suites
+were also run; hosted migration state remains unverified.
 
 ## CI
 
-`.github/workflows/ci.yml`, five parallel jobs on every push to `main`, every PR,
-and on demand:
+`.github/workflows/ci.yml`, six parallel jobs on pushes to `main` and `codex/**`,
+every PR, and on demand:
 
 | Job | Does |
 | --- | --- |
 | **Database** | `supabase start` → `db reset` → `db-lint.sh` → SQL suites → assert the committed types match the schema |
 | **Edge Functions** | `deno check` each entry, `deno lint`, `deno fmt --check`, logger and Razorpay contract tests |
 | **Admin dashboard** | `npm ci` → lint → typecheck → vitest → Playwright staff/refund journey → `next build` |
+| **Customer storefront** | lint → typecheck → unit tests → Playwright customer journeys → production build |
 | **Mobile app** | `flutter pub get` → `analyze` → `test` → debug APK build |
 | **Secret scan** | `scripts/check-secrets.sh` |
 

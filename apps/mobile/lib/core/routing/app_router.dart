@@ -21,6 +21,8 @@ import '../../features/customer/screens/orders_screen.dart';
 import '../../features/customer/screens/otp_screen.dart';
 import '../../features/customer/screens/product_screen.dart';
 import '../../features/customer/screens/profile_screen.dart';
+import '../../features/customer/screens/favorites_screen.dart';
+import '../../features/customer/screens/referral_screen.dart';
 import '../../features/customer/screens/profile_setup_screen.dart';
 import '../../features/customer/screens/search_screen.dart';
 import '../../features/customer/screens/sign_in_screen.dart';
@@ -61,10 +63,24 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     observers: [SentryNavigatorObserver()],
     routes: [
       GoRoute(path: Routes.splash, builder: (_, __) => const SplashScreen()),
-      GoRoute(path: Routes.signIn, builder: (_, __) => const SignInScreen()),
+      GoRoute(
+        path: Routes.signIn,
+        builder: (_, state) => SignInScreen(
+          referralCode: state.uri.queryParameters['ref'],
+        ),
+      ),
       GoRoute(
         path: Routes.verify,
-        builder: (_, state) => OtpScreen(phone: state.extra as String? ?? ''),
+        builder: (_, state) {
+          final extra = state.extra;
+          if (extra is Map<String, Object?>) {
+            return OtpScreen(
+              phone: extra['phone'] as String? ?? '',
+              referralCode: extra['referralCode'] as String?,
+            );
+          }
+          return OtpScreen(phone: extra as String? ?? '');
+        },
       ),
       GoRoute(
         path: Routes.staffSignIn,
@@ -161,6 +177,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.profile, builder: (_, __) => const ProfileScreen()),
       GoRoute(
+        path: Routes.favorites,
+        builder: (_, __) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: Routes.referrals,
+        builder: (_, __) => const ReferralScreen(),
+      ),
+      GoRoute(
+        path: '/r/:code',
+        builder: (_, state) =>
+            ReferralScreen(inviteCode: state.pathParameters['code']),
+      ),
+      GoRoute(
         path: Routes.newTicket,
         builder: (_, __) => const NewTicketScreen(),
       ),
@@ -242,6 +271,17 @@ String? _redirect(Ref ref, GoRouterState state) {
   }
 
   final session = sessionState.valueOrNull ?? const AppSession.guest();
+
+  // Keep the OTP route mounted long enough to attribute an invitation after
+  // Supabase authenticates the new customer. OtpScreen sends the user onward
+  // after the attribution attempt completes.
+  final extra = state.extra;
+  final pendingReferral = extra is Map<String, Object?> &&
+      extra['referralCode'] is String &&
+      (extra['referralCode'] as String).trim().isNotEmpty;
+  if (session.authenticated && location == Routes.verify && pendingReferral) {
+    return null;
+  }
 
   if (session.isGuest) {
     if (Routes.isOnboarding(location) && location != Routes.splash) return null;

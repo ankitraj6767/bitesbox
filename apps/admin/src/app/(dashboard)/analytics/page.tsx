@@ -34,10 +34,10 @@ export default async function AnalyticsPage({
 
     const rangeKey = (params.range ?? '30d') as RangeKey;
     const { from, to, label } = resolveRange(rangeKey);
-    const branchId = activeBranchId(session) ?? undefined;
+    const branchId = (await activeBranchId(session)) ?? undefined;
     const supabase = await createSupabaseServerClient();
 
-    const [chartsResult, customersResult] = await Promise.all([
+    const [chartsResult, customersResult, storefrontResult] = await Promise.all([
         supabase.rpc('dashboard_charts', {
             p_branch_id: branchId,
             p_from: from,
@@ -45,6 +45,7 @@ export default async function AnalyticsPage({
             p_granularity: rangeKey === 'today' || rangeKey === 'yesterday' ? 'hour' : 'day',
         }),
         supabase.rpc('report_customers', { p_branch_id: branchId, p_from: from, p_to: to }),
+        supabase.rpc('storefront_event_metrics', { p_branch_id: branchId, p_from: from, p_to: to }),
     ]);
 
     if (chartsResult.error) {
@@ -59,6 +60,7 @@ export default async function AnalyticsPage({
     }
 
     const charts = chartsResult.data as unknown as DashboardCharts;
+    const storefront = (storefrontResult.data ?? {}) as Record<string, number>;
     const customers = customersResult.data as unknown as {
         segments: Record<string, number>;
         repeat_rate: number;
@@ -117,6 +119,18 @@ export default async function AnalyticsPage({
                     tone={(customers?.abandoned_carts.count ?? 0) > 0 ? 'caution' : 'neutral'}
                     hint={money(customers?.abandoned_carts.value ?? 0)}
                 />
+            </section>
+
+            <section aria-label="Customer storefront" className="mt-5">
+                <PageHeader title="Customer storefront" description="Privacy-safe events for menu discovery and checkout. Search terms, customer IDs and addresses are never stored." />
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <StatCard label="Menu views" value={(storefront.MENU_VIEW ?? 0).toLocaleString('en-IN')} icon={Search} />
+                    <StatCard label="Searches" value={(storefront.SEARCH ?? 0).toLocaleString('en-IN')} icon={Search} />
+                    <StatCard label="Product views" value={(storefront.PRODUCT_VIEW ?? 0).toLocaleString('en-IN')} icon={TrendingUp} />
+                    <StatCard label="Serviceability checks" value={`${(storefront.SERVICEABILITY_SUCCESS ?? 0).toLocaleString('en-IN')} / ${(storefront.SERVICEABILITY_FAILURE ?? 0).toLocaleString('en-IN')}`} icon={ShoppingCart} hint="Passed / not serviceable" />
+                    <StatCard label="Checkout starts" value={(storefront.CHECKOUT_START ?? 0).toLocaleString('en-IN')} icon={ShoppingCart} />
+                    <StatCard label="Orders placed" value={(storefront.CHECKOUT_COMPLETED ?? 0).toLocaleString('en-IN')} icon={TrendingUp} />
+                </div>
             </section>
 
             <section aria-label="Trends" className="mt-5 grid gap-4 xl:grid-cols-2">

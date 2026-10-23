@@ -28,7 +28,7 @@ export default async function MenuPage({
     ]);
 
     const supabase = await createSupabaseServerClient();
-    const branchId = activeBranchId(session);
+    const branchId = await activeBranchId(session);
     const canCreate = hasPermission(session, PERMISSIONS.MENU_CREATE);
     const canUpdate = hasPermission(session, PERMISSIONS.MENU_UPDATE);
     const canDelete = hasPermission(session, PERMISSIONS.MENU_DELETE);

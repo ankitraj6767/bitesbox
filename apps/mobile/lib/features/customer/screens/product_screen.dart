@@ -6,6 +6,7 @@ import '../../../shared/widgets/states.dart';
 import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/product_sheet.dart';
+import '../widgets/favorite_button.dart';
 
 /// A deep-linkable product page.
 ///
@@ -42,6 +43,13 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(detail.valueOrNull?.product.name ?? 'Dish'),
+        actions: [
+          if (detail.valueOrNull != null)
+            FavoriteButton(
+              productId: widget.productId,
+              filledBackground: false,
+            ),
+        ],
       ),
       body: AsyncValueView<ProductDetail>(
         value: detail,

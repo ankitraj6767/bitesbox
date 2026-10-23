@@ -23,6 +23,8 @@ abstract final class Routes {
   static const addresses = '/addresses';
   static const addressEditor = '/addresses/edit';
   static const wallet = '/wallet';
+  static const favorites = '/favorites';
+  static const referrals = '/referrals';
   static const notifications = '/notifications';
   static const profile = '/profile';
   static const support = '/support';
@@ -31,6 +33,9 @@ abstract final class Routes {
   static const faqs = '/faqs';
 
   static String product(String id) => '/product/$id';
+  static String referralInvite(String code) => '/r/$code';
+  static String signInWithReferral(String code) =>
+      '$signIn?ref=${Uri.encodeQueryComponent(code.trim())}';
   static String order(String id) => '/order/$id';
   static String groupOrder(String id) => '/group-order/$id';
   static String ticket(String id) => '/support/$id';
@@ -55,7 +60,8 @@ abstract final class Routes {
         location == search ||
         location == policies ||
         location == faqs ||
-        location.startsWith('/product/');
+        location.startsWith('/product/') ||
+        location.startsWith('/r/');
   }
 
   /// Routes that belong to the onboarding flow.

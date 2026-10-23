@@ -9,25 +9,33 @@ class MenuRepository {
   final ApiClient _api;
 
   /// The home screen: banners, categories, curated rails and offers.
-  Future<HomeFeed> homeFeed({String? branchId}) async {
+  Future<HomeFeed> homeFeed({String? branchId, String locale = 'en'}) async {
     final result = await _api.rpc<dynamic>(
-      'home_feed',
-      params: {if (branchId != null) 'p_branch_id': branchId},
-      dedupeKey: 'home_feed:$branchId',
+      'localized_home_feed',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_locale': locale,
+      },
+      dedupeKey: 'home_feed:$branchId:$locale',
     );
 
     return HomeFeed.fromJson(Map<String, dynamic>.from(result as Map));
   }
 
   /// The whole menu with per-branch availability resolved server-side.
-  Future<MenuCatalog> catalog({String? branchId, String? categoryId}) async {
+  Future<MenuCatalog> catalog({
+    String? branchId,
+    String? categoryId,
+    String locale = 'en',
+  }) async {
     final result = await _api.rpc<dynamic>(
-      'menu_catalog',
+      'localized_menu_catalog',
       params: {
         if (branchId != null) 'p_branch_id': branchId,
         if (categoryId != null) 'p_category_id': categoryId,
+        'p_locale': locale,
       },
-      dedupeKey: 'menu_catalog:$branchId:$categoryId',
+      dedupeKey: 'menu_catalog:$branchId:$categoryId:$locale',
     );
 
     return MenuCatalog.fromJson(Map<String, dynamic>.from(result as Map));
@@ -38,17 +46,22 @@ class MenuRepository {
     String? productId,
     String? slug,
     String? branchId,
+    String locale = 'en',
   }) async {
-    assert(productId != null || slug != null, 'A product id or slug is required');
+    assert(
+      productId != null || slug != null,
+      'A product id or slug is required',
+    );
 
     final result = await _api.rpc<dynamic>(
-      'product_detail',
+      'localized_product_detail',
       params: {
         if (productId != null) 'p_product_id': productId,
         if (slug != null) 'p_slug': slug,
         if (branchId != null) 'p_branch_id': branchId,
+        'p_locale': locale,
       },
-      dedupeKey: 'product_detail:${productId ?? slug}',
+      dedupeKey: 'product_detail:${productId ?? slug}:$branchId:$locale',
     );
 
     return ProductDetail.fromJson(Map<String, dynamic>.from(result as Map));
@@ -56,13 +69,19 @@ class MenuRepository {
 
   /// Typo-tolerant search. Not de-duplicated: each keystroke-debounced query is a
   /// distinct question, and the server also records it for trending terms.
-  Future<SearchResults> search(String query, {String? branchId, int limit = 30}) async {
+  Future<SearchResults> search(
+    String query, {
+    String? branchId,
+    int limit = 30,
+    String locale = 'en',
+  }) async {
     final result = await _api.rpc<dynamic>(
-      'search_menu',
+      'localized_search_menu',
       params: {
         'p_query': query,
         'p_limit': limit,
         if (branchId != null) 'p_branch_id': branchId,
+        'p_locale': locale,
       },
     );
 

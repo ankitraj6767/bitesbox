@@ -30,13 +30,16 @@ import type { FoodType, SpiceLevel } from '@bitesbox/shared-types';
 
 const schema = z.object({
     name: z.string().min(2, 'Give the dish a name').max(120),
+    name_hi: z.string().max(120).optional().or(z.literal('')),
     slug: z
         .string()
         .min(2, 'A URL slug is required')
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Lowercase letters, numbers and hyphens only'),
     category_id: z.string().uuid('Choose a category'),
     short_description: z.string().max(180).optional().or(z.literal('')),
+    short_description_hi: z.string().max(180).optional().or(z.literal('')),
     description: z.string().max(2000).optional().or(z.literal('')),
+    description_hi: z.string().max(2000).optional().or(z.literal('')),
     food_type: z.enum(['VEG', 'NON_VEG', 'EGG', 'VEGAN']),
     spice_level: z.enum(['NONE', 'MILD', 'MEDIUM', 'HOT', 'EXTRA_HOT']),
     base_price: z.coerce.number().min(0, 'Price cannot be negative'),
@@ -107,10 +110,13 @@ export function ProductForm({
         resolver: zodResolver(schema),
         defaultValues: {
             name: '',
+            name_hi: '',
             slug: '',
             category_id: categories[0]?.id ?? '',
             short_description: '',
+            short_description_hi: '',
             description: '',
+            description_hi: '',
             food_type: 'VEG',
             spice_level: 'NONE',
             base_price: 0,
@@ -134,10 +140,13 @@ export function ProductForm({
 
             const payload = {
                 name: values.name.trim(),
+                name_hi: values.name_hi?.trim() || null,
                 slug: values.slug.trim(),
                 category_id: values.category_id,
                 short_description: values.short_description?.trim() || null,
+                short_description_hi: values.short_description_hi?.trim() || null,
                 description: values.description?.trim() || null,
+                description_hi: values.description_hi?.trim() || null,
                 food_type: values.food_type as FoodType,
                 spice_level: values.spice_level as SpiceLevel,
                 base_price: values.base_price,
@@ -227,6 +236,10 @@ export function ProductForm({
                                 <Input {...register('name')} placeholder="Chicken Dum Biryani" autoFocus />
                             </Field>
 
+                            <Field label="Dish name (Hindi)" hint="Enter reviewed Hindi copy. English is shown when this is blank.">
+                                <Input {...register('name_hi')} lang="hi" placeholder="हिन्दी नाम" />
+                            </Field>
+
                             <Field
                                 label="URL slug"
                                 required
@@ -247,12 +260,20 @@ export function ProductForm({
                                 />
                             </Field>
 
+                            <Field label="Short description (Hindi)" hint="Optional, human-reviewed translation.">
+                                <Input {...register('short_description_hi')} lang="hi" />
+                            </Field>
+
                             <Field label="Full description" error={errors.description?.message}>
                                 <Textarea
                                     {...register('description')}
                                     rows={4}
                                     placeholder="Aged basmati layered with marinated chicken, browned onions, mint and saffron milk…"
                                 />
+                            </Field>
+
+                            <Field label="Full description (Hindi)" error={errors.description_hi?.message}>
+                                <Textarea {...register('description_hi')} rows={4} lang="hi" />
                             </Field>
 
                             <div className="grid gap-4 sm:grid-cols-2">

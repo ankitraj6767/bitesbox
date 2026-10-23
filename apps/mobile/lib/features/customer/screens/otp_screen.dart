@@ -6,17 +6,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/core_providers.dart';
+import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
+import '../providers/customer_providers.dart';
 
 /// One-time code entry.
 ///
 /// Supabase enforces the real resend throttle; the countdown here just stops the
 /// customer tapping a button that will be refused.
 class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({required this.phone, super.key});
+  const OtpScreen({required this.phone, this.referralCode, super.key});
 
   final String phone;
+  final String? referralCode;
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
@@ -83,9 +86,26 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           .read(authRepositoryProvider)
           .verifyOtp(phone: widget.phone, token: code);
 
+      // A referral invite survives the phone verification hop. Attribute it
+      // before refreshing the session, while the original link is still in
+      // this route. A referral failure must not make a valid OTP look invalid.
+      final referralCode = widget.referralCode?.trim();
+      if (referralCode != null && referralCode.isNotEmpty) {
+        try {
+          await ref
+              .read(growthRepositoryProvider)
+              .attributeReferral(referralCode);
+        } catch (error) {
+          if (mounted) AppFeedback.showError(context, error);
+        }
+      }
+
       // Re-resolve identity, permissions and branch scope; the router then sends
       // this user to whichever shell their role belongs in.
       await ref.read(sessionProvider.notifier).refresh();
+      if (referralCode != null && referralCode.isNotEmpty && mounted) {
+        context.go(Routes.home);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {

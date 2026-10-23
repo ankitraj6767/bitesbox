@@ -6,15 +6,16 @@ import type { BranchOrderingState } from '@bitesbox/shared-types';
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
     const session = await requireSession();
     const supabase = await createSupabaseServerClient();
+    const selectedBranchId = await activeBranchId(session);
 
     const { data } = await supabase.rpc('branch_ordering_state', {
-        p_branch_id: activeBranchId(session) ?? undefined,
+        p_branch_id: selectedBranchId ?? undefined,
     });
 
     const branch = (data as unknown as BranchOrderingState | null) ?? null;
 
     return (
-        <AppShell session={session} branch={branch}>
+        <AppShell session={session} branch={branch} activeBranchId={selectedBranchId}>
             {children}
         </AppShell>
     );

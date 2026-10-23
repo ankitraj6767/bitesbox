@@ -77,7 +77,7 @@ authority because no edge out of `DELIVERED`, `DELIVERY_FAILED` or `COMPLETED` h
 
 ## Permission naming
 
-`domain.action`, 70 of them:
+`domain.action`, 71 of them:
 
 ```
 menu.*      view create update delete price_update availability
@@ -97,6 +97,7 @@ role.*      assign manage
 settings.*  view update      feature_flag.update
 analytics.view  report.view  report.export  finance.view
 audit.view  branch.manage  kitchen.view  kitchen.operate
+referral.manage
 notification.send  notification.template
 inventory.view  inventory.update
 ```
@@ -112,6 +113,10 @@ A few worth calling out:
   operator.
 - `order.override` allows forcing a transition the state machine does not have an
   edge for, and is likewise audited.
+- `referral.manage` is granted to OWNER and ADMIN. Referral reward configuration
+  and activity reads additionally require a Supabase-signed AAL2 session; the
+  independent `referrals` feature flag must also be enabled before customer
+  attribution or rewards are active.
 
 ## Branch scoping
 
@@ -146,7 +151,7 @@ as a broken product. Covered by `src/lib/navigation.test.ts`.
 before rendering, and redirects to `/no-access`. This one matters: navigating
 directly to `/refunds` gets nothing.
 
-**3. RLS** — 158 policies. The boundary that actually holds. A `select * from orders`
+**3. RLS** — 144 policies in the reset local schema. The boundary that actually holds. A `select * from orders`
 returns the caller's own orders, the orders they carry as a rider, or the branch's
 orders if they hold `order.view`.
 

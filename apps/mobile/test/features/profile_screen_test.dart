@@ -6,6 +6,7 @@ import 'package:bitesbox/core/theme/brand_tokens.dart';
 import 'package:bitesbox/features/customer/data/account_repository.dart';
 import 'package:bitesbox/features/customer/providers/customer_providers.dart';
 import 'package:bitesbox/features/customer/screens/profile_screen.dart';
+import 'package:bitesbox/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -205,14 +206,17 @@ SwitchListTile _switch(WidgetTester tester, String title) =>
 
 Future<void> _scrollTo(WidgetTester tester, String text) async {
   final target = find.text(text);
-  if (target.evaluate().isEmpty) {
+  final switchTile = _switchFinder(text);
+  final scrollTarget = switchTile.evaluate().isNotEmpty ? switchTile : target;
+  if (scrollTarget.evaluate().isEmpty || !tester.getRect(scrollTarget).overlaps(tester.getRect(find.byType(ListView)))) {
     await tester.scrollUntilVisible(
-      target,
+      scrollTarget,
       250,
       scrollable: find.byType(Scrollable).first,
     );
   }
-  await tester.ensureVisible(target);
+  await tester.ensureVisible(scrollTarget);
+  await tester.pumpAndSettle();
 }
 
 Widget _app(
@@ -226,7 +230,11 @@ Widget _app(
   ],
   child: BrandTheme(
     tokens: const BrandTokens(),
-    child: MaterialApp(home: child ?? const ProfileScreen()),
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: child ?? const ProfileScreen(),
+    ),
   ),
 );
 

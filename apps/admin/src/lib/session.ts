@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cache } from 'react';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Permission, Session } from '@bitesbox/shared-types';
 
@@ -76,7 +77,13 @@ export function hasPermission(session: Session, permission: Permission | Permiss
     return required.some((code) => held.has(code));
 }
 
-/** Branch the operator is acting on. Single branch today, scoped grants later. */
-export function activeBranchId(session: Session): string | null {
-    return session.branches?.[0]?.id ?? null;
+/**
+ * Selects a branch only from the server-resolved session scope. The cookie is a
+ * navigation preference; every RPC/RLS permission check still decides access.
+ */
+export async function activeBranchId(session: Session): Promise<string | null> {
+    const allowed = session.branches ?? [];
+    const selected = (await cookies()).get('bb_active_branch')?.value;
+    if (selected && allowed.some((branch) => branch.id === selected)) return selected;
+    return allowed[0]?.id ?? null;
 }

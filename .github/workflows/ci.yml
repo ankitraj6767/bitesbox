@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'codex/**']
   pull_request:
   workflow_dispatch:
 
@@ -149,8 +149,48 @@ jobs:
       - name: Build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ci_placeholder
         run: npm run build --workspace=@bitesbox/admin
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Public customer storefront
+  # ───────────────────────────────────────────────────────────────────────────
+  storefront:
+    name: Customer storefront
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace=@bitesbox/storefront
+
+      - name: Type check
+        run: npm run typecheck --workspace=@bitesbox/storefront
+
+      - name: Unit tests
+        run: npm run test --workspace=@bitesbox/storefront
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Customer storefront browser journey
+        run: npm run e2e --workspace=@bitesbox/storefront
+
+      - name: Production build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ci_placeholder
+          NEXT_PUBLIC_SITE_URL: https://storefront.example.invalid
+        run: npm run build --workspace=@bitesbox/storefront
 
   # ───────────────────────────────────────────────────────────────────────────
   # Flutter app

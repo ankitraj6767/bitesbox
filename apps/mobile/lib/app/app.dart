@@ -9,6 +9,7 @@ import '../core/routing/app_router.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/brand_tokens.dart';
 import '../core/update/update_gate.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// The application root.
 ///
@@ -27,10 +28,10 @@ class BitesBoxApp extends ConsumerWidget {
     final roleCategory = session.isCustomer
         ? 'customer'
         : session.isRider
-            ? 'delivery'
-            : session.isKitchen
-                ? 'kitchen'
-                : 'staff';
+        ? 'delivery'
+        : session.isKitchen
+        ? 'kitchen'
+        : 'staff';
     Sentry.configureScope((scope) {
       scope.setTag('role_category', roleCategory);
       scope.setTag('app_surface', roleCategory);
@@ -45,16 +46,18 @@ class BitesBoxApp extends ConsumerWidget {
         title: tokens.name,
         debugShowCheckedModeBanner: false,
         routerConfig: router,
+        locale: Locale(session.profile?.preferredLanguage ?? 'en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: useOperationsTheme
             ? AppTheme.operations(tokens)
             : AppTheme.customer(tokens),
         builder: (context, child) {
           // Respect the reader's font-size preference, but cap the extremes so a
           // kitchen ticket or a bill never breaks its layout.
-          final scale = MediaQuery.textScalerOf(context).clamp(
-            minScaleFactor: 0.9,
-            maxScaleFactor: 1.35,
-          );
+          final scale = MediaQuery.textScalerOf(
+            context,
+          ).clamp(minScaleFactor: 0.9, maxScaleFactor: 1.35);
 
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: scale),

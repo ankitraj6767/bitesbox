@@ -4,7 +4,7 @@ The Flutter app serves customers, delivery partners, and kitchen staff in one
 application. The database remains authoritative for pricing, permissions, order
 transitions, delivery completion, and payment state.
 
-Current app version: **1.1.4 (build 12)**.
+Current app version: **1.2.0 (build 13)**.
 
 ## Requirements
 

@@ -15,9 +15,12 @@ type DayPart = 'BREAKFAST' | 'LUNCH' | 'SNACKS' | 'DINNER' | 'LATE_NIGHT' | 'ALL
 export type CategoryEditorInitial = {
     id?: string;
     name: string;
+    name_hi?: string;
     slug: string;
     short_description: string;
+    short_description_hi?: string;
     description: string;
+    description_hi?: string;
     display_order: number;
     day_part: DayPart;
     accent_color: string;
@@ -40,9 +43,12 @@ export function CategoryEditor({ initial }: { initial: CategoryEditorInitial }) 
             const supabase = createSupabaseBrowserClient();
             const payload = {
                 name: form.name.trim(),
+                name_hi: form.name_hi?.trim() || null,
                 slug: form.slug.trim().toLowerCase(),
                 short_description: form.short_description.trim() || null,
+                short_description_hi: form.short_description_hi?.trim() || null,
                 description: form.description.trim() || null,
+                description_hi: form.description_hi?.trim() || null,
                 display_order: Number(form.display_order) || 0,
                 day_part: form.day_part,
                 accent_color: form.accent_color.trim() || null,
@@ -71,17 +77,26 @@ export function CategoryEditor({ initial }: { initial: CategoryEditorInitial }) 
                     <Field label="Name" required>
                         <Input value={form.name} onChange={(event) => set('name', event.target.value)} required />
                     </Field>
+                    <Field label="Name (Hindi)" hint="Reviewed Hindi copy; English is the fallback.">
+                        <Input value={form.name_hi ?? ''} onChange={(event) => set('name_hi', event.target.value)} lang="hi" />
+                    </Field>
                     <Field label="Slug" required hint="Lowercase letters, numbers and hyphens only.">
                         <Input value={form.slug} onChange={(event) => set('slug', event.target.value)} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required />
                     </Field>
                     <Field label="Short description">
                         <Input value={form.short_description} onChange={(event) => set('short_description', event.target.value)} />
                     </Field>
+                    <Field label="Short description (Hindi)">
+                        <Input value={form.short_description_hi ?? ''} onChange={(event) => set('short_description_hi', event.target.value)} lang="hi" />
+                    </Field>
                     <Field label="Accent colour" hint="Optional hex colour, e.g. #FDE7E7.">
                         <Input value={form.accent_color} onChange={(event) => set('accent_color', event.target.value)} placeholder="#FDE7E7" />
                     </Field>
                     <Field label="Description" className="md:col-span-2">
                         <Textarea value={form.description} onChange={(event) => set('description', event.target.value)} />
+                    </Field>
+                    <Field label="Description (Hindi)" className="md:col-span-2">
+                        <Textarea value={form.description_hi ?? ''} onChange={(event) => set('description_hi', event.target.value)} lang="hi" />
                     </Field>
                     <Field label="Day part">
                         <Select value={form.day_part} onValueChange={(value) => set('day_part', value as DayPart)}>

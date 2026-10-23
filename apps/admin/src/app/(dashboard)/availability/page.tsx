@@ -12,6 +12,7 @@ export default async function AvailabilityPage() {
         PERMISSIONS.INVENTORY_VIEW,
         PERMISSIONS.MENU_VIEW,
     ]);
+    const branchId = await activeBranchId(session);
 
     return (
         <>
@@ -21,7 +22,7 @@ export default async function AvailabilityPage() {
             />
 
             <AvailabilityGrid
-                branchId={activeBranchId(session)}
+                branchId={branchId}
                 canToggle={hasPermission(session, PERMISSIONS.MENU_AVAILABILITY)}
             />
         </>

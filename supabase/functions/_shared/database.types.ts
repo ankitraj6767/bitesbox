@@ -775,6 +775,7 @@ export type Database = {
           day_part: Database["public"]["Enums"]["day_part"];
           deleted_at: string | null;
           description: string | null;
+          description_hi: string | null;
           display_order: number;
           icon_name: string | null;
           id: string;
@@ -784,8 +785,10 @@ export type Database = {
           meta_description: string | null;
           meta_title: string | null;
           name: string;
+          name_hi: string | null;
           search_keywords: string[];
           short_description: string | null;
+          short_description_hi: string | null;
           slug: string;
           thumbnail_path: string | null;
           updated_at: string;
@@ -800,6 +803,7 @@ export type Database = {
           day_part?: Database["public"]["Enums"]["day_part"];
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           icon_name?: string | null;
           id?: string;
@@ -809,8 +813,10 @@ export type Database = {
           meta_description?: string | null;
           meta_title?: string | null;
           name: string;
+          name_hi?: string | null;
           search_keywords?: string[];
           short_description?: string | null;
+          short_description_hi?: string | null;
           slug: string;
           thumbnail_path?: string | null;
           updated_at?: string;
@@ -825,6 +831,7 @@ export type Database = {
           day_part?: Database["public"]["Enums"]["day_part"];
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           icon_name?: string | null;
           id?: string;
@@ -834,8 +841,10 @@ export type Database = {
           meta_description?: string | null;
           meta_title?: string | null;
           name?: string;
+          name_hi?: string | null;
           search_keywords?: string[];
           short_description?: string | null;
+          short_description_hi?: string | null;
           slug?: string;
           thumbnail_path?: string | null;
           updated_at?: string;
@@ -854,8 +863,10 @@ export type Database = {
       cms_banners: {
         Row: {
           alt_text: string | null;
+          alt_text_hi: string | null;
           background_color: string | null;
           badge_text: string | null;
+          badge_text_hi: string | null;
           branch_id: string | null;
           click_count: number;
           created_at: string;
@@ -877,13 +888,17 @@ export type Database = {
           section_id: string | null;
           starts_at: string | null;
           subtitle: string | null;
+          subtitle_hi: string | null;
           title: string | null;
+          title_hi: string | null;
           updated_at: string;
         };
         Insert: {
           alt_text?: string | null;
+          alt_text_hi?: string | null;
           background_color?: string | null;
           badge_text?: string | null;
+          badge_text_hi?: string | null;
           branch_id?: string | null;
           click_count?: number;
           created_at?: string;
@@ -905,13 +920,17 @@ export type Database = {
           section_id?: string | null;
           starts_at?: string | null;
           subtitle?: string | null;
+          subtitle_hi?: string | null;
           title?: string | null;
+          title_hi?: string | null;
           updated_at?: string;
         };
         Update: {
           alt_text?: string | null;
+          alt_text_hi?: string | null;
           background_color?: string | null;
           badge_text?: string | null;
+          badge_text_hi?: string | null;
           branch_id?: string | null;
           click_count?: number;
           created_at?: string;
@@ -933,7 +952,9 @@ export type Database = {
           section_id?: string | null;
           starts_at?: string | null;
           subtitle?: string | null;
+          subtitle_hi?: string | null;
           title?: string | null;
+          title_hi?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -1062,6 +1083,7 @@ export type Database = {
       cms_sections: {
         Row: {
           action_label: string | null;
+          action_label_hi: string | null;
           action_route: string | null;
           background_color: string | null;
           branch_id: string | null;
@@ -1081,12 +1103,15 @@ export type Database = {
           product_ids: string[];
           requires_auth: boolean;
           rich_text: string | null;
+          rich_text_hi: string | null;
           rule: Json;
           section_key: string;
           starts_at: string | null;
           subtitle: string | null;
+          subtitle_hi: string | null;
           text_color: string | null;
           title: string | null;
+          title_hi: string | null;
           updated_at: string;
           updated_by: string | null;
           valid_days_of_week: number[];
@@ -1095,6 +1120,7 @@ export type Database = {
         };
         Insert: {
           action_label?: string | null;
+          action_label_hi?: string | null;
           action_route?: string | null;
           background_color?: string | null;
           branch_id?: string | null;
@@ -1114,12 +1140,15 @@ export type Database = {
           product_ids?: string[];
           requires_auth?: boolean;
           rich_text?: string | null;
+          rich_text_hi?: string | null;
           rule?: Json;
           section_key: string;
           starts_at?: string | null;
           subtitle?: string | null;
+          subtitle_hi?: string | null;
           text_color?: string | null;
           title?: string | null;
+          title_hi?: string | null;
           updated_at?: string;
           updated_by?: string | null;
           valid_days_of_week?: number[];
@@ -1128,6 +1157,7 @@ export type Database = {
         };
         Update: {
           action_label?: string | null;
+          action_label_hi?: string | null;
           action_route?: string | null;
           background_color?: string | null;
           branch_id?: string | null;
@@ -1147,12 +1177,15 @@ export type Database = {
           product_ids?: string[];
           requires_auth?: boolean;
           rich_text?: string | null;
+          rich_text_hi?: string | null;
           rule?: Json;
           section_key?: string;
           starts_at?: string | null;
           subtitle?: string | null;
+          subtitle_hi?: string | null;
           text_color?: string | null;
           title?: string | null;
+          title_hi?: string | null;
           updated_at?: string;
           updated_by?: string | null;
           valid_days_of_week?: number[];
@@ -1462,6 +1495,7 @@ export type Database = {
           created_by: string | null;
           deleted_at: string | null;
           description: string | null;
+          description_hi: string | null;
           discount_kind: Database["public"]["Enums"]["discount_kind"];
           discount_value: number;
           eligible_category_ids: string[];
@@ -1486,6 +1520,7 @@ export type Database = {
           starts_at: string;
           terms: string | null;
           title: string;
+          title_hi: string | null;
           total_used: number;
           updated_at: string;
           updated_by: string | null;
@@ -1503,6 +1538,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           discount_kind: Database["public"]["Enums"]["discount_kind"];
           discount_value?: number;
           eligible_category_ids?: string[];
@@ -1527,6 +1563,7 @@ export type Database = {
           starts_at?: string;
           terms?: string | null;
           title: string;
+          title_hi?: string | null;
           total_used?: number;
           updated_at?: string;
           updated_by?: string | null;
@@ -1544,6 +1581,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           discount_kind?: Database["public"]["Enums"]["discount_kind"];
           discount_value?: number;
           eligible_category_ids?: string[];
@@ -1568,6 +1606,7 @@ export type Database = {
           starts_at?: string;
           terms?: string | null;
           title?: string;
+          title_hi?: string | null;
           total_used?: number;
           updated_at?: string;
           updated_by?: string | null;
@@ -1586,6 +1625,32 @@ export type Database = {
           {
             foreignKeyName: "coupons_get_product_id_fkey";
             columns: ["get_product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      customer_favorites: {
+        Row: {
+          created_at: string;
+          product_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          product_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          product_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_favorites_product_id_fkey";
+            columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
             referencedColumns: ["id"];
@@ -2572,6 +2637,41 @@ export type Database = {
           },
         ];
       };
+      guest_cart_imports: {
+        Row: {
+          branch_id: string;
+          created_at: string;
+          idempotency_key: string;
+          payload_hash: string;
+          result: Json | null;
+          user_id: string;
+        };
+        Insert: {
+          branch_id: string;
+          created_at?: string;
+          idempotency_key: string;
+          payload_hash: string;
+          result?: Json | null;
+          user_id: string;
+        };
+        Update: {
+          branch_id?: string;
+          created_at?: string;
+          idempotency_key?: string;
+          payload_hash?: string;
+          result?: Json | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guest_cart_imports_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ingredients: {
         Row: {
           average_cost_per_unit: number;
@@ -2811,6 +2911,7 @@ export type Database = {
           created_at: string;
           deleted_at: string | null;
           description: string | null;
+          description_hi: string | null;
           display_order: number;
           free_selections: number;
           id: string;
@@ -2819,6 +2920,7 @@ export type Database = {
           max_select: number | null;
           min_select: number;
           name: string;
+          name_hi: string | null;
           selection: Database["public"]["Enums"]["modifier_selection"];
           slug: string;
           updated_at: string;
@@ -2827,6 +2929,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           free_selections?: number;
           id?: string;
@@ -2835,6 +2938,7 @@ export type Database = {
           max_select?: number | null;
           min_select?: number;
           name: string;
+          name_hi?: string | null;
           selection?: Database["public"]["Enums"]["modifier_selection"];
           slug: string;
           updated_at?: string;
@@ -2843,6 +2947,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           free_selections?: number;
           id?: string;
@@ -2851,6 +2956,7 @@ export type Database = {
           max_select?: number | null;
           min_select?: number;
           name?: string;
+          name_hi?: string | null;
           selection?: Database["public"]["Enums"]["modifier_selection"];
           slug?: string;
           updated_at?: string;
@@ -2864,6 +2970,7 @@ export type Database = {
           created_at: string;
           deleted_at: string | null;
           description: string | null;
+          description_hi: string | null;
           display_order: number;
           food_type: Database["public"]["Enums"]["food_type"];
           id: string;
@@ -2873,6 +2980,7 @@ export type Database = {
           max_quantity: number;
           modifier_group_id: string;
           name: string;
+          name_hi: string | null;
           out_of_stock_until: string | null;
           price: number;
           updated_at: string;
@@ -2883,6 +2991,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           food_type?: Database["public"]["Enums"]["food_type"];
           id?: string;
@@ -2892,6 +3001,7 @@ export type Database = {
           max_quantity?: number;
           modifier_group_id: string;
           name: string;
+          name_hi?: string | null;
           out_of_stock_until?: string | null;
           price?: number;
           updated_at?: string;
@@ -2902,6 +3012,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           food_type?: Database["public"]["Enums"]["food_type"];
           id?: string;
@@ -2911,6 +3022,7 @@ export type Database = {
           max_quantity?: number;
           modifier_group_id?: string;
           name?: string;
+          name_hi?: string | null;
           out_of_stock_until?: string | null;
           price?: number;
           updated_at?: string;
@@ -4392,7 +4504,9 @@ export type Database = {
           is_active: boolean;
           is_default: boolean;
           name: string;
+          name_hi: string | null;
           option_group: string;
+          option_group_hi: string | null;
           out_of_stock_until: string | null;
           packaging_charge: number;
           preparation_minutes: number | null;
@@ -4414,7 +4528,9 @@ export type Database = {
           is_active?: boolean;
           is_default?: boolean;
           name: string;
+          name_hi?: string | null;
           option_group?: string;
+          option_group_hi?: string | null;
           out_of_stock_until?: string | null;
           packaging_charge?: number;
           preparation_minutes?: number | null;
@@ -4436,7 +4552,9 @@ export type Database = {
           is_active?: boolean;
           is_default?: boolean;
           name?: string;
+          name_hi?: string | null;
           option_group?: string;
+          option_group_hi?: string | null;
           out_of_stock_until?: string | null;
           packaging_charge?: number;
           preparation_minutes?: number | null;
@@ -4470,6 +4588,7 @@ export type Database = {
           created_by: string | null;
           deleted_at: string | null;
           description: string | null;
+          description_hi: string | null;
           dietary_tags: string[];
           display_order: number;
           food_type: Database["public"]["Enums"]["food_type"];
@@ -4487,6 +4606,7 @@ export type Database = {
           metadata: Json;
           min_quantity_per_order: number;
           name: string;
+          name_hi: string | null;
           order_count: number;
           packaging_charge: number;
           preparation_minutes: number;
@@ -4496,6 +4616,7 @@ export type Database = {
           search_vector: unknown;
           serves_count: number | null;
           short_description: string | null;
+          short_description_hi: string | null;
           slug: string;
           spice_level: Database["public"]["Enums"]["spice_level"];
           subcategory_id: string | null;
@@ -4517,6 +4638,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           dietary_tags?: string[];
           display_order?: number;
           food_type?: Database["public"]["Enums"]["food_type"];
@@ -4534,6 +4656,7 @@ export type Database = {
           metadata?: Json;
           min_quantity_per_order?: number;
           name: string;
+          name_hi?: string | null;
           order_count?: number;
           packaging_charge?: number;
           preparation_minutes?: number;
@@ -4543,6 +4666,7 @@ export type Database = {
           search_vector?: unknown;
           serves_count?: number | null;
           short_description?: string | null;
+          short_description_hi?: string | null;
           slug: string;
           spice_level?: Database["public"]["Enums"]["spice_level"];
           subcategory_id?: string | null;
@@ -4564,6 +4688,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           dietary_tags?: string[];
           display_order?: number;
           food_type?: Database["public"]["Enums"]["food_type"];
@@ -4581,6 +4706,7 @@ export type Database = {
           metadata?: Json;
           min_quantity_per_order?: number;
           name?: string;
+          name_hi?: string | null;
           order_count?: number;
           packaging_charge?: number;
           preparation_minutes?: number;
@@ -4590,6 +4716,7 @@ export type Database = {
           search_vector?: unknown;
           serves_count?: number | null;
           short_description?: string | null;
+          short_description_hi?: string | null;
           slug?: string;
           spice_level?: Database["public"]["Enums"]["spice_level"];
           subcategory_id?: string | null;
@@ -4658,6 +4785,7 @@ export type Database = {
           metadata: Json;
           onboarding_completed: boolean;
           phone: string | null;
+          preferred_branch_id: string | null;
           preferred_language: string;
           profile_completed_at: string | null;
           push_enabled: boolean;
@@ -4697,6 +4825,7 @@ export type Database = {
           metadata?: Json;
           onboarding_completed?: boolean;
           phone?: string | null;
+          preferred_branch_id?: string | null;
           preferred_language?: string;
           profile_completed_at?: string | null;
           push_enabled?: boolean;
@@ -4736,6 +4865,7 @@ export type Database = {
           metadata?: Json;
           onboarding_completed?: boolean;
           phone?: string | null;
+          preferred_branch_id?: string | null;
           preferred_language?: string;
           profile_completed_at?: string | null;
           push_enabled?: boolean;
@@ -4749,6 +4879,13 @@ export type Database = {
           whatsapp_enabled?: boolean;
         };
         Relationships: [
+          {
+            foreignKeyName: "profiles_preferred_branch_id_fkey";
+            columns: ["preferred_branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "profiles_referred_by_fkey";
             columns: ["referred_by"];
@@ -5038,6 +5175,185 @@ export type Database = {
             columns: ["variant_id"];
             isOneToOne: false;
             referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      referral_events: {
+        Row: {
+          actor_id: string | null;
+          amount: number | null;
+          beneficiary_id: string | null;
+          created_at: string;
+          details: Json;
+          event_key: string;
+          event_type: string;
+          id: string;
+          order_id: string | null;
+          referral_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          amount?: number | null;
+          beneficiary_id?: string | null;
+          created_at?: string;
+          details?: Json;
+          event_key: string;
+          event_type: string;
+          id?: string;
+          order_id?: string | null;
+          referral_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          amount?: number | null;
+          beneficiary_id?: string | null;
+          created_at?: string;
+          details?: Json;
+          event_key?: string;
+          event_type?: string;
+          id?: string;
+          order_id?: string | null;
+          referral_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referral_events_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referral_events_referral_id_fkey";
+            columns: ["referral_id"];
+            isOneToOne: false;
+            referencedRelation: "referrals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      referral_program_settings: {
+        Row: {
+          enabled: boolean;
+          id: boolean;
+          max_rewards_per_referrer: number | null;
+          minimum_order_amount: number | null;
+          referred_reward: number | null;
+          referrer_reward: number | null;
+          reward_expiry_days: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          enabled?: boolean;
+          id?: boolean;
+          max_rewards_per_referrer?: number | null;
+          minimum_order_amount?: number | null;
+          referred_reward?: number | null;
+          referrer_reward?: number | null;
+          reward_expiry_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          enabled?: boolean;
+          id?: boolean;
+          max_rewards_per_referrer?: number | null;
+          minimum_order_amount?: number | null;
+          referred_reward?: number | null;
+          referrer_reward?: number | null;
+          reward_expiry_days?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      referrals: {
+        Row: {
+          attributed_at: string;
+          branch_id: string | null;
+          created_at: string;
+          id: string;
+          inviter_id: string;
+          qualified_at: string | null;
+          qualifying_order_id: string | null;
+          referral_code: string;
+          referred_recovered: number;
+          referred_reward: number;
+          referred_user_id: string;
+          referrer_recovered: number;
+          referrer_reward: number;
+          reversal_shortfall: number;
+          reversed_at: string | null;
+          rewarded_at: string | null;
+          status: string;
+        };
+        Insert: {
+          attributed_at?: string;
+          branch_id?: string | null;
+          created_at?: string;
+          id?: string;
+          inviter_id: string;
+          qualified_at?: string | null;
+          qualifying_order_id?: string | null;
+          referral_code: string;
+          referred_recovered?: number;
+          referred_reward?: number;
+          referred_user_id: string;
+          referrer_recovered?: number;
+          referrer_reward?: number;
+          reversal_shortfall?: number;
+          reversed_at?: string | null;
+          rewarded_at?: string | null;
+          status?: string;
+        };
+        Update: {
+          attributed_at?: string;
+          branch_id?: string | null;
+          created_at?: string;
+          id?: string;
+          inviter_id?: string;
+          qualified_at?: string | null;
+          qualifying_order_id?: string | null;
+          referral_code?: string;
+          referred_recovered?: number;
+          referred_reward?: number;
+          referred_user_id?: string;
+          referrer_recovered?: number;
+          referrer_reward?: number;
+          reversal_shortfall?: number;
+          reversed_at?: string | null;
+          rewarded_at?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referrals_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_inviter_id_fkey";
+            columns: ["inviter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_qualifying_order_id_fkey";
+            columns: ["qualifying_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_referred_user_id_fkey";
+            columns: ["referred_user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -5779,6 +6095,7 @@ export type Database = {
           created_at: string;
           deleted_at: string | null;
           description: string | null;
+          description_hi: string | null;
           display_order: number;
           id: string;
           image_path: string | null;
@@ -5786,6 +6103,7 @@ export type Database = {
           meta_description: string | null;
           meta_title: string | null;
           name: string;
+          name_hi: string | null;
           slug: string;
           updated_at: string;
         };
@@ -5794,6 +6112,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           id?: string;
           image_path?: string | null;
@@ -5801,6 +6120,7 @@ export type Database = {
           meta_description?: string | null;
           meta_title?: string | null;
           name: string;
+          name_hi?: string | null;
           slug: string;
           updated_at?: string;
         };
@@ -5809,6 +6129,7 @@ export type Database = {
           created_at?: string;
           deleted_at?: string | null;
           description?: string | null;
+          description_hi?: string | null;
           display_order?: number;
           id?: string;
           image_path?: string | null;
@@ -5816,6 +6137,7 @@ export type Database = {
           meta_description?: string | null;
           meta_title?: string | null;
           name?: string;
+          name_hi?: string | null;
           slug?: string;
           updated_at?: string;
         };
@@ -6477,6 +6799,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      attribute_referral: { Args: { p_code: string }; Returns: Json };
       audit_trail: {
         Args: {
           p_action?: Database["public"]["Enums"]["audit_action"];
@@ -6656,10 +6979,48 @@ export type Database = {
         Returns: boolean;
       };
       home_feed: { Args: { p_branch_id?: string }; Returns: Json };
+      import_guest_cart: {
+        Args: { p_branch_id: string; p_idempotency_key: string; p_lines: Json };
+        Returns: Json;
+      };
       kitchen_availability: { Args: { p_branch_id?: string }; Returns: Json };
       kitchen_queue: { Args: { p_branch_id?: string }; Returns: Json };
       launch_campaign: { Args: { p_campaign_id: string }; Returns: Json };
       live_operations: { Args: { p_branch_id?: string }; Returns: Json };
+      localized_available_coupons: {
+        Args: { p_branch_id?: string; p_locale?: string };
+        Returns: Json;
+      };
+      localized_home_feed: {
+        Args: { p_branch_id?: string; p_locale?: string };
+        Returns: Json;
+      };
+      localized_menu_catalog: {
+        Args: {
+          p_branch_id?: string;
+          p_category_id?: string;
+          p_locale?: string;
+        };
+        Returns: Json;
+      };
+      localized_product_detail: {
+        Args: {
+          p_branch_id?: string;
+          p_locale?: string;
+          p_product_id?: string;
+          p_slug?: string;
+        };
+        Returns: Json;
+      };
+      localized_search_menu: {
+        Args: {
+          p_branch_id?: string;
+          p_limit?: number;
+          p_locale?: string;
+          p_query: string;
+        };
+        Returns: Json;
+      };
       manage_user_role: {
         Args: {
           p_branch_id?: string;
@@ -6689,10 +7050,15 @@ export type Database = {
       my_deliveries: { Args: { p_include_history?: boolean }; Returns: Json };
       my_delivery_location_sharing: { Args: never; Returns: Json };
       my_earnings: { Args: { p_from?: string; p_to?: string }; Returns: Json };
+      my_favorites: {
+        Args: { p_branch_id?: string; p_locale?: string };
+        Returns: Json;
+      };
       my_orders: {
         Args: { p_limit?: number; p_offset?: number; p_scope?: string };
         Returns: Json;
       };
+      my_referral_summary: { Args: never; Returns: Json };
       my_rider_onboarding: { Args: never; Returns: Json };
       my_session: { Args: never; Returns: Json };
       my_support_tickets: { Args: { p_limit?: number }; Returns: Json };
@@ -6726,6 +7092,11 @@ export type Database = {
         Args: { p_branch_id?: string; p_product_id?: string; p_slug?: string };
         Returns: Json;
       };
+      public_outlets: { Args: never; Returns: Json };
+      public_storefront_offers: {
+        Args: { p_branch_id?: string; p_locale?: string };
+        Returns: Json;
+      };
       publish_rider_location: {
         Args: {
           p_accuracy_meters?: number;
@@ -6751,6 +7122,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      record_storefront_event: {
+        Args: {
+          p_branch_id?: string;
+          p_event_id: string;
+          p_event_name: string;
+          p_product_id?: string;
+        };
+        Returns: boolean;
+      };
+      referral_admin_overview: { Args: never; Returns: Json };
       refresh_address_serviceability: {
         Args: { p_address_id: string };
         Returns: Json;
@@ -6902,11 +7283,19 @@ export type Database = {
         Returns: Json;
       };
       run_scheduled_jobs: { Args: { p_cadence?: string }; Returns: Json };
+      save_menu_translations: {
+        Args: { p_product_id: string; p_translations: Json };
+        Returns: Json;
+      };
       search_menu: {
         Args: { p_branch_id?: string; p_limit?: number; p_query: string };
         Returns: Json;
       };
       search_suggestions: { Args: { p_branch_id?: string }; Returns: Json };
+      serviceable_outlets: {
+        Args: { p_latitude: number; p_longitude: number };
+        Returns: Json;
+      };
       set_branch_status: {
         Args: {
           p_branch_id?: string;
@@ -6931,6 +7320,11 @@ export type Database = {
         };
         Returns: Json;
       };
+      set_my_favorite: {
+        Args: { p_favorite: boolean; p_product_id: string };
+        Returns: Json;
+      };
+      set_preferred_branch: { Args: { p_branch_id: string }; Returns: Json };
       set_product_availability: {
         Args: {
           p_branch_id?: string;
@@ -6963,6 +7357,10 @@ export type Database = {
       staff_directory: { Args: { p_branch_id?: string }; Returns: Json };
       start_preparing: { Args: { p_order_id: string }; Returns: Json };
       stop_my_delivery_location_sharing: { Args: never; Returns: Json };
+      storefront_event_metrics: {
+        Args: { p_branch_id?: string; p_from?: string; p_to?: string };
+        Returns: Json;
+      };
       submit_review: {
         Args: {
           p_comment?: string;
@@ -7205,6 +7603,17 @@ export type Database = {
         };
         Returns: Json;
       };
+      update_referral_program: {
+        Args: {
+          p_enabled: boolean;
+          p_max_rewards_per_referrer: number;
+          p_minimum_order_amount: number;
+          p_referred_reward: number;
+          p_referrer_reward: number;
+          p_reward_expiry_days?: number;
+        };
+        Returns: Json;
+      };
       upsert_address: {
         Args: {
           p_address_line1: string;
@@ -7428,7 +7837,8 @@ export type Database = {
         | "SYSTEM_ALERT"
         | "RIDER_DOCUMENT_REVIEWED"
         | "RIDER_APPROVED"
-        | "RIDER_SUSPENDED";
+        | "RIDER_SUSPENDED"
+        | "REFERRAL_REWARD";
       notification_status:
         | "QUEUED"
         | "SENDING"
@@ -7935,6 +8345,7 @@ export const Constants = {
         "RIDER_DOCUMENT_REVIEWED",
         "RIDER_APPROVED",
         "RIDER_SUSPENDED",
+        "REFERRAL_REWARD",
       ],
       notification_status: [
         "QUEUED",

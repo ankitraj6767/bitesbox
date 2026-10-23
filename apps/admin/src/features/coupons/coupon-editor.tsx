@@ -16,7 +16,9 @@ export type CouponEditorInitial = {
     id?: string;
     code: string;
     title: string;
+    title_hi?: string;
     description: string;
+    description_hi?: string;
     discount_kind: DiscountKind;
     discount_value: number;
     min_order_amount: number;
@@ -43,7 +45,9 @@ export function CouponEditor({ initial }: { initial: CouponEditorInitial }) {
             const payload = {
                 code: form.code.trim().toUpperCase(),
                 title: form.title.trim(),
+                title_hi: form.title_hi?.trim() || null,
                 description: form.description.trim() || null,
+                description_hi: form.description_hi?.trim() || null,
                 discount_kind: form.discount_kind,
                 discount_value: Number(form.discount_value) || 0,
                 min_order_amount: Number(form.min_order_amount) || 0,
@@ -79,8 +83,14 @@ export function CouponEditor({ initial }: { initial: CouponEditorInitial }) {
                     <Field label="Title" required>
                         <Input value={form.title} onChange={(event) => set('title', event.target.value)} required />
                     </Field>
+                    <Field label="Title (Hindi)" hint="Optional, reviewed translation.">
+                        <Input value={form.title_hi ?? ''} onChange={(event) => set('title_hi', event.target.value)} lang="hi" />
+                    </Field>
                     <Field label="Description" className="md:col-span-2">
                         <Textarea value={form.description} onChange={(event) => set('description', event.target.value)} />
+                    </Field>
+                    <Field label="Description (Hindi)" className="md:col-span-2">
+                        <Textarea value={form.description_hi ?? ''} onChange={(event) => set('description_hi', event.target.value)} lang="hi" />
                     </Field>
                     <Field label="Discount kind" required>
                         <Select value={form.discount_kind} onValueChange={(value) => set('discount_kind', value as DiscountKind)}>

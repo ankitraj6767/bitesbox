@@ -15,7 +15,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
         .from('categories')
-        .select('id, name, slug, short_description, description, display_order, day_part, accent_color, is_active, is_featured')
+        .select('id, name, name_hi, slug, short_description, short_description_hi, description, description_hi, display_order, day_part, accent_color, is_active, is_featured')
         .eq('id', id)
         .maybeSingle();
     if (error || !data) notFound();

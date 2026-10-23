@@ -49,8 +49,11 @@ export interface CmsSectionInitial {
   kind: CmsSectionKind;
   section_key: string;
   title: string | null;
+  title_hi?: string | null;
   subtitle: string | null;
+  subtitle_hi?: string | null;
   action_label: string | null;
+  action_label_hi?: string | null;
   action_route: string | null;
   layout: CmsLayout;
   item_limit: number;
@@ -64,6 +67,7 @@ export interface CmsSectionInitial {
   text_color: string | null;
   image_path: string | null;
   rich_text: string | null;
+  rich_text_hi?: string | null;
   starts_at: string | null;
   ends_at: string | null;
   valid_days_of_week: number[];
@@ -75,11 +79,15 @@ export interface CmsBannerInitial {
   id?: string;
   section_id: string | null;
   title: string | null;
+  title_hi?: string | null;
   subtitle: string | null;
+  subtitle_hi?: string | null;
   badge_text: string | null;
+  badge_text_hi?: string | null;
   image_path: string;
   image_path_wide: string | null;
   alt_text: string | null;
+  alt_text_hi?: string | null;
   background_color: string | null;
   link_kind: BannerLinkKind;
   link_category_id: string | null;

@@ -30,7 +30,7 @@ export default async function ReportsPage({
 
     const rangeKey = (params.range ?? '30d') as RangeKey;
     const { from, to, label } = resolveRange(rangeKey);
-    const branchId = activeBranchId(session) ?? undefined;
+    const branchId = (await activeBranchId(session)) ?? undefined;
     const canExport = hasPermission(session, PERMISSIONS.REPORT_EXPORT);
     const canSeeFinance = hasPermission(session, PERMISSIONS.FINANCE_VIEW);
 

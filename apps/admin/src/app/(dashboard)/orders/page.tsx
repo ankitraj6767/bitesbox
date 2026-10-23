@@ -86,7 +86,7 @@ export default async function OrdersPage({
     const page = Math.max(1, Number(params.page ?? '1') || 1);
 
     const supabase = await createSupabaseServerClient();
-    const branchId = activeBranchId(session);
+    const branchId = await activeBranchId(session);
 
     let query = supabase
         .from('orders')

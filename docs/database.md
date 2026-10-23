@@ -1,8 +1,8 @@
 # Database
 
-87 tables, 57 enums, 155 RLS policies, 107 client-callable functions, across 56
-version-controlled migrations in this checkout. Nothing is created by hand in
-the dashboard.
+93 tables, 57 enums, 144 RLS policies, and 130 client-callable functions across
+61 version-controlled migrations in this checkout. These counts come from the
+local schema after `npm run db:reset`; nothing is created by hand in the dashboard.
 
 ## Schemas
 
@@ -127,10 +127,16 @@ create unique index delivery_earnings_assignment_key
 | `0052 serialize_cart_line_mutations_for_group_merge` | Locks the cart before any line mutation |
 | `20261023053104 storefront_white_background` | Keeps the customer storefront canvas white |
 | `20261023065006 production_readiness_preferences_tracking_mfa` | Persisted consent, delivery-scoped location writes, signed AAL2 permission checks, webhook duplicate counts, and aggregate operations health alerts |
+| `20261023092506 customer_growth_localization_outlets` | Referral ledger/configuration, human-reviewed Hindi content fields, customer favorites, privacy-safe storefront analytics, and outlet discovery/preferences |
+| `20261023101500 preserve_wallet_refund_on_referral_reversal` | Preserves wallet credits issued by a completed refund while recovering referral rewards |
+| `20261023113000 idempotent_guest_cart_import` | Atomically moves a post-OTP browser cart into a customer cart with server-side repricing and retry safety |
+| `20261023114000 add_referral_reward_notification_event` | Adds a dedicated transactional referral-reward event |
+| `20261023114100 notify_referral_rewards` | Sends idempotent, profile-language push/in-app reward notifications through existing preference checks |
 
-`0028a` exists on its own because PostgreSQL refuses to *use* a new enum value in the
-same transaction that adds it, and `0029` inserts notification templates for those
-events.
+The notification event enums are isolated from their use in later migrations
+because PostgreSQL refuses to *use* a new enum value in the same transaction
+that adds it. The reward notification migration also uses the existing durable
+queue and preference checks; it does not create a second delivery mechanism.
 
 ## The order snapshot
 

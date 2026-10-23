@@ -40,6 +40,9 @@ serveFunction("create-order", async ({ req, requestId, origin }) => {
 
     const idempotencyKey = v.idempotencyKey(body, req);
     const paymentMode = v.enumValue(body, "payment_mode", PAYMENT_MODES, "ONLINE");
+    // Attribution label only; caller, cart ownership and branch authorization
+    // remain authoritative in the existing database order function.
+    const channel = v.enumValue(body, "channel", ["MOBILE_APP", "WEB"] as const, "MOBILE_APP");
     const cartId = v.optionalUuid(body, "cart_id");
     const branchId = v.optionalUuid(body, "branch_id");
     const tipAmount = v.optionalNumber(body, "tip_amount", { min: 0, max: 5000 }) ?? 0;
@@ -62,7 +65,7 @@ serveFunction("create-order", async ({ req, requestId, origin }) => {
         p_branch_id: branchId,
         p_tip_amount: tipAmount,
         p_loyalty_points: Math.floor(loyaltyPoints),
-        p_channel: "MOBILE_APP",
+        p_channel: channel,
         p_app_version: appVersion,
         p_device_platform: DEVICE_PLATFORMS.includes(devicePlatform as never)
             ? devicePlatform
