@@ -47,6 +47,23 @@ and assignment state, then contact the responsible on-shift operator through the
 approved internal channel. Use the existing audited order transition/override
 actions. Do not update order status directly in SQL.
 
+## Delivery-zone changes
+
+Open Admin → Settings → Delivery with the intended outlet selected. Branch
+managers and higher can add a radius or polygon zone, edit its fee/minimum/ETA/COD
+limits, adjust peak or live operations surcharges, and change the priority used
+when zones overlap. Checkout reads these values from the database for each new
+quote, so saved changes take effect immediately; an order already placed keeps
+its confirmed delivery fee and zone snapshot.
+
+Use **Live** to remove a zone from matching new addresses, and **Accept orders**
+to keep its coverage visible while preventing new orders in that zone. Deleting
+a zone archives it and stops it matching future quotes; it preserves audit and
+historical order records. Confirm the outlet and test a serviceability address
+after changing a zone boundary or priority. Do not change delivery-zone rows in
+SQL or use a client-selected outlet as authorization; branch permissions and RLS
+remain authoritative.
+
 ## Stale rider location
 
 `DELIVERY_LOCATION_STALE` means an active rider-enabled assignment has no accepted

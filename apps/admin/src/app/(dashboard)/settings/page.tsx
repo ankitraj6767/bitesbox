@@ -9,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/overla
 import { Table, TableWrap, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { SettingsEditor, type SettingRow } from '@/features/settings/settings-editor';
 import { FeatureFlagList, type FeatureFlagRow } from '@/features/settings/feature-flag-list';
+import { DeliveryZoneManager } from '@/features/settings/delivery-zone-manager';
 import { PERMISSIONS } from '@bitesbox/shared-types';
-import { money, humanise } from '@/lib/utils';
+import { humanise } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Settings' };
 export const dynamic = 'force-dynamic';
@@ -37,12 +38,13 @@ export default async function SettingsPage() {
             supabase
                 .from('delivery_zones')
                 .select(
-                    `id, name, description, kind, min_distance_km, max_distance_km, delivery_fee,
+                    `id, branch_id, name, description, kind, min_distance_km, max_distance_km, polygon, delivery_fee,
            min_order_amount, free_delivery_threshold, per_km_surcharge, surcharge_after_km,
-           peak_surcharge, peak_starts_at, peak_ends_at, base_eta_minutes, extra_eta_minutes,
+           peak_surcharge, peak_starts_at, peak_ends_at, dynamic_surcharge, base_eta_minutes, extra_eta_minutes,
            cod_enabled, max_cod_amount, is_serviceable, is_active, priority`,
                 )
                 .is('deleted_at', null)
+                .eq('branch_id', branchId ?? '')
                 .order('priority'),
             supabase
                 .from('branch_hours')
@@ -145,82 +147,13 @@ export default async function SettingsPage() {
                         canEdit={canEditSettings}
                     />
 
-                    <Card>
-                        <CardToolbar
-                            title="Delivery zones"
-                            description="Fees and minimums per zone. Lowest priority wins when zones overlap."
-                        />
-                        <CardContent className="p-0">
-                            <TableWrap className="rounded-none border-0">
-                                <Table>
-                                    <THead>
-                                        <TR className="hover:bg-transparent">
-                                            <TH>Zone</TH>
-                                            <TH>Distance</TH>
-                                            <TH numeric>Fee</TH>
-                                            <TH numeric>Min order</TH>
-                                            <TH numeric>Free above</TH>
-                                            <TH numeric>ETA</TH>
-                                            <TH>Cash on delivery</TH>
-                                            <TH>State</TH>
-                                        </TR>
-                                    </THead>
-                                    <TBody>
-                                        {zones.map((zone) => (
-                                            <TR key={zone.id}>
-                                                <TD>
-                                                    <span className="block text-[13px] font-medium text-ink">{zone.name}</span>
-                                                    <span className="block max-w-56 truncate text-[11.5px] text-ink-muted">
-                                                        {zone.description ?? humanise(zone.kind)}
-                                                    </span>
-                                                </TD>
-                                                <TD className="text-[12.5px]">
-                                                    {zone.kind === 'RADIUS'
-                                                        ? `${zone.min_distance_km}–${zone.max_distance_km} km`
-                                                        : 'Geofenced'}
-                                                </TD>
-                                                <TD numeric className="text-[13px] font-semibold">
-                                                    {money(zone.delivery_fee)}
-                                                    {Number(zone.peak_surcharge) > 0 ? (
-                                                        <span className="block text-[11px] font-normal text-caution">
-                                                            +{money(zone.peak_surcharge)} peak
-                                                        </span>
-                                                    ) : null}
-                                                </TD>
-                                                <TD numeric className="text-[12.5px]">
-                                                    {money(zone.min_order_amount)}
-                                                </TD>
-                                                <TD numeric className="text-[12.5px]">
-                                                    {zone.free_delivery_threshold ? money(zone.free_delivery_threshold) : '—'}
-                                                </TD>
-                                                <TD numeric className="text-[12.5px]">
-                                                    {zone.base_eta_minutes + zone.extra_eta_minutes}m
-                                                </TD>
-                                                <TD>
-                                                    {zone.cod_enabled ? (
-                                                        <Badge tone="positive">
-                                                            Up to {zone.max_cod_amount ? money(zone.max_cod_amount) : 'limit'}
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge tone="neutral">Not allowed</Badge>
-                                                    )}
-                                                </TD>
-                                                <TD>
-                                                    {zone.is_active && zone.is_serviceable ? (
-                                                        <Badge tone="positive" dot>
-                                                            Serviceable
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge tone="critical">Off</Badge>
-                                                    )}
-                                                </TD>
-                                            </TR>
-                                        ))}
-                                    </TBody>
-                                </Table>
-                            </TableWrap>
-                        </CardContent>
-                    </Card>
+                    <DeliveryZoneManager
+                        zones={zones}
+                        branchId={branchId}
+                        branchName={branch?.name ?? 'selected outlet'}
+                        canManage={canManageBranch}
+                        loadError={Boolean(zonesResult.error)}
+                    />
                 </TabsContent>
 
                 <TabsContent value="payments" className="space-y-4">
