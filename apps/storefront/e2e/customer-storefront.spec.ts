@@ -108,6 +108,42 @@ test('guest cart moves through OTP into server-priced checkout and order trackin
     await expect(page.getByText('Current status:')).toBeVisible();
 });
 
+test('online checkout uses the existing Razorpay create and verify contracts without a real charge', async ({ page }) => {
+    await page.route('https://checkout.razorpay.com/v1/checkout.js', (route) => route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: `window.Razorpay = function(options) {
+            this.on = function() {};
+            this.open = function() { options.handler({
+                razorpay_order_id: options.order_id,
+                razorpay_payment_id: 'pay_test_local',
+                razorpay_signature: 'signature_test_local'
+            }); };
+        };`,
+    }));
+    const functionCalls: string[] = [];
+    page.on('request', (request) => {
+        const match = request.url().match(/\/functions\/v1\/(create-order|create-payment|verify-payment)$/);
+        if (match) functionCalls.push(match[1]);
+    });
+
+    await page.goto('/menu/litti-chokha');
+    await page.getByRole('button', { name: 'Add to cart' }).click();
+    await page.getByRole('link', { name: 'Continue to secure checkout' }).click();
+    await page.getByLabel('Phone number').fill('+919999000001');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await page.getByLabel('Verification code').fill('123456');
+    await page.getByRole('button', { name: 'Verify code' }).click();
+    await expect(page).toHaveURL(/\/cart$/);
+    await page.getByRole('button', { name: 'Add saved items to my cart' }).click();
+    await page.getByLabel('Fulfilment').selectOption('PICKUP');
+    await page.getByLabel('Payment method').selectOption('ONLINE');
+    await page.getByRole('button', { name: 'Place order' }).click();
+    await expect(page).toHaveURL(/\/order\/00000000-0000-4000-8000-000000000501$/);
+    await expect(page.getByText('CAPTURED')).toBeVisible();
+    expect(functionCalls).toEqual(['create-order', 'create-payment', 'verify-payment']);
+});
+
 test('signed-in favorites stay private behind the customer session and support removal', async ({ context, page }) => {
     await context.addCookies([{ ...sessionCookie(), url: 'http://127.0.0.1:3001' }]);
     await page.goto('/favorites');

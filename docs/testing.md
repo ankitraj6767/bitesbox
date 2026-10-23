@@ -306,13 +306,14 @@ npm run e2e --workspace=@bitesbox/storefront
 ```
 
 The unit suite covers outlet-isolated guest cart storage, safe malformed-cart
-handling, retry-key rotation, and English/Hindi fallback selection. Four Playwright
+handling, retry-key rotation, and English/Hindi fallback selection. Five Playwright
 journeys run against a deterministic local Auth/REST/Edge fake: guest language and
 outlet switching with separate carts, referral attribution through OTP, an OTP
-guest-cart import into server-priced checkout and order tracking, and signed-in
-favorite removal. The checkout test uses COD; the fake does not charge money.
-Razorpay signature, retry, idempotency, mismatch and refund contracts remain in
-the Deno/provider and SQL suites rather than issuing a live browser payment.
+guest-cart import into server-priced COD checkout and order tracking, signed-in
+favorite removal, and an online checkout through the existing create/verify
+payment contracts with a fake Razorpay SDK callback. The browser fake does not
+charge money. Signature, retry, idempotency, mismatch and refund contracts remain
+in the Deno/provider and SQL suites rather than calling Razorpay.
 
 ## Edge Functions
 

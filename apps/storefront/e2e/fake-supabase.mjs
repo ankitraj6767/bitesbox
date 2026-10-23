@@ -8,6 +8,8 @@ const productId = '00000000-0000-4000-8000-000000000201';
 const userId = '00000000-0000-4000-8000-000000000301';
 const orderId = '00000000-0000-4000-8000-000000000501';
 let importedGuestLines = [];
+let onlineOrder = false;
+let onlinePaymentVerified = false;
 
 const product = (locale = 'en', branchId = branchA) => ({
     id: productId,
@@ -146,7 +148,8 @@ const server = createServer(async (request, response) => {
             return send(response, 200, { imported: true, line_count: importedGuestLines.length, branch_id: body.p_branch_id, replayed: false });
         }
         if (name === 'order_detail') return claims && body.p_order_id === orderId ? send(response, 200, {
-            id: orderId, order_number: 'BB-E2E-002', status: 'ORDER_PLACED', payment: { status: 'COD_PENDING', mode: 'COD' },
+            id: orderId, order_number: 'BB-E2E-002', status: onlineOrder && onlinePaymentVerified ? 'PAYMENT_CONFIRMED' : 'ORDER_PLACED',
+            payment: { status: onlinePaymentVerified ? 'CAPTURED' : 'COD_PENDING', mode: onlineOrder ? 'ONLINE' : 'COD' },
             totals: { grand_total: 126, currency_code: 'INR' }, items: [{ product_name: 'Litti Chokha', quantity: 1, net_amount: 120 }], timeline: [],
         }) : send(response, 404, { code: 'order_not_found' });
         if (name === 'localized_menu_catalog') return send(response, 200, menu(body.p_locale, body.p_branch_id ?? branchA));
@@ -168,8 +171,30 @@ const server = createServer(async (request, response) => {
     if (url.pathname === '/functions/v1/create-order' && request.method === 'POST') {
         const body = await jsonBody(request);
         if (!claimsFor(request)) return send(response, 401, { message: 'Authentication required.' });
-        if (body.payment_mode !== 'COD' || body.branch_id !== branchA) return send(response, 400, { message: 'Invalid E2E order intent.' });
-        return send(response, 200, { order: { order_id: orderId, requires_payment: false } });
+        if (!['COD', 'ONLINE'].includes(body.payment_mode) || body.branch_id !== branchA) return send(response, 400, { message: 'Invalid E2E order intent.' });
+        onlineOrder = body.payment_mode === 'ONLINE';
+        onlinePaymentVerified = false;
+        return send(response, 200, { order: { order_id: orderId, requires_payment: onlineOrder } });
+    }
+    if (url.pathname === '/functions/v1/create-payment' && request.method === 'POST') {
+        const body = await jsonBody(request);
+        return claimsFor(request) && onlineOrder && body.order_id === orderId
+            ? send(response, 200, {
+                payment: { provider_order_id: 'order_test_local', amount: 12600, currency: 'INR' },
+                checkout: { key_id: 'rzp_test_local_e2e', name: 'Bites Box', description: 'Test order', theme_color: '#ff6d00', prefill: {} },
+            })
+            : send(response, 400, { message: 'Invalid E2E payment intent.' });
+    }
+    if (url.pathname === '/functions/v1/verify-payment' && request.method === 'POST') {
+        const body = await jsonBody(request);
+        if (!claimsFor(request) || !onlineOrder || body.order_id !== orderId
+            || body.razorpay_order_id !== 'order_test_local'
+            || body.razorpay_payment_id !== 'pay_test_local'
+            || body.razorpay_signature !== 'signature_test_local') {
+            return send(response, 400, { message: 'Invalid E2E payment verification.' });
+        }
+        onlinePaymentVerified = true;
+        return send(response, 200, { status: 'CAPTURED' });
     }
     if (url.pathname.startsWith('/rest/v1/')) return send(response, 200, []);
     return send(response, 404, { message: 'Not found in deterministic storefront E2E fake' });

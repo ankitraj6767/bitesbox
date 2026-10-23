@@ -66,7 +66,7 @@ reviewed before merging.
 | Admin browser journey | Passed: 7 tests | Deterministic local Auth/REST fake; includes two authorized branches, rejection of an out-of-scope branch, AAL2 referral terms, and refund gates |
 | Admin build | Passed | Next.js production build with placeholder Supabase configuration |
 | Storefront lint, typecheck, unit tests | Passed: 4 unit tests | Playwright/build rerun sequentially after a temporary artifact collision |
-| Storefront browser journey | Passed: 4 tests | Guest browsing/outlet/language, referral OTP attribution, guest-cart import → server-priced COD order → tracking, favorites |
+| Storefront browser journey | Passed: 5 tests | Guest browsing/outlet/language, referral OTP attribution, guest-cart import → server-priced COD order → tracking, fake online-payment callback, favorites |
 | Storefront production build | Passed | Next.js production build with placeholder Supabase configuration |
 | Flutter static analysis | Passed | `npm run mobile:analyze` |
 | Flutter unit/widget tests | Passed: 144 tests | `npm run mobile:test`; does not replace device validation |
