@@ -227,7 +227,7 @@ function buildCheckoutPayload(input: {
             key_id: env.razorpayKeyId,
             name: "Bites Box",
             description: `Order ${input.order.order_number}`,
-            theme_color: "#C1121F",
+            theme_color: "#FC8019",
             prefill: {
                 name: input.order.customer_name ?? "",
                 contact: input.order.customer_phone ?? input.caller.phone ?? "",

@@ -7,16 +7,16 @@
    deploy. The values below are the compiled-in defaults.
    ═══════════════════════════════════════════════════════════════════════════ */
 @theme {
-  --color-brand-50: #fff1f2;
-  --color-brand-100: #ffe0e2;
-  --color-brand-200: #ffc7cb;
-  --color-brand-300: #ff9ea6;
-  --color-brand-400: #fb6672;
-  --color-brand-500: #ef3746;
-  --color-brand-600: #c1121f;
-  --color-brand-700: #a30f1a;
-  --color-brand-800: #871119;
-  --color-brand-900: #71131a;
+  --color-brand-50: #fff4eb;
+  --color-brand-100: #ffe3cc;
+  --color-brand-200: #ffc89d;
+  --color-brand-300: #ffa15f;
+  --color-brand-400: #ff8a3d;
+  --color-brand-500: #fc8019;
+  --color-brand-600: #c04b00;
+  --color-brand-700: #a83e00;
+  --color-brand-800: #7a2f00;
+  --color-brand-900: #5a2200;
 
   --color-herb-500: #2d6a4f;
   --color-herb-600: #1b4332;
@@ -70,7 +70,7 @@
 :root {
   /* Runtime-overridable brand hooks (see ThemeProvider). */
   --brand-primary: var(--color-brand-600);
-  --brand-secondary: var(--color-herb-600);
+  --brand-secondary: #3d4152;
   --brand-accent: var(--color-turmeric-500);
   color-scheme: light;
 }

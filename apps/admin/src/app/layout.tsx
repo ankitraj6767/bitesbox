@@ -10,11 +10,14 @@ export const metadata: Metadata = {
     description:
         'Operating console for Bites Box: live orders, kitchen, delivery, payments, refunds and analytics.',
     robots: { index: false, follow: false },
-    icons: { icon: '/favicon.ico' },
+    icons: {
+        icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
+        apple: '/branding/bitesbox-app-icon.png',
+    },
 };
 
 export const viewport: Viewport = {
-    themeColor: '#c1121f',
+    themeColor: '#FC8019',
     width: 'device-width',
     initialScale: 1,
 };

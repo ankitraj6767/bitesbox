@@ -2,8 +2,9 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { UtensilsCrossed, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { visibleNavigation } from '@/lib/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -58,9 +59,13 @@ export function Sidebar({
             >
                 <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-hairline px-4">
                     <Link href="/overview" className="flex min-w-0 items-center gap-2.5">
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
-                            <UtensilsCrossed className="size-4" aria-hidden />
-                        </span>
+                        <Image
+                            src="/branding/bitesbox-app-icon.png"
+                            alt=""
+                            width={32}
+                            height={32}
+                            className="size-8 shrink-0 rounded-lg object-cover"
+                        />
                         <span className="min-w-0">
                             <span className="block truncate font-display text-[15px] leading-tight font-semibold tracking-tight text-ink">
                                 Bites Box

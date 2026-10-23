@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { UtensilsCrossed } from 'lucide-react';
+import Image from 'next/image';
 import { getSession } from '@/lib/session';
 import { LoginForm } from './login-form';
 
@@ -31,9 +31,13 @@ export default async function LoginPage({
                 />
 
                 <div className="relative flex items-center gap-2.5">
-                    <span className="flex size-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-                        <UtensilsCrossed className="size-5" aria-hidden />
-                    </span>
+                    <Image
+                        src="/branding/bitesbox-app-icon.png"
+                        alt=""
+                        width={36}
+                        height={36}
+                        className="rounded-xl object-cover"
+                    />
                     <span className="font-display text-lg font-semibold tracking-tight">Bites Box</span>
                 </div>
 
@@ -66,9 +70,13 @@ export default async function LoginPage({
             <section className="flex items-center justify-center px-6 py-12">
                 <div className="w-full max-w-sm">
                     <div className="mb-8 lg:hidden">
-                        <span className="flex size-10 items-center justify-center rounded-xl bg-brand-600 text-white">
-                            <UtensilsCrossed className="size-5" aria-hidden />
-                        </span>
+                        <Image
+                            src="/branding/bitesbox-app-icon.png"
+                            alt=""
+                            width={40}
+                            height={40}
+                            className="rounded-xl object-cover"
+                        />
                     </div>
 
                     <h2 className="font-display text-2xl font-semibold tracking-tight text-ink">

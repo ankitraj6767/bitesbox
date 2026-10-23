@@ -21,13 +21,13 @@ import { EmptyState } from '@/components/ui/states';
 import { compactNumber, money, humanise } from '@/lib/utils';
 import type { DashboardCharts } from '@bitesbox/shared-types';
 
-const BRAND = '#c1121f';
-const HERB = '#1b4332';
-const TURMERIC = '#f0a202';
+const BRAND = '#FC8019';
+const SECONDARY = '#3D4152';
+const ACCENT = '#F7A552';
 const INK_MUTED = '#6b625c';
 const HAIRLINE = '#ece5dd';
 
-const PIE_COLOURS = [BRAND, HERB, TURMERIC, '#1d4ed8', '#7c3aed', '#0891b2', '#be185d'];
+const PIE_COLOURS = [BRAND, SECONDARY, ACCENT, '#1d4ed8', '#7c3aed', '#0891b2', '#be185d'];
 
 const axisProps = {
     stroke: INK_MUTED,
@@ -200,7 +200,7 @@ export function OrdersByHourChart({ data }: { data: DashboardCharts['orders_by_h
                 <XAxis dataKey="label" {...axisProps} interval={2} />
                 <YAxis {...axisProps} allowDecimals={false} />
                 <ChartTooltip content={<TooltipCard />} cursor={{ fill: 'rgba(26,22,20,0.04)' }} />
-                <Bar dataKey="orders" name="Orders" fill={HERB} radius={[4, 4, 0, 0]} maxBarSize={22} />
+                <Bar dataKey="orders" name="Orders" fill={SECONDARY} radius={[4, 4, 0, 0]} maxBarSize={22} />
             </BarChart>
         </ChartFrame>
     );

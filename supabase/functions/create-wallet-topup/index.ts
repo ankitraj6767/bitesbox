@@ -166,7 +166,7 @@ serveFunction("create-wallet-topup", async ({ req, requestId, origin }) => {
             key_id: env.razorpayKeyId,
             name: "Bites Box",
             description: `Add ₹${amount.toFixed(2)} to your wallet`,
-            theme_color: "#C1121F",
+            theme_color: "#FC8019",
             prefill: { name: "", contact: caller.phone ?? "", email: caller.email ?? "" },
         },
     }, { status: reusable ? 200 : 201, origin, requestId });

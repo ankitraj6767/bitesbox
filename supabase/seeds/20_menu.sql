@@ -12,7 +12,7 @@ insert into public.categories (
    'Slow-dum handi biryani, layered with saffron rice',
    'Our signature dum biryani is layered in sealed handis with aged basmati, whole spices and saffron milk, then cooked slowly so every grain stays separate.',
    'menu-images/categories/biryani-thumb.jpg', 'menu-images/categories/biryani.jpg',
-   'rice_bowl', '#C1121F', 1, true, 'ALL_DAY',
+   'rice_bowl', '#FC8019', 1, true, 'ALL_DAY',
    'Biryani in Bakhtiyarpur | Bites Box', 'Order authentic dum handi biryani in Bakhtiyarpur. Chicken, mutton and veg biryani delivered hot.',
    array['biryani','biriyani','handi','dum','rice','pulao']),
 
@@ -92,7 +92,7 @@ insert into public.categories (
    'Value meal boxes for one, two or the family',
    'Complete meal boxes that pair a main with bread, rice and a drink.',
    'menu-images/categories/combos-thumb.jpg', 'menu-images/categories/combos.jpg',
-   'box', '#C1121F', 11, true, 'ALL_DAY',
+   'box', '#FC8019', 11, true, 'ALL_DAY',
    'Combo Meals | Bites Box', 'Value combo meals for solo, couple and family.',
    array['combo','meal','box','thali','family pack','value']),
 

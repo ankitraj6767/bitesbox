@@ -104,11 +104,17 @@ function toHtml(body: string): string {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/\n/g, "<br>");
+    const logoUrl = `${env.supabaseUrl}/storage/v1/object/public/brand-assets/app-icon.png`;
 
     return `<!doctype html>
 <html><body style="margin:0;padding:24px;background:#FFFBF6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1A1614;">
   <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border-radius:16px;padding:32px;">
-    <div style="font-size:20px;font-weight:700;color:#C1121F;margin-bottom:20px;">Bites Box</div>
+    <table role="presentation" style="border-collapse:collapse;margin-bottom:20px;">
+      <tr>
+        <td style="padding:0 10px 0 0;vertical-align:middle;"><img src="${logoUrl}" alt="" width="36" height="36" style="display:block;border-radius:10px;"></td>
+        <td style="padding:0;vertical-align:middle;font-size:20px;font-weight:700;color:#C04B00;">Bites Box</td>
+      </tr>
+    </table>
     <div style="font-size:15px;line-height:1.6;">${escaped}</div>
     <hr style="border:none;border-top:1px solid #F0EAE4;margin:28px 0 16px;">
     <div style="font-size:12px;color:#6B625C;">

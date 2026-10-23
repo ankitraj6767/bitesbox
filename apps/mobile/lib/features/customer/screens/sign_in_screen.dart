@@ -77,17 +77,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: brand.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(brand.radiusMd),
-                ),
-                child: Icon(
-                  Icons.lunch_dining_rounded,
-                  size: 32,
-                  color: brand.primary,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(brand.radiusMd),
+                child: Image.asset(
+                  'assets/branding/bitesbox-app-icon.png',
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  semanticLabel: '${brand.name} logo',
                 ),
               ),
               const SizedBox(height: 24),
