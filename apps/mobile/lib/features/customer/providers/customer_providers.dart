@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -290,20 +293,50 @@ final myOrdersProvider = FutureProvider.family<OrderList, String>((
 });
 
 /// A single order, refreshed whenever realtime reports a change to it.
-final orderDetailProvider = FutureProvider.family<OrderDetail, String>((
+/// Realtime is best-effort, so assigned deliveries also refresh in foreground
+/// to recover when a location event is missed or the channel reconnects.
+final orderDetailProvider =
+    FutureProvider.autoDispose.family<OrderDetail, String>((
   ref,
   orderId,
 ) async {
   final repository = ref.watch(orderRepositoryProvider);
+  const locationRefreshInterval = Duration(seconds: 20);
+  Timer? refreshTimer;
+  AppLifecycleListener? lifecycleListener;
+  var canRefreshLocation = false;
+  var refreshQueued = false;
+
+  void refreshIfNeeded() {
+    if (!canRefreshLocation || refreshQueued) return;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
+    refreshQueued = true;
+    ref.invalidateSelf();
+  }
 
   // Re-read on every signal rather than trusting the realtime payload, so RLS
   // remains the only thing deciding what the customer can see.
   final subscription = repository.watchOrder(orderId).listen((_) {
     ref.invalidateSelf();
   });
-  ref.onDispose(subscription.cancel);
+  lifecycleListener = AppLifecycleListener(onResume: refreshIfNeeded);
+  ref.onDispose(() {
+    refreshTimer?.cancel();
+    lifecycleListener?.dispose();
+    unawaited(subscription.cancel());
+  });
 
-  return repository.detail(orderId);
+  final detail = await repository.detail(orderId);
+  canRefreshLocation = detail.shouldRefreshDeliveryLocation;
+  if (canRefreshLocation) {
+    refreshTimer = Timer.periodic(
+      locationRefreshInterval,
+      (_) => refreshIfNeeded(),
+    );
+  }
+  return detail;
 });
 
 final cancellationOptionsProvider =

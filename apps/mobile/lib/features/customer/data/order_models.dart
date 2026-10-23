@@ -905,6 +905,19 @@ class OrderDetail {
 
   bool get isTrackable => isActive && !awaitingPayment;
 
+  /// Only poll while a rider can legitimately publish a delivery location.
+  bool get shouldRefreshDeliveryLocation =>
+      isTrackable &&
+      !isPickup &&
+      rider != null &&
+      const {
+        'RIDER_ASSIGNED',
+        'RIDER_ARRIVED_STORE',
+        'PICKED_UP',
+        'OUT_FOR_DELIVERY',
+        'RIDER_ARRIVED_CUSTOMER',
+      }.contains(status);
+
   /// Live ETA from the rider's own device, falling back to the promise time.
   int? get etaMinutes {
     final live = rider?.liveLocation;

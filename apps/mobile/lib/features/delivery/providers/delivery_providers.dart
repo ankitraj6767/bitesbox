@@ -239,6 +239,7 @@ final riderLastFixProvider = StateProvider<RiderFix?>((ref) => null);
 enum LocationSharingStatus {
   idle,
   requestingPermission,
+  waitingForFix,
   sharing,
   stale,
   permissionDenied,
@@ -266,8 +267,13 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
   DateTime? _lastSent;
   bool _starting = false;
   bool _reconciling = false;
+  bool _publishing = false;
+  Position? _pendingFix;
+  String? _pendingFixAssignmentId;
   String? _localStopPendingAssignmentId;
+  String? _streamAssignmentId;
   DateTime? _streamStartedAt;
+  DateTime? _lastImmediateFixAttempt;
 
   static const _minInterval = Duration(seconds: 8);
   static const _staleAfter = Duration(minutes: 2);
@@ -467,7 +473,7 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
         return;
       }
 
-      await _startLocalStream();
+      await _startLocalStream(assignment.assignmentId);
     } finally {
       _reconciling = false;
     }
@@ -516,14 +522,22 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
     return null;
   }
 
-  Future<void> _startLocalStream() async {
+  Future<void> _startLocalStream(String assignmentId) async {
     if (_subscription != null) {
-      if (state.status == LocationSharingStatus.stale ||
-          state.status == LocationSharingStatus.networkUnavailable) {
+      if (_streamAssignmentId != assignmentId) {
+        await _stopLocal();
+      } else {
+        if (state.status == LocationSharingStatus.stale ||
+            state.status == LocationSharingStatus.networkUnavailable ||
+            state.status == LocationSharingStatus.waitingForFix) {
+          _set(
+            LocationSharingStatus.waitingForFix,
+            'Checking for a fresh GPS fix and reconnecting to the server.',
+          );
+          unawaited(_requestCurrentFix(assignmentId));
+        }
         return;
       }
-      _set(LocationSharingStatus.sharing);
-      return;
     }
 
     final LocationSettings settings;
@@ -556,13 +570,19 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
       );
     }
 
+    _streamAssignmentId = assignmentId;
     _subscription = Geolocator.getPositionStream(locationSettings: settings)
         .listen(
-          (position) => unawaited(_publish(position)),
-          onError: (Object error) => unawaited(_handleStreamError(error)),
+          (position) => unawaited(
+            _publish(position, expectedAssignmentId: assignmentId),
+          ),
+          onError: (Object error) => unawaited(
+            _handleStreamError(error, expectedAssignmentId: assignmentId),
+          ),
           cancelOnError: false,
         );
     _streamStartedAt = DateTime.now().toUtc();
+    _lastImmediateFixAttempt = null;
     _staleTimer?.cancel();
     _staleTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       final fixAt =
@@ -575,7 +595,42 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
         );
       }
     });
-    _set(LocationSharingStatus.sharing);
+    _set(
+      LocationSharingStatus.waitingForFix,
+      'Waiting for a fresh GPS fix. The customer will see your location after the server receives it.',
+    );
+    unawaited(_requestCurrentFix(assignmentId));
+  }
+
+  Future<void> _requestCurrentFix(String assignmentId) async {
+    final now = DateTime.now().toUtc();
+    final lastAttempt = _lastImmediateFixAttempt;
+    if (lastAttempt != null &&
+        now.difference(lastAttempt) < const Duration(seconds: 15)) {
+      return;
+    }
+    _lastImmediateFixAttempt = now;
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+      if (_streamAssignmentId != assignmentId) return;
+      await _publish(position, expectedAssignmentId: assignmentId);
+    } on TimeoutException {
+      if (_streamAssignmentId == assignmentId &&
+          state.status == LocationSharingStatus.waitingForFix) {
+        _set(
+          LocationSharingStatus.waitingForFix,
+          'GPS is taking longer than expected. Keep Location Services on; sharing will start when a fresh fix is available.',
+        );
+      }
+    } catch (_) {
+      // Keep the position stream active. A later OS fix can still publish.
+    }
   }
 
   Future<void> _stopLocal() async {
@@ -585,11 +640,20 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
     _staleTimer = null;
     _lastSent = null;
     _streamStartedAt = null;
+    _streamAssignmentId = null;
+    _lastImmediateFixAttempt = null;
+    _pendingFix = null;
+    _pendingFixAssignmentId = null;
     ref.read(riderLastFixProvider.notifier).state = null;
   }
 
-  Future<void> _handleStreamError(Object _) async {
+  Future<void> _handleStreamError(
+    Object _, {
+    required String expectedAssignmentId,
+  }) async {
+    if (_streamAssignmentId != expectedAssignmentId) return;
     final permission = await Geolocator.checkPermission();
+    if (_streamAssignmentId != expectedAssignmentId) return;
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       await _stopLocal();
@@ -611,7 +675,9 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
       }
       return;
     }
-    if (!await Geolocator.isLocationServiceEnabled()) {
+    final locationEnabled = await Geolocator.isLocationServiceEnabled();
+    if (_streamAssignmentId != expectedAssignmentId) return;
+    if (!locationEnabled) {
       await _stopLocal();
       _set(
         LocationSharingStatus.locationServicesOff,
@@ -626,7 +692,27 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
     await _stopLocal();
   }
 
-  Future<void> _publish(Position position) async {
+  Future<void> _publish(
+    Position position, {
+    required String expectedAssignmentId,
+  }) async {
+    if (_streamAssignmentId != expectedAssignmentId) return;
+    if (_publishing) {
+      final pending = _pendingFix;
+      if (_pendingFixAssignmentId != expectedAssignmentId ||
+          pending == null ||
+          position.timestamp.isAfter(pending.timestamp)) {
+        _pendingFix = position;
+        _pendingFixAssignmentId = expectedAssignmentId;
+      }
+      return;
+    }
+    final dashboard = ref.read(riderDashboardProvider).valueOrNull;
+    if (dashboard?.current?.assignmentId != expectedAssignmentId ||
+        dashboard?.isSharingLocationFor(expectedAssignmentId) != true) {
+      return;
+    }
+
     final capturedAt = position.timestamp.toUtc();
     final now = DateTime.now().toUtc();
     final decision = evaluateRiderFix(
@@ -649,6 +735,7 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
       return;
     }
 
+    _publishing = true;
     try {
       final keepGoing = await ref
           .read(deliveryRepositoryProvider)
@@ -661,6 +748,9 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
             speedKmph: position.speed * 3.6,
             isMoving: position.speed > 0.5,
           );
+      // The request may have completed after stop, reassignment or sign-out.
+      // Do not let that response stop or update a newer assignment's stream.
+      if (_streamAssignmentId != expectedAssignmentId) return;
       if (!keepGoing) {
         await _stopLocal();
         _set(LocationSharingStatus.idle);
@@ -676,21 +766,38 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
       );
       _set(LocationSharingStatus.sharing);
     } on AppError {
-      // Do not queue or replay this fix. The next OS capture is the only retry.
+      // Do not retry or replay this captured fix. A later OS capture can be
+      // attempted when the location stream emits again.
+      if (_streamAssignmentId != expectedAssignmentId) return;
       _set(
         LocationSharingStatus.networkUnavailable,
         'Location could not reach the server. Waiting for a fresh GPS update.',
       );
     } on Exception {
+      if (_streamAssignmentId != expectedAssignmentId) return;
       _set(
         LocationSharingStatus.networkUnavailable,
         'Location could not reach the server. Waiting for a fresh GPS update.',
       );
     } catch (_) {
+      if (_streamAssignmentId != expectedAssignmentId) return;
       _set(
         LocationSharingStatus.networkUnavailable,
         'Location could not reach the server. Waiting for a fresh GPS update.',
       );
+    } finally {
+      _publishing = false;
+      final pending = _pendingFix;
+      final pendingAssignmentId = _pendingFixAssignmentId;
+      _pendingFix = null;
+      _pendingFixAssignmentId = null;
+      if (pending != null &&
+          pendingAssignmentId != null &&
+          pendingAssignmentId == _streamAssignmentId) {
+        unawaited(
+          _publish(pending, expectedAssignmentId: pendingAssignmentId),
+        );
+      }
     }
   }
 

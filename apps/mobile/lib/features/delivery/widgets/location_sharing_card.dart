@@ -39,6 +39,8 @@ class LocationSharingCard extends ConsumerWidget {
     final statusCopy = switch (status) {
       LocationSharingStatus.sharing =>
         'Location is being shared for this delivery.',
+      LocationSharingStatus.waitingForFix => tracking.message ??
+          'Waiting for a fresh GPS fix. The customer will see your location after the server receives it.',
       LocationSharingStatus.stale =>
         tracking.message ?? 'Waiting for a fresh location update.',
       LocationSharingStatus.permissionDenied ||
@@ -63,7 +65,8 @@ class LocationSharingCard extends ConsumerWidget {
       LocationSharingStatus.locationServicesOff ||
       LocationSharingStatus.unavailable => brand.error,
       LocationSharingStatus.stale ||
-      LocationSharingStatus.networkUnavailable => brand.warning,
+      LocationSharingStatus.networkUnavailable ||
+      LocationSharingStatus.waitingForFix => brand.warning,
       _ => brand.inkMuted,
     };
 
@@ -109,9 +112,7 @@ class LocationSharingCard extends ConsumerWidget {
               style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
             ),
           ],
-          if (enabled &&
-              status != LocationSharingStatus.sharing &&
-              fix == null) ...[
+          if (enabled && fix == null && serverFixAt == null) ...[
             const SizedBox(height: 4),
             Text(
               'No location fix has reached the server yet.',
