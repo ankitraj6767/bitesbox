@@ -20,12 +20,39 @@ if (!databaseHeader) {
   );
 }
 
-const internalPostgrestVersion = databaseHeader[1].match(
+// Supabase CLI versions differ on whether they emit these explanatory
+// comments. Keep generated types stable across the CLI versions used locally
+// and in CI by removing them from the Database header.
+const normalizedHeader = databaseHeader[0]
+  .replace(
+    /^  \/\/ Allows to automatically instantiate createClient with right options\n/m,
+    "",
+  )
+  .replace(
+    /^  \/\/ instead of createClient<Database, \{ PostgrestVersion: 'XX' \}>\(URL, KEY\)\n/m,
+    "",
+  );
+const normalizedSource = source.replace(databaseHeader[0], normalizedHeader);
+
+const normalizedDatabaseHeader = normalizedHeader.match(
+  /export type Database = \{([\s\S]*?)\n  public: \{/,
+);
+
+if (!normalizedDatabaseHeader) {
+  throw new Error(
+    `${filePath} does not contain the expected public Database schema`,
+  );
+}
+
+const internalPostgrestVersion = normalizedDatabaseHeader[1].match(
   /__InternalSupabase:\s*\{\s*PostgrestVersion:\s*"([^"]+)"/s,
 );
 
 if (internalPostgrestVersion) {
   if (internalPostgrestVersion[1] === "14.15") {
+    if (normalizedSource !== source) {
+      writeFileSync(filePath, normalizedSource);
+    }
     process.exit(0);
   }
   throw new Error(`${filePath} has an unexpected __InternalSupabase version`);
@@ -33,7 +60,7 @@ if (internalPostgrestVersion) {
 
 const databaseType = "export type Database = {\n";
 
-if (!source.includes(databaseType)) {
+if (!normalizedSource.includes(databaseType)) {
   throw new Error(
     `${filePath} does not contain the expected Database type declaration`,
   );
@@ -47,4 +74,7 @@ const postgrestVersion = [
   "  };",
 ].join("\n");
 
-writeFileSync(filePath, source.replace(databaseType, `${postgrestVersion}\n`));
+writeFileSync(
+  filePath,
+  normalizedSource.replace(databaseType, `${postgrestVersion}\n`),
+);
