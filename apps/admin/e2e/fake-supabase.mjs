@@ -7,6 +7,7 @@ const secondBranchId = '00000000-0000-4000-8000-000000000102';
 const refundId = '00000000-0000-4000-8000-000000000201';
 const ownerId = '00000000-0000-4000-8000-000000000001';
 const operationsId = '00000000-0000-4000-8000-000000000002';
+const scopedAdminId = '00000000-0000-4000-8000-000000000003';
 const supportTicketId = '00000000-0000-4000-8000-000000000501';
 const supportTicketNumber = 'BB-T-E2E-001';
 let zoneSequence = 0;
@@ -124,6 +125,7 @@ function getClaims(request) {
 function getUser(claims) {
     if (!claims?.sub) return null;
     const isNoRefund = claims.email === 'operations@bitesbox.test';
+    const isScopedAdmin = claims.email === 'scoped-admin@bitesbox.test';
     const hasAal1Factor = claims.email === 'aal1@bitesbox.test';
     return {
         id: claims.sub,
@@ -134,7 +136,11 @@ function getUser(claims) {
         created_at: '2026-10-23T00:00:00.000Z',
         app_metadata: { provider: 'email', providers: ['email'] },
         user_metadata: {
-            full_name: isNoRefund ? 'Operations Tester' : 'Owner Tester',
+            full_name: isNoRefund
+                ? 'Operations Tester'
+                : isScopedAdmin
+                  ? 'Scoped Admin Tester'
+                  : 'Owner Tester',
         },
         factors: hasAal1Factor
             ? [
@@ -152,8 +158,9 @@ function getUser(claims) {
 
 function sessionFor(claims) {
     const isNoRefund = claims.email === 'operations@bitesbox.test';
+    const isScopedAdmin = claims.email === 'scoped-admin@bitesbox.test';
     const isAal1 = claims.email === 'aal1@bitesbox.test';
-    const role = isNoRefund ? 'OPERATIONS' : 'OWNER';
+    const role = isNoRefund ? 'OPERATIONS' : isScopedAdmin ? 'ADMIN' : 'OWNER';
     const permissions = isNoRefund ? ['order.view'] : ownerPermissions;
     return {
         authenticated: true,
@@ -162,7 +169,11 @@ function sessionFor(claims) {
             id: claims.sub,
             phone: null,
             email: claims.email,
-            full_name: isNoRefund ? 'Operations Tester' : 'Owner Tester',
+            full_name: isNoRefund
+                ? 'Operations Tester'
+                : isScopedAdmin
+                  ? 'Scoped Admin Tester'
+                  : 'Owner Tester',
             avatar_url: null,
             status: 'ACTIVE',
             preferred_language: 'en',
@@ -175,15 +186,37 @@ function sessionFor(claims) {
             whatsapp_enabled: false,
         },
         primary_role: role,
-        roles: [
-            {
-                role,
-                label: role === 'OWNER' ? 'Owner' : 'Operations',
-                branch_id: branchId,
-                is_primary: true,
-                surfaces: ['admin'],
-            },
-        ],
+        roles: isScopedAdmin
+            ? [
+                  {
+                      role: 'ADMIN',
+                      label: 'Administrator',
+                      branch_id: branchId,
+                      is_primary: true,
+                      surfaces: ['admin'],
+                  },
+                  {
+                      role: 'OPERATIONS',
+                      label: 'Operations',
+                      branch_id: secondBranchId,
+                      is_primary: false,
+                      surfaces: ['admin'],
+                  },
+              ]
+            : [
+                  {
+                      role,
+                      label:
+                          role === 'OWNER'
+                              ? 'Owner'
+                              : role === 'OPERATIONS'
+                                ? 'Operations'
+                                : 'Administrator',
+                      branch_id: branchId,
+                      is_primary: true,
+                      surfaces: ['admin'],
+                  },
+              ],
         permissions,
         branches: [
             { id: branchId, code: 'BKP', name: 'Bakhtiyarpur', status: 'OPEN' },
@@ -209,9 +242,11 @@ function jwtFor(email) {
     const isAal1 = email === 'aal1@bitesbox.test';
     const sub = isAal1
         ? ownerId
-        : email === 'operations@bitesbox.test'
-          ? operationsId
-          : ownerId;
+        : email === 'scoped-admin@bitesbox.test'
+          ? scopedAdminId
+          : email === 'operations@bitesbox.test'
+            ? operationsId
+            : ownerId;
     const payload = {
         sub,
         email,
@@ -343,6 +378,24 @@ const server = createServer(async (request, response) => {
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
         const name = url.pathname.split('/').at(-1);
         const claims = getClaims(request);
+        if (name === 'has_permission') {
+            const body = await jsonBody(request);
+            if (!claims) {
+                return send(response, 401, {
+                    code: 'no_session',
+                    message: 'No session',
+                });
+            }
+            const canManage =
+                claims.email === 'owner@bitesbox.test' ||
+                (claims.email === 'scoped-admin@bitesbox.test' &&
+                    body.p_branch_id === branchId);
+            return send(
+                response,
+                200,
+                canManage && body.p_permission === 'branch.manage',
+            );
+        }
         if (name === 'my_session') {
             return claims
                 ? send(response, 200, sessionFor(claims))

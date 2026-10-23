@@ -25,6 +25,10 @@ export async function saveDeliveryZone(
       message: "Choose an outlet before managing its delivery zones.",
     };
 
+  const supabase = await createSupabaseServerClient();
+  const permissionMessage = await branchPermissionError(supabase, branchId);
+  if (permissionMessage) return { ok: false, message: permissionMessage };
+
   const parsed = deliveryZoneFormSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -35,7 +39,6 @@ export async function saveDeliveryZone(
   }
 
   const { id, ...values } = parsed.data;
-  const supabase = await createSupabaseServerClient();
   const mutation = id
     ? await supabase
         .from("delivery_zones")
@@ -81,12 +84,15 @@ export async function updateDeliveryZoneStatus(
       message: "Choose an outlet before managing its delivery zones.",
     };
 
+  const supabase = await createSupabaseServerClient();
+  const permissionMessage = await branchPermissionError(supabase, branchId);
+  if (permissionMessage) return { ok: false, message: permissionMessage };
+
   const parsed = deliveryZoneStatusSchema.safeParse(input);
   if (!parsed.success)
     return { ok: false, message: "The requested zone status is invalid." };
 
   const { id, ...status } = parsed.data;
-  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("delivery_zones")
     .update({ ...status, updated_by: session.user_id })
@@ -118,11 +124,13 @@ export async function deleteDeliveryZone(
       ok: false,
       message: "Choose an outlet before managing its delivery zones.",
     };
+  const supabase = await createSupabaseServerClient();
+  const permissionMessage = await branchPermissionError(supabase, branchId);
+  if (permissionMessage) return { ok: false, message: permissionMessage };
   if (!deliveryZoneIdSchema.safeParse(id).success) {
     return { ok: false, message: "The requested zone is invalid." };
   }
 
-  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("delivery_zones")
     .update({
@@ -153,10 +161,28 @@ function messageForDatabaseError(code: string | undefined): string {
     case "23505":
       return "A delivery zone with this name already exists for the selected outlet.";
     case "42501":
-      return "You no longer have permission to change delivery zones for this outlet.";
+      return "Outlet access changed while you were editing. Refresh the page; if this continues, ask an owner to review your access for this outlet.";
     case "23514":
       return "Some delivery zone values are outside the allowed range. Review the form and try again.";
     default:
       return "The delivery zone could not be saved. Please try again.";
   }
+}
+
+async function branchPermissionError(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  branchId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase.rpc("has_permission", {
+    p_permission: PERMISSIONS.BRANCH_MANAGE,
+    p_branch_id: branchId,
+  });
+
+  if (error) {
+    return "Could not verify your access to this outlet. Refresh the page and try again.";
+  }
+  if (!data) {
+    return "Your account does not have Manage branch access for this outlet. Select an outlet in your assigned scope or ask an owner to review your branch assignment.";
+  }
+  return null;
 }

@@ -228,12 +228,14 @@ export function DeliveryZoneManager({
   branchId,
   branchName,
   canManage,
+  permissionMessage,
   loadError,
 }: {
   zones: ZoneRow[];
   branchId: string | null;
   branchName: string;
   canManage: boolean;
+  permissionMessage?: string;
   loadError?: boolean;
 }) {
   const router = useRouter();
@@ -367,6 +369,11 @@ export function DeliveryZoneManager({
           }
         />
         <CardContent className="p-0">
+          {permissionMessage ? (
+            <InlineNotice tone="info" className="m-4">
+              {permissionMessage}
+            </InlineNotice>
+          ) : null}
           {loadError ? (
             <ErrorState
               title="Could not load delivery zones"

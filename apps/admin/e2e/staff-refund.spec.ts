@@ -183,6 +183,29 @@ test('branch selector accepts only a branch in the signed-in session scope', asy
     expect(forbidden.status()).toBe(403);
 });
 
+test('branch-scoped admin only sees delivery-zone controls in the assigned outlet', async ({
+    page,
+}) => {
+    const secondBranchId = '00000000-0000-4000-8000-000000000102';
+    await page.context().addCookies([
+        {
+            ...sessionCookie('scoped-admin@bitesbox.test', 'aal2'),
+            url: 'http://localhost:3100',
+        },
+        {
+            name: 'bb_active_branch',
+            value: secondBranchId,
+            url: 'http://localhost:3100',
+        },
+    ]);
+    await page.goto('/settings');
+    await page.getByRole('tab', { name: 'Delivery' }).click();
+
+    await expect(page.getByText('Patna outlet zone')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add zone' })).toHaveCount(0);
+    await expect(page.getByText(/does not include this outlet/i)).toBeVisible();
+});
+
 test('owner can configure referral terms while the independent rollout flag remains off', async ({
     page,
 }) => {

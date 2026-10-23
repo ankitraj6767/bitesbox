@@ -23,7 +23,6 @@ export default async function SettingsPage() {
 
     const canEditSettings = hasPermission(session, PERMISSIONS.SETTINGS_UPDATE);
     const canEditFlags = hasPermission(session, PERMISSIONS.FEATURE_FLAG_UPDATE);
-    const canManageBranch = hasPermission(session, PERMISSIONS.BRANCH_MANAGE);
 
     const [settingsResult, flagsResult, zonesResult, hoursResult, branchResult, taxResult] =
         await Promise.all([
@@ -66,6 +65,19 @@ export default async function SettingsPage() {
                 .is('deleted_at', null)
                 .order('code'),
         ]);
+
+    const branchPermissionResult = branchId
+        ? await supabase.rpc('has_permission', {
+              p_permission: PERMISSIONS.BRANCH_MANAGE,
+              p_branch_id: branchId,
+          })
+        : null;
+    const canManageBranch = branchPermissionResult?.data === true && !branchPermissionResult.error;
+    const branchPermissionMessage = branchPermissionResult?.error
+        ? 'Outlet access could not be verified. Refresh the page before managing delivery zones.'
+        : !canManageBranch && hasPermission(session, PERMISSIONS.BRANCH_MANAGE)
+          ? 'Your Manage branch permission does not include this outlet. Select an outlet in your assigned scope, or ask an owner to review your branch assignment.'
+          : undefined;
 
     if (settingsResult.error) {
         return (
@@ -152,6 +164,7 @@ export default async function SettingsPage() {
                         branchId={branchId}
                         branchName={branch?.name ?? 'selected outlet'}
                         canManage={canManageBranch}
+                        permissionMessage={branchPermissionMessage}
                         loadError={Boolean(zonesResult.error)}
                     />
                 </TabsContent>

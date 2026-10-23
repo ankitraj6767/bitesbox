@@ -14,7 +14,7 @@ it is not where the risk lives.
 
 ```
 supabase/tests/      12 suites · 428 assertion calls in source   ← the security boundary
-apps/admin/           7 unit files · 72 tests; 9 deterministic Playwright tests
+apps/admin/           7 unit files · 72 tests; 10 deterministic Playwright tests
 apps/storefront/      1 unit file · 4 tests; deterministic customer journeys
 apps/mobile/test/     16 files · see final run record below
 supabase/functions/   Deno checks · lint · fmt · logger/provider contracts
