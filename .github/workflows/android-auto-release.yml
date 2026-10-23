@@ -1,12 +1,8 @@
-name: Automatic Android release
+name: Android release
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/mobile/**'
-      - 'scripts/publish_android_release.sh'
-      - '.github/workflows/android-auto-release.yml'
+  # Publishing a signed APK and changing the hosted update manifest are explicit
+  # release actions. Source pushes are validated by the regular CI workflow.
   workflow_dispatch:
     inputs:
       notes:
@@ -30,8 +26,7 @@ permissions:
 jobs:
   release:
     name: Build and publish Android update
-    # A source version bump must not publish APKs or mutate the hosted manifest.
-    # Those side effects require an explicit workflow dispatch.
+    # Keep the guard in place if another trigger is added in the future.
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45

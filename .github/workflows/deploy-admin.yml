@@ -1,20 +1,12 @@
 name: Deploy admin dashboard
 
-# Vercel's own Git integration is the usual way to ship this, and if it is enabled
-# this workflow is redundant. It exists for the case where deployment should be
-# gated on CI passing rather than on a push landing — which is the safer default for
-# a dashboard that can cancel orders and issue refunds.
+# Vercel's own Git integration is the usual way to ship this. This workflow is a
+# manual deployment path for cases where an operator wants to select an environment
+# explicitly after CI passes. Source pushes are validated by the regular CI workflow.
 #
 # Skips itself entirely when the Vercel secrets are absent, so a fork does not see a
 # permanently red workflow.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/admin/**'
-      - 'packages/shared-types/**'
-      - 'package.json'
-      - 'package-lock.json'
   workflow_dispatch:
     inputs:
       target:
@@ -31,7 +23,7 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Vercel (${{ github.event.inputs.target || 'preview' }})
-    # Source pushes are not deployment approval; deploy through an explicit dispatch.
+    # Keep the guard in place if another trigger is added in the future.
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
