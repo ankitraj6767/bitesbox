@@ -7,6 +7,8 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.15";
   };
@@ -2469,6 +2471,99 @@ export type Database = {
             columns: ["branch_id"];
             isOneToOne: false;
             referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      group_order_members: {
+        Row: {
+          cart_id: string;
+          group_order_id: string;
+          is_host: boolean;
+          joined_at: string;
+          left_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          cart_id: string;
+          group_order_id: string;
+          is_host?: boolean;
+          joined_at?: string;
+          left_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          cart_id?: string;
+          group_order_id?: string;
+          is_host?: boolean;
+          joined_at?: string;
+          left_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "group_order_members_cart_id_fkey";
+            columns: ["cart_id"];
+            isOneToOne: false;
+            referencedRelation: "carts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "group_order_members_group_order_id_fkey";
+            columns: ["group_order_id"];
+            isOneToOne: false;
+            referencedRelation: "group_orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      group_orders: {
+        Row: {
+          branch_id: string;
+          created_at: string;
+          expires_at: string;
+          host_cart_id: string;
+          host_user_id: string;
+          id: string;
+          invite_code: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          branch_id: string;
+          created_at?: string;
+          expires_at?: string;
+          host_cart_id: string;
+          host_user_id: string;
+          id?: string;
+          invite_code: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          branch_id?: string;
+          created_at?: string;
+          expires_at?: string;
+          host_cart_id?: string;
+          host_user_id?: string;
+          id?: string;
+          invite_code?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "group_orders_branch_id_fkey";
+            columns: ["branch_id"];
+            isOneToOne: false;
+            referencedRelation: "branches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "group_orders_host_cart_id_fkey";
+            columns: ["host_cart_id"];
+            isOneToOne: false;
+            referencedRelation: "carts";
             referencedColumns: ["id"];
           },
         ];
@@ -6539,6 +6634,13 @@ export type Database = {
         Args: { p_key: string; p_user_id?: string };
         Returns: boolean;
       };
+      group_order_close: { Args: { p_group_order_id: string }; Returns: Json };
+      group_order_create: { Args: { p_branch_id?: string }; Returns: Json };
+      group_order_current: { Args: never; Returns: Json };
+      group_order_detail: { Args: { p_group_order_id: string }; Returns: Json };
+      group_order_join: { Args: { p_invite_code: string }; Returns: Json };
+      group_order_leave: { Args: { p_group_order_id: string }; Returns: Json };
+      group_order_merge: { Args: { p_group_order_id: string }; Returns: Json };
       has_permission: {
         Args: { p_branch_id?: string; p_permission: string };
         Returns: boolean;

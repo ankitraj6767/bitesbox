@@ -1,6 +1,6 @@
 # Database
 
-85 tables, 57 enums, 158 RLS policies, 95 client-callable functions, across 32
+87 tables, 57 enums, 158 RLS policies, 102 client-callable functions, across 54
 version-controlled migrations. Nothing is created by hand in the dashboard.
 
 ## Schemas
@@ -98,10 +98,32 @@ create unique index delivery_earnings_assignment_key
 | `0026 admin_operations` | Back-office read surfaces and role management |
 | `0027 profile_relations` | Deferred foreign keys to `profiles` |
 | `0028a notification_events` | Three enum values, alone in a migration (see below) |
+| `0028b repair_rls_helpers` | Restores helper access needed by guest-facing RLS checks |
 | `0028 security_and_storage_hardening` | `available_riders` guard, `anon` helper grants, storage buckets, replica identity, `moderate_review` |
 | `0029 rider_lifecycle` | Onboarding state machine, partner codes, earnings adjustments, peak payout |
 | `0030 campaign_delivery` | Audience resolution, campaign send, scheduled campaigns |
 | `0031 rider_privilege_scope` | Narrows rider privileges; `app.is_assigned_rider` |
+| `0032 rider_onboarding_review` | Staff review flow and onboarding corrections |
+| `0033 fix_broken_functions` | Repairs SQL bodies discovered by execution checks |
+| `0034 fix_app_schema_access` | Corrects private helper access for API functions |
+| `0035 hosted_app_helper_grants` | Grants the required private helper execution to hosted roles |
+| `0036 fix_manual_open_and_home_feed` | Restores branch opening and storefront feed behavior |
+| `0037 fix_section_products_jsonb` | Corrects home-section product JSON output |
+| `0038 fix_delivery_max_distance_fallback` | Uses configured defaults when delivery bounds are absent |
+| `0039 customer_support_ticket_list` | Customer support ticket read surface |
+| `0040 add_pay_at_store_payment_mode` | Adds the store-payment option |
+| `0041 confirm_pickup_order` | Pickup handover confirmation |
+| `0042 repair_pickup_handover_completion` | Completes the pickup order state transition |
+| `0043 app_release_storage` | Mobile release update metadata |
+| `0044 explicit_client_table_privileges` | Makes client table grants explicit |
+| `0045 menu_item_specific_photos` | Adds menu-item image support |
+| `0046 wallet_topups` | Wallet top-up intent and ledger flow |
+| `0047 wallet_topup_capture_guards` | Secures top-up capture and idempotency |
+| `0048 notification_read_scope` | Limits notification updates to the owning user |
+| `0049 notification_activity_non_null_outputs` | Stabilizes notification activity RPC output shapes |
+| `0050 customer_group_orders` | Group rooms, memberships, host merge RPCs and guarded cart locking |
+| `0051 add_customer_group_order_fk_indexes` | Covers new group-order foreign keys |
+| `0052 serialize_cart_line_mutations_for_group_merge` | Locks the cart before any line mutation |
 
 `0028a` exists on its own because PostgreSQL refuses to *use* a new enum value in the
 same transaction that adds it, and `0029` inserts notification templates for those

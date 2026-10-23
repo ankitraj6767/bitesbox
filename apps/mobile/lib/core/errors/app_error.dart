@@ -21,6 +21,14 @@ abstract final class ErrorCodes {
   static const quantityLimitExceeded = 'QUANTITY_LIMIT_EXCEEDED';
 
   static const cartEmpty = 'CART_EMPTY';
+  static const groupAlreadyActive = 'GROUP_ALREADY_ACTIVE';
+  static const groupAlreadyLeft = 'GROUP_ALREADY_LEFT';
+  static const groupCartNotEmpty = 'GROUP_CART_NOT_EMPTY';
+  static const groupClosed = 'GROUP_CLOSED';
+  static const groupCodeInvalid = 'GROUP_CODE_INVALID';
+  static const groupHostCannotLeave = 'GROUP_HOST_CANNOT_LEAVE';
+  static const groupHostCartClosed = 'GROUP_HOST_CART_CLOSED';
+  static const groupNotFound = 'GROUP_NOT_FOUND';
   static const checkoutInvalid = 'CHECKOUT_INVALID';
   static const minOrderNotMet = 'MIN_ORDER_NOT_MET';
   static const addressRequired = 'ADDRESS_REQUIRED';

@@ -11,6 +11,7 @@ import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/cart_bar.dart';
 import '../widgets/home_sections.dart';
+import 'group_order_screen.dart';
 
 /// The storefront.
 ///
@@ -72,6 +73,7 @@ class HomeScreen extends ConsumerWidget {
                           orElse: () => const SizedBox.shrink(),
                         ),
                         const ActiveOrderStrip(),
+                        const GroupOrderHomeCard(),
                         if (data.sections.isEmpty)
                           const Padding(
                             padding: EdgeInsets.only(top: 60),

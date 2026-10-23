@@ -13,9 +13,9 @@ Unit-testing a Dart function that formats a duration is cheap and worth having;
 it is not where the risk lives.
 
 ```
-supabase/tests/       9 suites · 330 assertions   ← the security boundary
+supabase/tests/      10 suites · 340 assertions   ← the security boundary
 apps/admin/           4 files  · 63 tests
-apps/mobile/test/     5 files  · 113 tests
+apps/mobile/test/     9 files  · 125 tests
 supabase/functions/   deno check · lint · fmt --check
 schema                db-lint.sh — fails on error-level findings
 ```
@@ -28,7 +28,11 @@ schema                db-lint.sh — fails on error-level findings
 npm run db:test                  # same thing
 ```
 
-Current: **9 passed, 0 failed** from a clean `supabase db reset`.
+The repository's last recorded full local run passed **9 suites / 330
+assertions** on 20 August 2026. Suite `100_group_orders` adds 10 assertions. It
+could not be run in this environment because the local Docker/Supabase stack is unavailable;
+the three new migrations were applied to the linked project and its RLS/table
+grants were inspected after deployment.
 
 | Suite | Assertions | Covers |
 | --- | --- | --- |
@@ -41,6 +45,7 @@ Current: **9 passed, 0 failed** from a clean `supabase db reset`.
 | `070_rider_lifecycle` | 64 | Onboarding chain, document review, self-promotion refusal, the staff read surface |
 | `080_campaigns_and_reviews` | 33 | Audience resolution, opt-out honouring, review moderation |
 | `090_read_surfaces` | 65 | Every client-callable read RPC actually executes, as a role allowed to call it |
+| `100_group_orders` | 10 | Invite privacy, membership checks, host authority, server-validated merge and participant-cart clearing |
 
 ### Why 090 exists
 
@@ -206,7 +211,7 @@ pages, all now removed.
 cd apps/mobile && flutter test
 ```
 
-**5 files, 113 tests passing.** `flutter analyze` reports "No issues found!".
+**9 files, 125 tests passing.** `flutter analyze` reports "No issues found!".
 
 | File | Covers |
 | --- | --- |
@@ -215,6 +220,10 @@ cd apps/mobile && flutter test
 | `test/shared/format_test.dart` | `money`, `elapsed`, `duration`, `distance`, `humanise`, `relative`, `until`, `maskPhone`, `smartDateTime` |
 | `test/features/delivery_models_test.dart` | `DutyState`, `RiderProfile`, `DeliveryAssignment`, `RiderDashboard`, `RiderEarnings`, `PickupResult`, `DeliveryHistoryEntry`, plus onboarding: `RiderDocumentType`, `RiderDocumentStatus`, `RiderDocument`, `RiderOnboarding` |
 | `test/features/rider_widgets_test.dart` | `RiderPrimaryButton`, `DutyStatePill`, `RiderStat`, `RiderWaypoint`, `LiveMap` fallback |
+| `test/core/api_client_test.dart` | Supabase filters, sort order, limits, localized policy documents and FAQs |
+| `test/core/update_test.dart` | Version comparison and compatible release artifact selection |
+| `test/features/account_notifications_test.dart` | Notification ownership, persisted read state and channel isolation |
+| `test/features/group_order_models_test.dart` | Group snapshots, member contributions, configured dishes and malformed optional fields |
 
 `shell selection` is the one worth calling out: it asserts which shell each role
 lands in, so a customer cannot be routed into the kitchen UI by a role-mapping
@@ -293,7 +302,7 @@ would otherwise get the whole check disabled within a week.
 This is the only tool in the chain that looks inside a function body before a user
 does.
 
-All 13 functions type-check (`supabase/functions/` has 14 directories; `_shared`
+All 16 functions type-check (`supabase/functions/` has 17 directories; `_shared`
 holds no entry point). `supabase/functions/deno.json` sets
 `fmt.indentWidth: 4` to match the actual style and excludes the generated
 `_shared/database.types.ts`.

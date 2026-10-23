@@ -17,7 +17,7 @@ official one.
 │ 1  Auth            Supabase phone OTP / email. auth.uid() is   │
 │                    the only identity the database trusts.      │
 ├────────────────────────────────────────────────────────────────┤
-│ 2  RLS             85 tables, RLS enabled on all 85.           │
+│ 2  RLS             87 tables, RLS enabled on all 87.           │
 │                    143 policies in public, 15 in storage.      │
 ├────────────────────────────────────────────────────────────────┤
 │ 3  Permissions     app.has_permission(code, branch) inside     │
@@ -46,6 +46,11 @@ illegal edge.
 Every table in `public` has `row level security` enabled. Not one is left open on
 the assumption that no client reads it — a table with no policy returns nothing,
 which is the correct default.
+
+Group-order tables have no direct client policies and revoke table access from
+`anon` and `authenticated`. Members access their room and shared cart summaries only
+through authenticated RPCs that check membership; only the host can merge into
+checkout.
 
 Helper functions used by policies, all `stable` and reading only the caller's own
 grants:

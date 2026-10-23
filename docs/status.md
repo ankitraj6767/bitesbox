@@ -1,43 +1,45 @@
 # Status
 
-Last verified: 20 August 2026, against a clean `supabase db reset`.
+Last updated: 23 October 2026. The linked Supabase project is in sync at 54
+migrations; the local SQL stack was unavailable in this environment.
 
 ## Where it stands
 
-Every layer is implemented and verified end to end. Nothing ships as a stub: there
-are no TODO markers, no "coming soon" screens, no mock payment path and no
-simulated tracking. Where a feature depends on a credential that is not configured
-— Maps, FCM, Razorpay — it degrades to something usable and says so, rather than
-showing a broken screen.
+The single-brand food commerce flow covers discovery, checkout, payments, order
+tracking, kitchen work, delivery, support and repeat purchase. This release adds
+collaborative group ordering and refreshes the customer palette. Bites Box still
+does not operate Swiggy's restaurant marketplace, grocery network or dine-in
+reservations; the [feature review](swiggy-comparison.md) explains those boundaries.
+Features that depend on an unconfigured credential — Maps, FCM, Razorpay — degrade
+to a usable fallback rather than showing a broken screen.
 
 ```
-Backend      35 migrations · 85 tables · 158 RLS policies · 95 client RPCs
-Edge         13 functions, all type-checked
+Backend      54 migrations · 87 tables · 158 RLS policies · 102 client RPCs
+Edge         16 functions, all type-checked
 Admin        29 pages
-Mobile       83 Dart files · 31 screens · 3 role shells
-Tests        330 SQL assertions · 63 admin · 113 Flutter
+Mobile       96 Dart files · 37 screens · 3 role shells
+Tests        340 SQL assertions · 63 admin · 125 Flutter
 CI           5 jobs on every push, 3 deploy workflows
-Docs         10 documents
+Docs         12 documents
 ```
 
 ## Verification
 
-All green as of the date above:
+Latest checks for this release:
 
 ```
-supabase db reset                           35 migrations, exit 0
-./supabase/tests/run.sh                     9 passed, 0 failed
-npm run db:lint                             no error-level findings
-npm run test --workspace=@bitesbox/admin    4 files, 63 tests
-npm run lint --workspace=@bitesbox/admin    exit 0
-npm run typecheck --workspace=@bitesbox/admin  exit 0
-npm run build --workspace=@bitesbox/admin   exit 0
-npm run fn:check                            13 functions
-npm run fn:lint                             deno lint + fmt --check
-cd apps/mobile && flutter analyze           No issues found!
-cd apps/mobile && flutter test              113 passed
-./scripts/check-secrets.sh                  no committed credentials
+supabase migration list --linked            all 54 local and remote migrations match
+supabase db push --linked                   three release migrations applied
+supabase security/performance advisors      no group-order FK warnings after indexes
+npm run typecheck --workspace=@bitesbox/shared-types  exit 0
+npm run mobile:analyze                      No issues found!
+npm run mobile:test                         125 passed
 ```
+
+The new SQL suite was not run: this environment has no local Docker/Supabase
+socket. The hosted `db lint` command also could not authenticate because no
+`SUPABASE_DB_PASSWORD` is configured. The migration itself applied, and remote
+RLS/table grants, RPC grants and index metadata were inspected. No APK was built.
 
 ## By area
 
@@ -62,12 +64,13 @@ cd apps/mobile && flutter test              113 passed
 | Notifications | Done | Templates, channel prefs, push, in-app inbox, campaigns |
 | Support & reviews | Done | Tickets, order help, audited moderation |
 | CMS | Done | Banners, sections, FAQs, documents |
+| Group ordering | Done | Invite code, isolated carts, member visibility, host-validated merge |
 | Admin dashboard | Done | 29 pages across 7 staff roles |
 | Analytics & reports | Done | Sales, items, riders, funnels, CSV export |
 | Audit | Done | Append-only, actor + diff + IP on every sensitive action |
 | Scheduled jobs | Done | 15 jobs across 3 pg_cron cadences |
 | CI/CD | Done | 5 CI jobs, gated deploys for Supabase, admin, mobile |
-| Documentation | Done | 10 documents |
+| Documentation | Done | 12 documents |
 
 ## What was wrong when this work started
 
@@ -295,8 +298,7 @@ made reliably by editing files.
 
 In the order that would add the most:
 
-1. Push migrations to the hosted project and run the post-deploy checklist in
-   [deployment.md](deployment.md#verification-after-a-deploy).
+1. Run the local SQL suite against Docker/Supabase and confirm all 10 suites pass.
 2. Razorpay test-mode run-through, end to end, with the webhook confirmed in
    `payment_events`.
 3. A Playwright suite covering the three admin flows where a mistake costs money:

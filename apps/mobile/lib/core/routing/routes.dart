@@ -19,6 +19,7 @@ abstract final class Routes {
   static const cart = '/cart';
   static const checkout = '/checkout';
   static const offers = '/offers';
+  static const groupOrders = '/group-order';
   static const addresses = '/addresses';
   static const addressEditor = '/addresses/edit';
   static const wallet = '/wallet';
@@ -31,6 +32,7 @@ abstract final class Routes {
 
   static String product(String id) => '/product/$id';
   static String order(String id) => '/order/$id';
+  static String groupOrder(String id) => '/group-order/$id';
   static String ticket(String id) => '/support/$id';
 
   // Kitchen

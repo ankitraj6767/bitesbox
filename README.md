@@ -37,10 +37,10 @@ bitesbox/
 │   ├── mobile/          Flutter — unified app (customer/delivery/kitchen/manager)
 │   └── admin/           Next.js 15 App Router — admin dashboard
 ├── supabase/
-│   ├── migrations/      Version-controlled SQL migrations (35)
-│   ├── functions/       Deno Edge Functions (13, secure business logic)
+│   ├── migrations/      Version-controlled SQL migrations (54)
+│   ├── functions/       Deno Edge Functions (16, secure business logic)
 │   ├── seeds/           Ordered development seed data (7 files)
-│   ├── tests/           SQL test harness + 9 suites
+│   ├── tests/           SQL test harness + 10 suites
 │   └── config.toml
 ├── scripts/             psql wrapper, schema lint gate, secret scan
 ├── packages/
@@ -55,6 +55,8 @@ bitesbox/
     ├── security.md
     ├── testing.md
     ├── deployment.md
+    ├── android-auto-updates.md
+    ├── swiggy-comparison.md
     └── status.md
 ```
 
@@ -76,7 +78,7 @@ npm install
 # 2. Backend — local Supabase stack (requires Docker)
 npm run db:start
 npm run db:reset          # all migrations, then supabase/seeds/*.sql in order
-npm run db:test           # 8 suites, expect "8 passed, 0 failed"
+npm run db:test           # 10 suites, expect "10 passed, 0 failed"
 
 # 3. Admin dashboard
 cd apps/admin && npm run dev                     # http://localhost:3000
@@ -109,19 +111,23 @@ Environment variables: [`.env.example`](.env.example).
 | [security.md](docs/security.md) | RLS, secrets, abuse controls, audit |
 | [testing.md](docs/testing.md) | Test strategy, harness, what is and is not covered |
 | [deployment.md](docs/deployment.md) | Environments, CI/CD, release process, rollback |
+| [android-auto-updates.md](docs/android-auto-updates.md) | Android release manifests and in-app update flow |
+| [swiggy-comparison.md](docs/swiggy-comparison.md) | Swiggy feature comparison and scope |
 | [status.md](docs/status.md) | What is built, what was broken, known gaps |
 
 ## Status
 
-Every layer is implemented and verified end to end — no stubs, no mock payment
-path, no simulated tracking.
+Core customer, kitchen, delivery and admin flows are implemented. Group ordering
+is included in this release. Mobile analysis/tests and the hosted migration sync
+are verified; the local SQL suites require a Docker stack. The Swiggy comparison
+and remaining product scope are documented in [`docs/status.md`](docs/status.md).
 
 ```
-Backend   35 migrations · 85 tables · 158 RLS policies · 95 client RPCs
-Edge      13 functions
+Backend   54 migrations · 87 tables · 158 RLS policies · 102 client RPCs
+Edge      16 functions
 Admin     29 pages
-Mobile    83 Dart files · 31 screens · 3 role shells
-Tests     330 SQL assertions · 63 admin · 113 Flutter
+Mobile    96 Dart files · 37 screens · 3 role shells
+Tests     340 SQL assertions · 63 admin · 125 Flutter
 ```
 
 [`docs/status.md`](docs/status.md) has the per-area breakdown, the defects this

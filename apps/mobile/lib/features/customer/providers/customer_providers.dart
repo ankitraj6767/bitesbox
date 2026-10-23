@@ -8,6 +8,8 @@ import '../data/address_repository.dart';
 import '../data/cart_repository.dart';
 import '../data/content_models.dart';
 import '../data/content_repository.dart';
+import '../data/group_order_models.dart';
+import '../data/group_order_repository.dart';
 import '../data/menu_models.dart';
 import '../data/menu_repository.dart';
 import '../data/order_models.dart';
@@ -42,6 +44,23 @@ final paymentRepositoryProvider = Provider<PaymentRepository>(
 final contentRepositoryProvider = Provider<ContentRepository>(
   (ref) => ContentRepository(ref.watch(apiClientProvider)),
 );
+
+final groupOrderRepositoryProvider = Provider<GroupOrderRepository>(
+  (ref) => GroupOrderRepository(ref.watch(apiClientProvider)),
+);
+
+final currentGroupOrderProvider = FutureProvider<GroupOrder?>((ref) async {
+  final session = ref.watch(currentSessionProvider);
+  if (session.isGuest) return null;
+  return ref.watch(groupOrderRepositoryProvider).current();
+});
+
+final groupOrderProvider = FutureProvider.family<GroupOrder, String>((
+  ref,
+  groupOrderId,
+) async {
+  return ref.watch(groupOrderRepositoryProvider).detail(groupOrderId);
+});
 
 final publishedDocumentsProvider = FutureProvider<List<CmsDocument>>((ref) {
   return ref.watch(contentRepositoryProvider).documents();

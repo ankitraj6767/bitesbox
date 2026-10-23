@@ -10,15 +10,9 @@ if (!filePath) {
 
 const source = readFileSync(filePath, "utf8");
 
-const existingPostgrestVersion =
-  /export type Database = \{\s*__InternalSupabase:\s*\{\s*PostgrestVersion: "14\.15";?\s*\};/s;
 const databaseHeader = source.match(
   /export type Database = \{([\s\S]*?)\n  public: \{/,
 );
-
-if (existingPostgrestVersion.test(source)) {
-  process.exit(0);
-}
 
 if (!databaseHeader) {
   throw new Error(
@@ -26,7 +20,14 @@ if (!databaseHeader) {
   );
 }
 
-if (databaseHeader[1].includes("__InternalSupabase")) {
+const internalPostgrestVersion = databaseHeader[1].match(
+  /__InternalSupabase:\s*\{\s*PostgrestVersion:\s*"([^"]+)"/s,
+);
+
+if (internalPostgrestVersion) {
+  if (internalPostgrestVersion[1] === "14.15") {
+    process.exit(0);
+  }
   throw new Error(`${filePath} has an unexpected __InternalSupabase version`);
 }
 

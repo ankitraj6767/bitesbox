@@ -10,6 +10,7 @@ import '../../features/customer/screens/cart_screen.dart';
 import '../../features/customer/screens/checkout_screen.dart';
 import '../../features/customer/screens/customer_shell.dart';
 import '../../features/customer/screens/content_screens.dart';
+import '../../features/customer/screens/group_order_screen.dart';
 import '../../features/customer/screens/home_screen.dart';
 import '../../features/customer/screens/menu_screen.dart';
 import '../../features/customer/screens/notifications_screen.dart';
@@ -129,6 +130,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const CheckoutScreen(),
       ),
       GoRoute(path: Routes.offers, builder: (_, __) => const OffersScreen()),
+      GoRoute(
+        path: Routes.groupOrders,
+        builder: (_, __) => const GroupOrderScreen(),
+      ),
+      GoRoute(
+        path: '/group-order/:id',
+        builder: (_, state) =>
+            GroupOrderScreen(groupOrderId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: Routes.addresses,
         builder: (_, __) => const AddressesScreen(),
