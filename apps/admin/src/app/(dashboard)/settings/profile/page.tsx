@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { requireSession } from '@/lib/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
@@ -98,6 +100,18 @@ export default async function ProfilePage() {
                                 These permissions are checked by the database on every request. If a permission is
                                 revoked, it takes effect on your next action — no sign-out needed.
                             </p>
+                        </div>
+
+                        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-hairline p-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-ink">Authenticator security</p>
+                                <p className="mt-1 text-[12.5px] leading-relaxed text-ink-muted">
+                                    Staff sign-in and sensitive actions require a verified authenticator session.
+                                </p>
+                            </div>
+                            <Button asChild variant="secondary">
+                                <Link href="/mfa">Manage authenticators</Link>
+                            </Button>
                         </div>
 
                         <div className="mt-5 border-t border-hairline pt-4">

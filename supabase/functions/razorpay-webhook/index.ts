@@ -11,9 +11,9 @@
  *   index. A duplicate delivery therefore finds an existing row and returns 200
  *   without repeating any side effect.
  *
- * Always returns 200 once the signature is valid, even if our own processing
- * fails — otherwise Razorpay retries forever. Failures are recorded on the event
- * row and surfaced through the unreconciled-payments alert instead.
+ * Once a valid event is durably registered, handler failures are acknowledged
+ * and surfaced through operational alerts instead of causing an unbounded retry.
+ * Failures before registration return 500 so Razorpay can retry safely.
  */
 
 import { corsHeaders, jsonResponse, newRequestId } from "../_shared/http.ts";
@@ -22,6 +22,7 @@ import {
     extractMethodDetail,
     fromPaise,
     mapPaymentMethod,
+    matchesGatewayAmountAndCurrency,
     type RazorpayPayment,
     verifyWebhookSignature,
 } from "../_shared/razorpay.ts";
@@ -49,159 +50,185 @@ Deno.serve(async (req) => {
     const origin = req.headers.get("origin");
     const requestId = newRequestId(req);
 
-    if (req.method === "OPTIONS") {
-        return new Response("ok", { headers: corsHeaders(origin) });
-    }
-
-    if (req.method !== "POST") {
-        return jsonResponse({ error: "method_not_allowed" }, { status: 405, origin, requestId });
-    }
-
-    // The raw body must be read verbatim: any reserialisation breaks the HMAC.
-    const rawBody = await req.text();
-    const signature = req.headers.get("x-razorpay-signature");
-    const providerEventId = req.headers.get("x-razorpay-event-id");
-
-    const signatureValid = await verifyWebhookSignature(rawBody, signature);
-
-    if (!signatureValid) {
-        // 401 (not 200): an unsigned request is not a Razorpay delivery worth retrying.
-        logger.error("webhook.signature_invalid", {
-            request_id: requestId,
-            provider_event_id: providerEventId,
-            has_signature: Boolean(signature),
-        });
-        return jsonResponse(
-            { error: { code: "INVALID_SIGNATURE", message: "Signature verification failed." } },
-            { status: 401, origin, requestId },
-        );
-    }
-
-    let body: WebhookBody;
     try {
-        body = JSON.parse(rawBody) as WebhookBody;
-    } catch {
-        logger.error("webhook.invalid_json", { request_id: requestId });
-        return jsonResponse({ received: true, ignored: "invalid_json" }, { origin, requestId });
-    }
-
-    const eventType = body.event ?? "unknown";
-    const admin = serviceClient();
-
-    const paymentEntity = body.payload?.payment?.entity;
-    const refundEntity = body.payload?.refund?.entity;
-    const orderEntity = body.payload?.order?.entity;
-
-    // ── Resolve our own records so the event row is linked correctly ──
-    const ourPayment = await rpc<
-        | {
-            id: string;
-            order_id: string;
-            status: string;
-            amount: number;
-            currency_code: string;
-            verified_by_callback: boolean;
-            verified_by_webhook: boolean;
+        if (req.method === "OPTIONS") {
+            return new Response("ok", { headers: corsHeaders(origin) });
         }
-        | null
-    >(admin, "svc_find_payment", {
-        p_provider_order_id: paymentEntity?.order_id ?? orderEntity?.id ?? null,
-        p_provider_payment_id: paymentEntity?.id ?? refundEntity?.payment_id ?? null,
-    }).catch(() => null);
 
-    const topupOrderId = paymentEntity?.order_id ?? orderEntity?.id;
-    const { data: ourWalletTopup, error: topupLookupError } = topupOrderId
-        ? await admin
-            .from("wallet_topups")
-            .select("id, user_id, amount, currency_code, status, provider_order_id")
-            .eq("provider_order_id", topupOrderId)
-            .maybeSingle()
-        : { data: null, error: null };
-    if (topupLookupError) {
-        logger.error("webhook.wallet_topup_lookup_failed", {
-            request_id: requestId,
-            provider_order_id: topupOrderId,
-            error: topupLookupError.message,
+        if (req.method !== "POST") {
+            return jsonResponse({ error: "method_not_allowed" }, {
+                status: 405,
+                origin,
+                requestId,
+            });
+        }
+
+        // The raw body must be read verbatim: any reserialisation breaks the HMAC.
+        const rawBody = await req.text();
+        const signature = req.headers.get("x-razorpay-signature");
+        const providerEventId = req.headers.get("x-razorpay-event-id");
+
+        const signatureValid = await verifyWebhookSignature(rawBody, signature);
+
+        if (!signatureValid) {
+            // 401 (not 200): an unsigned request is not a Razorpay delivery worth retrying.
+            logger.error("webhook.signature_invalid", {
+                request_id: requestId,
+                provider_event_id: providerEventId,
+                has_signature: Boolean(signature),
+            });
+            return jsonResponse(
+                { error: { code: "INVALID_SIGNATURE", message: "Signature verification failed." } },
+                { status: 401, origin, requestId },
+            );
+        }
+
+        let body: WebhookBody;
+        try {
+            body = JSON.parse(rawBody) as WebhookBody;
+        } catch {
+            logger.error("webhook.invalid_json", { request_id: requestId });
+            return jsonResponse({ received: true, ignored: "invalid_json" }, { origin, requestId });
+        }
+
+        const eventType = body.event ?? "unknown";
+        const admin = serviceClient();
+
+        const paymentEntity = body.payload?.payment?.entity;
+        const refundEntity = body.payload?.refund?.entity;
+        const orderEntity = body.payload?.order?.entity;
+
+        // ── Resolve our own records so the event row is linked correctly ──
+        const ourPayment = await rpc<
+            | {
+                id: string;
+                order_id: string;
+                status: string;
+                amount: number;
+                currency_code: string;
+                verified_by_callback: boolean;
+                verified_by_webhook: boolean;
+            }
+            | null
+        >(admin, "svc_find_payment", {
+            p_provider_order_id: paymentEntity?.order_id ?? orderEntity?.id ?? null,
+            p_provider_payment_id: paymentEntity?.id ?? refundEntity?.payment_id ?? null,
+        }).catch(() => null);
+
+        const topupOrderId = paymentEntity?.order_id ?? orderEntity?.id;
+        const { data: ourWalletTopup, error: topupLookupError } = topupOrderId
+            ? await admin
+                .from("wallet_topups")
+                .select("id, user_id, amount, currency_code, status, provider_order_id")
+                .eq("provider_order_id", topupOrderId)
+                .maybeSingle()
+            : { data: null, error: null };
+        if (topupLookupError) {
+            logger.error("webhook.wallet_topup_lookup_failed", {
+                request_id: requestId,
+                provider_order_id: topupOrderId,
+                error: topupLookupError.message,
+            });
+            throw topupLookupError;
+        }
+
+        // ── Register the event: this is the exactly-once gate ──
+        const registration = await rpc<{
+            event_id: string;
+            already_processed: boolean;
+            duplicate: boolean;
+        }>(admin, "svc_register_webhook_event", {
+            p_gateway: "RAZORPAY",
+            p_provider_event_id: providerEventId,
+            p_event_type: eventType,
+            p_payload: body as unknown as Record<string, unknown>,
+            p_signature_verified: true,
+            p_payment_id: ourPayment?.id ?? null,
+            p_order_id: ourPayment?.order_id ?? null,
         });
-        throw topupLookupError;
-    }
 
-    // ── Register the event: this is the exactly-once gate ──
-    const registration = await rpc<{
-        event_id: string;
-        already_processed: boolean;
-        duplicate: boolean;
-    }>(admin, "svc_register_webhook_event", {
-        p_gateway: "RAZORPAY",
-        p_provider_event_id: providerEventId,
-        p_event_type: eventType,
-        p_payload: body as unknown as Record<string, unknown>,
-        p_signature_verified: true,
-        p_payment_id: ourPayment?.id ?? null,
-        p_order_id: ourPayment?.order_id ?? null,
-    });
+        if (registration.duplicate) {
+            await rpc(admin, "svc_note_duplicate_webhook_delivery", {
+                p_event_id: registration.event_id,
+            });
+        }
 
-    if (registration.duplicate && registration.already_processed) {
-        logger.info("webhook.duplicate_ignored", {
-            request_id: requestId,
-            event_type: eventType,
-            provider_event_id: providerEventId,
-        });
-        return jsonResponse(
-            { received: true, duplicate: true, event_id: registration.event_id },
-            { origin, requestId },
-        );
-    }
+        if (registration.duplicate && registration.already_processed) {
+            logger.info("webhook.duplicate_ignored", {
+                request_id: requestId,
+                event_type: eventType,
+                provider_event_id: providerEventId,
+            });
+            return jsonResponse(
+                { received: true, duplicate: true, event_id: registration.event_id },
+                { origin, requestId },
+            );
+        }
 
-    try {
-        const outcome = await handleEvent({
-            admin,
-            eventType,
-            paymentEntity,
-            refundEntity,
-            ourPayment,
-            ourWalletTopup,
-            requestId,
-        });
+        try {
+            const outcome = await handleEvent({
+                admin,
+                eventType,
+                paymentEntity,
+                refundEntity,
+                ourPayment,
+                ourWalletTopup,
+                requestId,
+            });
 
-        await rpc(admin, "svc_settle_webhook_event", {
-            p_event_id: registration.event_id,
-            p_processed: true,
-            p_error: null,
-        });
+            await rpc(admin, "svc_settle_webhook_event", {
+                p_event_id: registration.event_id,
+                p_processed: true,
+                p_error: null,
+            });
 
-        logger.info("webhook.processed", {
-            request_id: requestId,
-            event_type: eventType,
-            provider_event_id: providerEventId,
-            outcome,
-        });
+            logger.info("webhook.processed", {
+                request_id: requestId,
+                event_type: eventType,
+                provider_event_id: providerEventId,
+                outcome,
+            });
 
-        return jsonResponse(
-            { received: true, event_type: eventType, outcome, event_id: registration.event_id },
-            { origin, requestId },
-        );
+            return jsonResponse(
+                { received: true, event_type: eventType, outcome, event_id: registration.event_id },
+                { origin, requestId },
+            );
+        } catch (error) {
+            // Record and acknowledge. Retrying a broken handler forever helps nobody; the
+            // reconciliation job and the live-ops alert pick this up instead.
+            await rpc(admin, "svc_settle_webhook_event", {
+                p_event_id: registration.event_id,
+                p_processed: false,
+                p_error: String(error).slice(0, 1000),
+            }).catch(() => {});
+
+            logger.error("webhook.processing_failed", {
+                request_id: requestId,
+                event_type: eventType,
+                provider_event_id: providerEventId,
+                error: String(error),
+            });
+
+            await reportToSentry(error, {
+                fn: "razorpay-webhook",
+                event_type: eventType,
+                requestId,
+            });
+
+            return jsonResponse(
+                { received: true, processed: false, event_id: registration.event_id },
+                { origin, requestId },
+            );
+        }
     } catch (error) {
-        // Record and acknowledge. Retrying a broken handler forever helps nobody; the
-        // reconciliation job and the live-ops alert pick this up instead.
-        await rpc(admin, "svc_settle_webhook_event", {
-            p_event_id: registration.event_id,
-            p_processed: false,
-            p_error: String(error).slice(0, 1000),
-        }).catch(() => {});
-
-        logger.error("webhook.processing_failed", {
+        logger.error("webhook.unexpected_failure", {
             request_id: requestId,
-            event_type: eventType,
-            provider_event_id: providerEventId,
             error: String(error),
         });
-
-        await reportToSentry(error, { fn: "razorpay-webhook", event_type: eventType, requestId });
-
+        await reportToSentry(error, { fn: "razorpay-webhook", requestId });
         return jsonResponse(
-            { received: true, processed: false, event_id: registration.event_id },
-            { origin, requestId },
+            { error: { code: "WEBHOOK_PROCESSING_FAILED", request_id: requestId } },
+            { status: 500, origin, requestId },
         );
     }
 });
@@ -217,7 +244,13 @@ async function handleEvent(input: {
         status?: string;
         speed_processed?: string;
     };
-    ourPayment: { id: string; order_id: string; amount: number; status: string } | null;
+    ourPayment: {
+        id: string;
+        order_id: string;
+        amount: number;
+        currency_code: string;
+        status: string;
+    } | null;
     ourWalletTopup: {
         id: string;
         user_id: string;
@@ -237,8 +270,12 @@ async function handleEvent(input: {
             if (ourWalletTopup && paymentEntity) {
                 const capturedRupees = fromPaise(paymentEntity.amount);
                 if (
-                    capturedRupees !== Number(ourWalletTopup.amount) ||
-                    (paymentEntity.currency ?? "INR") !== ourWalletTopup.currency_code
+                    !matchesGatewayAmountAndCurrency({
+                        expectedRupees: Number(ourWalletTopup.amount),
+                        capturedPaise: paymentEntity.amount,
+                        expectedCurrency: ourWalletTopup.currency_code,
+                        capturedCurrency: paymentEntity.currency,
+                    })
                 ) {
                     logger.error("webhook.wallet_topup_amount_mismatch", {
                         topup_id: ourWalletTopup.id,
@@ -266,9 +303,16 @@ async function handleEvent(input: {
 
             if (!ourPayment || !paymentEntity) return "payment_not_found";
 
-            // Never capture more than we asked for; a mismatch is an incident, not a sale.
+            // Never reconcile a different amount or currency as a successful sale.
             const capturedRupees = fromPaise(paymentEntity.amount);
-            if (capturedRupees < Number(ourPayment.amount)) {
+            if (
+                !matchesGatewayAmountAndCurrency({
+                    expectedRupees: Number(ourPayment.amount),
+                    capturedPaise: paymentEntity.amount,
+                    expectedCurrency: ourPayment.currency_code,
+                    capturedCurrency: paymentEntity.currency,
+                })
+            ) {
                 logger.error("webhook.underpayment", {
                     payment_id: ourPayment.id,
                     expected: ourPayment.amount,

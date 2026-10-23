@@ -37,10 +37,10 @@ bitesbox/
 │   ├── mobile/          Flutter — unified app (customer/delivery/kitchen/manager)
 │   └── admin/           Next.js 15 App Router — admin dashboard
 ├── supabase/
-│   ├── migrations/      Version-controlled SQL migrations (54)
+│   ├── migrations/      Version-controlled SQL migrations (56)
 │   ├── functions/       Deno Edge Functions (16, secure business logic)
 │   ├── seeds/           Ordered development seed data (7 files)
-│   ├── tests/           SQL test harness + 10 suites
+│   ├── tests/           SQL test harness + 11 suites
 │   └── config.toml
 ├── scripts/             psql wrapper, schema lint gate, secret scan
 ├── packages/
@@ -78,7 +78,7 @@ npm install
 # 2. Backend — local Supabase stack (requires Docker)
 npm run db:start
 npm run db:reset          # all migrations, then supabase/seeds/*.sql in order
-npm run db:test           # 10 suites, expect "10 passed, 0 failed"
+npm run db:test           # 11 suites, expect "11 passed, 0 failed"
 
 # 3. Admin dashboard
 cd apps/admin && npm run dev                     # http://localhost:3000
@@ -118,16 +118,17 @@ Environment variables: [`.env.example`](.env.example).
 ## Status
 
 Core customer, kitchen, delivery and admin flows are implemented. Group ordering
-is included in this release. Mobile analysis/tests and the hosted migration sync
-are verified; the local SQL suites require a Docker stack. The Swiggy comparison
-and remaining product scope are documented in [`docs/status.md`](docs/status.md).
+is included. Hosted migration state is unverified beyond the read-only observation
+recorded in [`docs/status.md`](docs/status.md); SQL verification requires the
+local Docker stack. The Swiggy comparison and product boundaries are documented
+there as well.
 
 ```
-Backend   54 migrations · 87 tables · 158 RLS policies · 102 client RPCs
+Backend   56 migrations · 87 tables · 155 RLS policies · 107 client RPCs
 Edge      16 functions
-Admin     29 pages
-Mobile    96 Dart files · 37 screens · 3 role shells
-Tests     340 SQL assertions · 63 admin · 125 Flutter
+Admin     44 page modules
+Mobile    98 Dart files · 37 screens · 3 role shells
+Tests     See the verified release record in [`docs/testing.md`](docs/testing.md)
 ```
 
 [`docs/status.md`](docs/status.md) has the per-area breakdown, the defects this

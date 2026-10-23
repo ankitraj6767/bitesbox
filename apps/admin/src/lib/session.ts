@@ -42,6 +42,15 @@ export async function requireSession(): Promise<Session> {
         redirect('/no-access?reason=blocked');
     }
 
+    const isBackOffice = (session.roles ?? []).some(({ role }) =>
+        ['OWNER', 'ADMIN', 'MANAGER', 'OPERATIONS', 'FINANCE', 'SUPPORT', 'MARKETING'].includes(role),
+    );
+    if (isBackOffice) {
+        const supabase = await createSupabaseServerClient();
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance?.currentLevel !== 'aal2') redirect('/mfa');
+    }
+
     return session;
 }
 

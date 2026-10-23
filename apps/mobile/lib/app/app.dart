@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../core/auth/session.dart';
 import '../core/notifications/push_gateway.dart';
@@ -22,6 +23,19 @@ class BitesBoxApp extends ConsumerWidget {
     final router = ref.watch(goRouterProvider);
     final tokens = ref.watch(brandTokensProvider);
     final session = ref.watch(currentSessionProvider);
+
+    final roleCategory = session.isCustomer
+        ? 'customer'
+        : session.isRider
+            ? 'delivery'
+            : session.isKitchen
+                ? 'kitchen'
+                : 'staff';
+    Sentry.configureScope((scope) {
+      scope.setTag('role_category', roleCategory);
+      scope.setTag('app_surface', roleCategory);
+      scope.setTag('feature', roleCategory);
+    });
 
     final useOperationsTheme = session.isRider || session.prefersKitchenShell;
 

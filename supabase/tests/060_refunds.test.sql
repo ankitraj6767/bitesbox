@@ -206,6 +206,12 @@ select tap.no_throw(
   'settling an already-completed refund is a no-op'
 );
 
+select tap.no_throw(
+  format('select public.svc_fail_refund(%L, ''LATE_FAILURE'', ''late out-of-order event'')',
+         tap.recall_uuid('refund_id')),
+  'a late failure event after refund completion is harmless'
+);
+
 select tap.reset();
 
 select tap.eq(
@@ -213,6 +219,12 @@ select tap.eq(
     where refund_id = tap.recall_uuid('refund_id')),
   1::bigint,
   'a replayed settlement does not credit the wallet twice'
+);
+
+select tap.eq(
+  (select status::text from public.refunds where id = tap.recall_uuid('refund_id')),
+  'COMPLETED',
+  'an out-of-order failure cannot downgrade a completed refund'
 );
 
 -- ─── Every refund decision is audited ───────────────────────────────────────

@@ -21,7 +21,8 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _name = TextEditingController();
   final _email = TextEditingController();
-  bool _marketingOptIn = true;
+  bool _marketingOptIn = false;
+  bool _marketingChanged = false;
   bool _busy = false;
 
   @override
@@ -30,6 +31,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final profile = ref.read(currentSessionProvider).profile;
     _name.text = profile?.fullName ?? '';
     _email.text = profile?.email ?? '';
+    _marketingOptIn = profile?.marketingOptIn ?? false;
   }
 
   @override
@@ -48,7 +50,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       await ref.read(accountRepositoryProvider).updateProfile(
             fullName: _name.text,
             email: _email.text,
-            marketingOptIn: _marketingOptIn,
+            marketingOptIn: _marketingChanged ? _marketingOptIn : null,
           );
 
       // The router watches the session: once onboarding is complete it moves on.
@@ -139,11 +141,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             const SizedBox(height: 6),
             SwitchListTile.adaptive(
               value: _marketingOptIn,
-              onChanged: (value) => setState(() => _marketingOptIn = value),
+              onChanged: (value) => setState(() {
+                _marketingOptIn = value;
+                _marketingChanged = true;
+              }),
               contentPadding: EdgeInsets.zero,
               title: const Text('Send me offers and new dish alerts'),
               subtitle: Text(
-                'You can change this any time in your profile.',
+                'Optional offers only. Order-critical updates are separate. You can change this any time in your profile.',
                 style: TextStyle(fontSize: 13, color: brand.inkMuted),
               ),
             ),

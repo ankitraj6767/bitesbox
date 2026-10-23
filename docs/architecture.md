@@ -36,7 +36,7 @@ cannot be bypassed by a second client written later.
 │   app.*        private helpers, triggers, guards          │
 │   analytics.*  reporting helpers                          │
 │                                                           │
-│   87 tables · 57 enums · 158 RLS policies · 102 client RPCs│
+│   87 tables · 57 enums · 155 RLS policies · 107 client RPCs│
 └──────────┬────────────────────────────────────────────────┘
            │  PostgREST + service role (server-side only)
            ▼

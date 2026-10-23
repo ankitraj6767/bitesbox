@@ -13,6 +13,7 @@ import '../../../shared/widgets/states.dart';
 import '../data/delivery_models.dart';
 import '../data/delivery_repository.dart';
 import '../providers/delivery_providers.dart';
+import '../widgets/location_sharing_card.dart';
 import 'rider_shell.dart';
 
 /// The rider's home: duty state, live offers, work in progress, and what they
@@ -92,6 +93,12 @@ class _RiderHomeScreenState extends ConsumerState<RiderHomeScreen> {
                 for (final job in data.inProgress) ...[
                   const SizedBox(height: 10),
                   _ActiveJobCard(job: job),
+                  const SizedBox(height: 8),
+                  LocationSharingCard(
+                    assignment: job,
+                    enabled: data.isSharingLocationFor(job.assignmentId),
+                    canEnable: data.current?.assignmentId == job.assignmentId,
+                  ),
                 ],
               ],
               if (data.active.isEmpty) ...[

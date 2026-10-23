@@ -1,0 +1,77 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@supabase/supabase-js@2.49.4": "2.49.4"
+  },
+  "jsr": {
+    "@supabase/supabase-js@2.49.4": {
+      "integrity": "4b785f9cd4a62feb7b3f84606bb923a4ea51e3e000eafff0972bc779240b7592"
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:prettier@3.6.2"
+      ]
+    },
+    "members": {
+      "apps/admin": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@bitesbox/shared-types@*",
+            "npm:@eslint/eslintrc@^3.3.1",
+            "npm:@hookform/resolvers@5.2.1",
+            "npm:@playwright/test@1.55.1",
+            "npm:@radix-ui/react-dialog@1.1.15",
+            "npm:@radix-ui/react-dropdown-menu@2.1.16",
+            "npm:@radix-ui/react-label@2.1.7",
+            "npm:@radix-ui/react-popover@1.1.15",
+            "npm:@radix-ui/react-select@2.2.6",
+            "npm:@radix-ui/react-separator@1.1.7",
+            "npm:@radix-ui/react-slot@1.2.3",
+            "npm:@radix-ui/react-switch@1.2.6",
+            "npm:@radix-ui/react-tabs@1.1.13",
+            "npm:@radix-ui/react-tooltip@1.2.8",
+            "npm:@sentry/nextjs@10.75.2",
+            "npm:@supabase/ssr@0.7.0",
+            "npm:@supabase/supabase-js@2.58.0",
+            "npm:@tailwindcss/postcss@4.1.13",
+            "npm:@tanstack/react-query@5.90.2",
+            "npm:@testing-library/jest-dom@6.9.0",
+            "npm:@testing-library/react@16.3.0",
+            "npm:@types/node@22.18.6",
+            "npm:@types/react-dom@19.1.9",
+            "npm:@types/react@19.1.13",
+            "npm:@vitejs/plugin-react@5.0.3",
+            "npm:class-variance-authority@0.7.1",
+            "npm:clsx@2.1.1",
+            "npm:cmdk@1.1.1",
+            "npm:date-fns@4.1.0",
+            "npm:eslint-config-next@15.5.4",
+            "npm:eslint@9.36.0",
+            "npm:jsdom@26.1.0",
+            "npm:lucide-react@0.544.0",
+            "npm:next@15.5.23",
+            "npm:react-dom@19.1.1",
+            "npm:react-hook-form@7.63.0",
+            "npm:react@19.1.1",
+            "npm:recharts@2.15.4",
+            "npm:sonner@2.0.7",
+            "npm:tailwind-merge@3.3.1",
+            "npm:tailwindcss@4.1.13",
+            "npm:typescript@5.9.2",
+            "npm:vitest@3.2.4",
+            "npm:zod@4.1.11"
+          ]
+        }
+      },
+      "packages/shared-types": {
+        "packageJson": {
+          "dependencies": [
+            "npm:typescript@5.9.2"
+          ]
+        }
+      }
+    }
+  }
+}

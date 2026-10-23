@@ -323,8 +323,8 @@ select tap.eq(
 select tap.eq(
   (select count(*) from public.delivery_partner_locations
     where delivery_partner_id = tap.seed('dp_suraj')),
-  1::bigint,
-  'going on duty seeds a position so dispatch can rank by proximity'
+  0::bigint,
+  'going on duty does not collect or retain a rider location'
 );
 
 -- ─── Suspension ─────────────────────────────────────────────────────────────

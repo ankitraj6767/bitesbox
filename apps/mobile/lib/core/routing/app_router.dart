@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../features/customer/data/address_models.dart';
 import '../../features/customer/screens/account_screen.dart';
@@ -57,6 +58,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     debugLogDiagnostics: false,
     redirect: (context, state) => _redirect(ref, state),
+    observers: [SentryNavigatorObserver()],
     routes: [
       GoRoute(path: Routes.splash, builder: (_, __) => const SplashScreen()),
       GoRoute(path: Routes.signIn, builder: (_, __) => const SignInScreen()),

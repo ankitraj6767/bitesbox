@@ -67,10 +67,11 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
-	<!-- Location. Only the delivery-partner shell ever asks: a rider publishes a
-	     position while a delivery is live so the customer can watch it move.
-	     "When in use" is deliberate — the app does not track a rider in the
-	     background, and nothing here needs it to. -->
+	<!-- Location is requested only after a rider accepts an active delivery and
+	     turns on sharing. When-in-use authorization plus the location background
+	     mode allows that foreground-started session to continue with the system
+	     location indicator while the rider navigates or locks the phone. No Always
+	     authorization is requested. -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Bites Box shares your location with the customer while you are delivering their order, and uses it to give you accurate directions.</string>
 
@@ -91,6 +92,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>

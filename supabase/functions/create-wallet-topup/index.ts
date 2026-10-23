@@ -10,7 +10,7 @@ import { v } from "../_shared/validate.ts";
 import { AppError, fromPostgrestError } from "../_shared/errors.ts";
 import { razorpay, toPaise } from "../_shared/razorpay.ts";
 import { env } from "../_shared/env.ts";
-import { logger } from "../_shared/logger.ts";
+import { logger, reportToSentry } from "../_shared/logger.ts";
 
 const MIN_TOPUP = 100;
 const MAX_TOPUP = 10_000;
@@ -104,8 +104,9 @@ serveFunction("create-wallet-topup", async ({ req, requestId, origin }) => {
         );
     }
 
-    // The key is tied to the persistent top-up id, so a retry after a lost
-    // response asks Razorpay for the same order rather than creating a charge.
+    // A saved provider order is fetched on replay. If the create response was
+    // lost, this POST is intentionally not retried: Razorpay does not document
+    // an idempotency contract for payment Orders.
     const gatewayOrder = reusable
         ? await razorpay.fetchOrder(topup.provider_order_id!)
         : await razorpay.createOrder({
@@ -117,7 +118,6 @@ serveFunction("create-wallet-topup", async ({ req, requestId, origin }) => {
                 user_id: caller.userId,
                 purpose: "BITESBOX_WALLET_TOPUP",
             },
-            idempotencyKey: `bb-wallet-topup-${topup.id}`,
         });
 
     if (gatewayOrder.amount !== toPaise(amount) || gatewayOrder.currency !== "INR") {
@@ -127,6 +127,13 @@ serveFunction("create-wallet-topup", async ({ req, requestId, origin }) => {
             expected_paise: toPaise(amount),
             gateway_paise: gatewayOrder.amount,
             gateway_currency: gatewayOrder.currency,
+        });
+        await reportToSentry(new Error("wallet_topup.gateway_amount_mismatch"), {
+            fn: "create-wallet-topup",
+            request_id: requestId,
+            topup_id: topup.id,
+            role_category: caller.primaryRole.toLowerCase(),
+            error_code: "PAYMENT_GATEWAY_ERROR",
         });
         throw new AppError(
             "PAYMENT_GATEWAY_ERROR",

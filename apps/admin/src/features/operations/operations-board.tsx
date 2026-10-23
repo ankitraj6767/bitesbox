@@ -27,11 +27,7 @@ import { useLiveOperations } from './use-live-operations';
 import { useOrderActions } from './order-actions';
 import { AssignRiderDialog } from './assign-rider-dialog';
 import { RejectOrderDialog } from './reject-order-dialog';
-import {
-    OPERATIONS_COLUMNS,
-    type OperationsColumn,
-    type OperationsOrderCard,
-} from '@bitesbox/shared-types';
+import { OPERATIONS_COLUMNS, type OperationsColumn, type OperationsOrderCard } from '@bitesbox/shared-types';
 
 const COLUMN_LABELS: Record<OperationsColumn, string> = {
     NEW: 'New',
@@ -64,7 +60,7 @@ export function OperationsBoard({
     canOperate: boolean;
     canCancel: boolean;
 }) {
-    const { data, isPending, isError, error, refetch, isFetching, connected, lastEventAt } =
+    const { data, isPending, isError, error, refetch, isFetching, healthQuery, connected, lastEventAt } =
         useLiveOperations(branchId);
 
     const [assignFor, setAssignFor] = React.useState<OperationsOrderCard | null>(null);
@@ -101,6 +97,7 @@ export function OperationsBoard({
 
     const columns = data.columns ?? {};
     const alerts = data.alerts ?? [];
+    const healthAlerts = healthQuery.data ?? [];
 
     return (
         <>
@@ -137,7 +134,11 @@ export function OperationsBoard({
                                     : 'border-caution/25 bg-caution-soft text-caution',
                             )}
                         >
-                            {connected ? <Wifi className="size-3" aria-hidden /> : <WifiOff className="size-3" aria-hidden />}
+                            {connected ? (
+                                <Wifi className="size-3" aria-hidden />
+                            ) : (
+                                <WifiOff className="size-3" aria-hidden />
+                            )}
                             {connected ? 'Live' : 'Polling'}
                         </span>
                     </Tooltip>
@@ -174,6 +175,46 @@ export function OperationsBoard({
                                         Open order
                                     </Link>
                                 ) : null}
+                            </span>
+                        </InlineNotice>
+                    ))}
+                </div>
+            ) : null}
+
+            {healthQuery.isError ? (
+                <div className="mb-4">
+                    <InlineNotice tone="caution">
+                        Operational health checks are temporarily unavailable.{' '}
+                        <Link
+                            href="https://github.com/ankitraj6767/bitesbox/blob/main/docs/operations-runbook.md"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold underline underline-offset-2"
+                        >
+                            Open the response runbook
+                        </Link>
+                    </InlineNotice>
+                </div>
+            ) : null}
+
+            {healthAlerts.length > 0 ? (
+                <div className="mb-4 space-y-2">
+                    {healthAlerts.map((alert) => (
+                        <InlineNotice key={alert.type} tone={alert.severity === '1' ? 'critical' : 'caution'}>
+                            <span className="flex flex-wrap items-center gap-2">
+                                <span className="font-semibold">{humanise(alert.type)}</span>
+                                <span className="font-normal">{alert.message}</span>
+                                {alert.oldest_minutes !== null ? (
+                                    <span className="text-xs">Oldest: {alert.oldest_minutes} min</span>
+                                ) : null}
+                                <Link
+                                    href="https://github.com/ankitraj6767/bitesbox/blob/main/docs/operations-runbook.md"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="font-semibold underline underline-offset-2"
+                                >
+                                    Runbook
+                                </Link>
                             </span>
                         </InlineNotice>
                     ))}
@@ -259,7 +300,10 @@ export function OperationsBoard({
                                                 : ' · location unknown'}
                                         </p>
                                     </div>
-                                    <Badge tone={rider.duty_state === 'AVAILABLE' ? 'positive' : 'caution'} className="shrink-0">
+                                    <Badge
+                                        tone={rider.duty_state === 'AVAILABLE' ? 'positive' : 'caution'}
+                                        className="shrink-0"
+                                    >
                                         {rider.duty_state === 'AVAILABLE' ? 'Free' : 'Busy'}
                                     </Badge>
                                 </li>
@@ -340,9 +384,7 @@ function OrderCard({
                 </span>
             </div>
 
-            <p className="mt-1.5 truncate text-[13px] font-medium text-ink">
-                {order.customer_name ?? 'Customer'}
-            </p>
+            <p className="mt-1.5 truncate text-[13px] font-medium text-ink">{order.customer_name ?? 'Customer'}</p>
 
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-ink-muted">
                 <span className="inline-flex items-center gap-1">

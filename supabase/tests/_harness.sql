@@ -24,17 +24,52 @@ create schema if not exists tap;
 
 -- Become a signed-in user: Postgres role `authenticated` plus the JWT claim that
 -- auth.uid() reads. Transaction-scoped, so a rollback restores the session.
-create or replace function tap.as_user(p_user_id uuid)
+-- Choose an explicit signed assurance claim for MFA boundary tests. The normal
+-- helper models a fully verified staff session so older role tests stay focused.
+create or replace function tap.as_user_aal(p_user_id uuid, p_aal text)
 returns void
 language plpgsql
 as $$
 begin
   perform set_config(
     'request.jwt.claims',
-    json_build_object('sub', p_user_id::text, 'role', 'authenticated')::text,
+    json_build_object(
+      'sub', p_user_id::text,
+      'role', 'authenticated',
+      'aal', p_aal,
+      'exp', extract(epoch from (now() + interval '1 hour'))::bigint
+    )::text,
     true
   );
   execute 'set local role authenticated';
+end;
+$$;
+
+create or replace function tap.as_expired_user(p_user_id uuid)
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object(
+      'sub', p_user_id::text,
+      'role', 'authenticated',
+      'aal', 'aal2',
+      'exp', 1
+    )::text,
+    true
+  );
+  execute 'set local role authenticated';
+end;
+$$;
+
+create or replace function tap.as_user(p_user_id uuid)
+returns void
+language plpgsql
+as $$
+begin
+  perform tap.as_user_aal(p_user_id, 'aal2');
 end;
 $$;
 

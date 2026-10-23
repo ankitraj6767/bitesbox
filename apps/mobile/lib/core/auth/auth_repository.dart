@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../errors/app_error.dart';
 import '../network/api_client.dart';
@@ -135,6 +136,29 @@ class AuthRepository {
   }
 
   Future<void> signOut({String? deviceToken}) async {
+    // Revoke rider location consent while this authenticated session still
+    // exists; the UI also stops the native stream when sign-out completes.
+    final userId = currentUserId;
+    final pendingStopKey = userId == null
+        ? null
+        : 'rider_location_stop_pending_$userId';
+    SharedPreferences? preferences;
+    if (pendingStopKey != null) {
+      try {
+        preferences = await SharedPreferences.getInstance();
+        await preferences.setBool(pendingStopKey, true);
+      } catch (_) {
+        // Persisting the marker is best-effort; local sign-out must remain available.
+      }
+    }
+    try {
+      await _api.rpc<dynamic>('stop_my_delivery_location_sharing');
+      if (pendingStopKey != null) await preferences?.remove(pendingStopKey);
+    } catch (_) {
+      // Signing out must remain possible on a lost connection. The local
+      // publisher stops on auth change and customer tracking expires as stale.
+    }
+
     // Detach this device first so a shared handset stops receiving the previous
     // user's order notifications.
     if (deviceToken != null && deviceToken.isNotEmpty) {

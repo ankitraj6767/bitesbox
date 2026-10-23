@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import * as Sentry from '@sentry/nextjs';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -17,8 +18,12 @@ export default function DashboardError({
     reset: () => void;
 }) {
     React.useEffect(() => {
-        // Sentry (or any configured reporter) picks this up in production.
-        console.error('Dashboard route error', error);
+        Sentry.withScope((scope) => {
+            scope.setTag('route', 'dashboard');
+            scope.setTag('feature', 'admin_dashboard');
+            if (error.digest) scope.setTag('correlation_id', error.digest);
+            Sentry.captureException(error);
+        });
     }, [error]);
 
     return (

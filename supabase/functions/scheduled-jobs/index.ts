@@ -64,6 +64,11 @@ serveFunction("scheduled-jobs", async ({ req, requestId, origin }) => {
                 request_id: requestId,
                 error: String(error),
             });
+            await reportToSentry(error, {
+                fn: "scheduled-jobs",
+                request_id: requestId,
+                stage: "db_jobs",
+            });
             results["db_jobs"] = { error: String(error) };
         }
     }
@@ -79,6 +84,11 @@ serveFunction("scheduled-jobs", async ({ req, requestId, origin }) => {
             logger.error("scheduler.notifications_failed", {
                 request_id: requestId,
                 error: String(error),
+            });
+            await reportToSentry(error, {
+                fn: "scheduled-jobs",
+                request_id: requestId,
+                stage: "notifications",
             });
             results["notifications"] = { error: String(error) };
         }

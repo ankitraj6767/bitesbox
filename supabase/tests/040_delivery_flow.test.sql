@@ -81,6 +81,12 @@ select tap.eq(
   'ACCEPTED',
   'manual dispatch is authoritative, so the assignment starts accepted'
 );
+select tap.eq(
+  (select location_sharing_enabled from public.delivery_assignments
+    where id = tap.recall_uuid('assignment_id')),
+  false,
+  'new assignments start with location sharing disabled'
+);
 
 -- Migration 0029 added the payout trigger; the total must be the sum of its parts
 -- rather than whatever the caller happened to pass in.
@@ -102,6 +108,123 @@ select tap.eq(
 );
 
 select tap.as_user(tap.seed('rider_rahul'));
+
+select tap.throws(
+  'select public.publish_rider_location(25.461, 85.523)',
+  'LOCATION_CAPTURE_TIME_REQUIRED',
+  'legacy location clients cannot publish without an OS capture timestamp'
+);
+
+select tap.no_throw(
+  format('select public.set_delivery_location_sharing(%L, true)', tap.recall_uuid('assignment_id')),
+  'the assigned rider explicitly enables delivery-scoped sharing'
+);
+
+select tap.throws(
+  format(
+    'insert into public.delivery_partner_locations (delivery_partner_id, order_id, assignment_id, latitude, longitude) values (%L, %L, %L, 25.461, 85.523)',
+    tap.seed('dp_rahul'), tap.recall_uuid('order_id'), tap.recall_uuid('assignment_id')
+  ),
+  'PERMISSION_DENIED',
+  'direct location inserts cannot bypass capture-time and consent checks'
+);
+select tap.throws(
+  format(
+    'update public.delivery_partner_locations set latitude = 25.462, recorded_at = now() where delivery_partner_id = %L',
+    tap.seed('dp_rahul')
+  ),
+  'PERMISSION_DENIED',
+  'direct location updates cannot bypass capture-time and consent checks'
+);
+select tap.throws(
+  format(
+    'insert into public.delivery_location_events (delivery_partner_id, order_id, assignment_id, latitude, longitude) values (%L, %L, %L, 25.461, 85.523)',
+    tap.seed('dp_rahul'), tap.recall_uuid('order_id'), tap.recall_uuid('assignment_id')
+  ),
+  'PERMISSION_DENIED',
+  'riders cannot inject unsampled location history'
+);
+select tap.throws(
+  format(
+    'insert into public.delivery_partner_availability (delivery_partner_id, duty_state, latitude, longitude) values (%L, ''AVAILABLE'', 25.461, 85.523)',
+    tap.seed('dp_rahul')
+  ),
+  'PERMISSION_DENIED',
+  'duty-state changes cannot write off-duty coordinates directly'
+);
+
+select tap.remember('location_fix_at', clock_timestamp()::text);
+
+select tap.no_throw(
+  format(
+    'select public.publish_rider_location_v2(25.461, 85.523, %L::timestamptz)',
+    tap.recall('location_fix_at')
+  ),
+  'the server accepts a fresh OS capture timestamp'
+);
+
+select tap.throws(
+  format(
+    'select public.publish_rider_location_v2(25.461, 85.523, %L::timestamptz)',
+    tap.recall('location_fix_at')
+  ),
+  'LOCATION_FIX_OUT_OF_ORDER',
+  'a duplicate or out-of-order fix is rejected'
+);
+
+select tap.throws(
+  'select public.publish_rider_location_v2(25.461, 85.523, now() - interval ''3 minutes'')',
+  'LOCATION_CAPTURE_TIME_INVALID',
+  'a stale capture timestamp is rejected'
+);
+
+select tap.reset();
+select tap.as_user(tap.seed('rider_amit'));
+select tap.eq(
+  (select public.publish_rider_location_v2(25.461, 85.523, clock_timestamp()) ->> 'should_keep_publishing'),
+  'false',
+  'a different rider cannot publish against the active assignment'
+);
+select tap.reset();
+
+-- Reassignment revokes consent and detaches the old rider's current point.
+select tap.as_service();
+update public.delivery_assignments
+set delivery_partner_id = tap.seed('dp_amit')
+where id = tap.recall_uuid('assignment_id');
+select tap.eq(
+  (select location_sharing_enabled from public.delivery_assignments where id = tap.recall_uuid('assignment_id')),
+  false,
+  'reassignment clears location consent'
+);
+select tap.eq(
+  (select assignment_id from public.delivery_partner_locations where delivery_partner_id = tap.seed('dp_rahul')),
+  null::uuid,
+  'reassignment removes the former rider current point'
+);
+update public.delivery_assignments
+set delivery_partner_id = tap.seed('dp_rahul')
+where id = tap.recall_uuid('assignment_id');
+select tap.reset();
+
+select tap.as_user(tap.seed('rider_rahul'));
+select tap.no_throw(
+  format('select public.set_delivery_location_sharing(%L, true)', tap.recall_uuid('assignment_id')),
+  'the reassigned rider must explicitly enable sharing again'
+);
+select tap.no_throw(
+  'select public.stop_my_delivery_location_sharing()',
+  'sign-out can revoke active location consent'
+);
+select tap.eq(
+  (select location_sharing_enabled from public.delivery_assignments where id = tap.recall_uuid('assignment_id')),
+  false,
+  'sign-out stops sharing on the server'
+);
+select tap.no_throw(
+  format('select public.set_delivery_location_sharing(%L, true)', tap.recall_uuid('assignment_id')),
+  'a rider can explicitly resume after signing back in'
+);
 
 select tap.no_throw(
   format('select public.rider_arrived_at_store(%L)', tap.recall_uuid('assignment_id')),
@@ -258,6 +381,25 @@ select tap.eq(
   null::uuid,
   'live tracking is detached once the delivery ends'
 );
+select tap.eq(
+  (select assignment_id from public.delivery_partner_locations
+    where delivery_partner_id = tap.seed('dp_rahul')),
+  null::uuid,
+  'the customer-visible location no longer references a terminal assignment'
+);
+select tap.eq(
+  (select location_sharing_enabled from public.delivery_assignments
+    where id = tap.recall_uuid('assignment_id')),
+  false,
+  'completion revokes server-side location consent'
+);
+select tap.as_user(tap.seed('rider_rahul'));
+select tap.eq(
+  (select public.publish_rider_location_v2(25.461, 85.523, clock_timestamp()) ->> 'should_keep_publishing'),
+  'false',
+  'terminal assignments cannot resume location publishing'
+);
+select tap.reset();
 
 -- ─── Location publishing is scoped to riders ────────────────────────────────
 select tap.as_user(tap.seed('customer_a'));

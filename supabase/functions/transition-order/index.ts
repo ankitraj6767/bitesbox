@@ -96,8 +96,7 @@ serveFunction("transition-order", async ({ req, requestId, origin }) => {
     logger.info("order.transition", {
         request_id: requestId,
         action,
-        actor: caller.userId,
-        role: caller.primaryRole,
+        role_category: caller.primaryRole.toLowerCase(),
         order_id: body["order_id"] ?? null,
     });
 

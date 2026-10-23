@@ -4,8 +4,9 @@
  * Rules encoded here:
  *   · Amounts cross the wire in paise (integers). Rupee↔paise conversion is
  *     centralised so no caller can accidentally send ₹566 as 566 paise.
- *   · Every write sends an idempotency key so a retried network call cannot
- *     create a second order, payment capture or refund.
+ *   · Reads have bounded retries. Writes are sent once because Razorpay's
+ *     payment Orders/Refunds APIs do not document an idempotency header; a
+ *     timeout must be reconciled before an operator retries an ambiguous write.
  *   · Signatures are verified with a constant-time comparison.
  */
 
@@ -14,6 +15,8 @@ import { env } from "./env.ts";
 import { logger } from "./logger.ts";
 
 const API_BASE = "https://api.razorpay.com/v1";
+const REQUEST_TIMEOUT_MS = 10_000;
+const MAX_RETRIES = 2;
 
 export interface RazorpayOrder {
     id: string;
@@ -83,13 +86,23 @@ export function fromPaise(paise: number): number {
     return Math.round(paise) / 100;
 }
 
+export function matchesGatewayAmountAndCurrency(input: {
+    expectedRupees: number;
+    capturedPaise: number;
+    expectedCurrency: string;
+    capturedCurrency: string | null | undefined;
+}): boolean {
+    return input.capturedPaise === toPaise(input.expectedRupees) &&
+        (input.capturedCurrency ?? "INR") === input.expectedCurrency;
+}
+
 function authHeader(): string {
     return `Basic ${btoa(`${env.razorpayKeyId}:${env.razorpayKeySecret}`)}`;
 }
 
 async function call<T>(
     path: string,
-    init: { method?: "GET" | "POST"; body?: unknown; idempotencyKey?: string } = {},
+    init: { method?: "GET" | "POST"; body?: unknown } = {},
 ): Promise<T> {
     if (!env.razorpayConfigured) {
         throw new AppError(
@@ -104,16 +117,55 @@ async function call<T>(
         "Content-Type": "application/json",
     };
 
-    // Razorpay honours this header on create endpoints, making retries safe.
-    if (init.idempotencyKey) {
-        headers["X-Razorpay-Idempotency-Key"] = init.idempotencyKey;
+    const method = init.method ?? "GET";
+    // Razorpay payment Orders and Refunds requests have no documented idempotency
+    // key contract. Retrying an ambiguous POST could create a duplicate order or
+    // refund, so only safe reads are automatically retried.
+    const mayRetry = method === "GET";
+    let response: Response | undefined;
+    for (let attempt = 0;; attempt++) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        try {
+            response = await fetch(`${API_BASE}${path}`, {
+                method,
+                headers,
+                body: init.body ? JSON.stringify(init.body) : undefined,
+                signal: controller.signal,
+            });
+        } catch (_error) {
+            if (!mayRetry || attempt >= MAX_RETRIES) {
+                throw new AppError(
+                    "PAYMENT_GATEWAY_ERROR",
+                    "We could not reach the payment gateway. Please try again in a moment.",
+                    { http_status: 502 },
+                    502,
+                );
+            }
+            logger.warn("razorpay.request_retry", { path, attempt: attempt + 1 });
+            await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+            continue;
+        } finally {
+            clearTimeout(timeout);
+        }
+
+        if (response.status < 500 || !mayRetry || attempt >= MAX_RETRIES) break;
+        logger.warn("razorpay.request_retry", {
+            path,
+            attempt: attempt + 1,
+            status: response.status,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
     }
 
-    const response = await fetch(`${API_BASE}${path}`, {
-        method: init.method ?? "GET",
-        headers,
-        body: init.body ? JSON.stringify(init.body) : undefined,
-    });
+    if (!response) {
+        throw new AppError(
+            "PAYMENT_GATEWAY_ERROR",
+            "The payment gateway did not respond.",
+            {},
+            502,
+        );
+    }
 
     const text = await response.text();
     let payload: unknown = {};
@@ -158,11 +210,9 @@ export const razorpay = {
         currency?: string;
         receipt: string;
         notes?: Record<string, string>;
-        idempotencyKey: string;
     }): Promise<RazorpayOrder> {
         return call<RazorpayOrder>("/orders", {
             method: "POST",
-            idempotencyKey: params.idempotencyKey,
             body: {
                 amount: toPaise(params.amountRupees),
                 currency: params.currency ?? "INR",
@@ -192,11 +242,9 @@ export const razorpay = {
         amountRupees?: number;
         speed?: "normal" | "optimum";
         notes?: Record<string, string>;
-        idempotencyKey: string;
     }): Promise<RazorpayRefund> {
         return call<RazorpayRefund>(`/payments/${params.paymentId}/refund`, {
             method: "POST",
-            idempotencyKey: params.idempotencyKey,
             body: {
                 // Omitting amount refunds the whole payment.
                 ...(params.amountRupees !== undefined

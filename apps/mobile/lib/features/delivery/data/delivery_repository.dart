@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../shared/json.dart';
 import 'delivery_models.dart';
 
 /// The rider's side of a delivery.
@@ -22,7 +23,18 @@ class DeliveryRepository {
       dedupeKey: 'my_deliveries:$includeHistory',
     );
 
-    return RiderDashboard.fromJson(Map<String, dynamic>.from(result as Map));
+    final dashboard = RiderDashboard.fromJson(
+      Map<String, dynamic>.from(result as Map),
+    );
+    final sharing = await _api.rpc<dynamic>('my_delivery_location_sharing');
+    final sharingState = sharing is Map
+        ? Map<String, dynamic>.from(sharing)
+        : const <String, dynamic>{};
+    return dashboard.withLocationSharing(
+      assignmentId: sharingState['assignment_id'] as String?,
+      enabled: sharingState['location_sharing_enabled'] == true,
+      lastLocationAt: asDate(sharingState['location_recorded_at']),
+    );
   }
 
   Future<RiderEarnings> earnings({DateTime? from, DateTime? to}) async {
@@ -37,21 +49,35 @@ class DeliveryRepository {
     return RiderEarnings.fromJson(Map<String, dynamic>.from(result as Map));
   }
 
-  /// Going online seeds the live location so dispatch can rank by proximity.
+  /// Duty availability does not collect location. GPS sharing is requested only
+  /// after the rider accepts a delivery and explicitly enables delivery tracking.
   Future<void> setDutyState({
     required DutyState state,
-    double? latitude,
-    double? longitude,
     int? batteryLevel,
     String? reason,
   }) async {
-    await _api.rpc<dynamic>('set_duty_state', params: {
-      'p_state': state.code,
-      if (latitude != null) 'p_latitude': latitude,
-      if (longitude != null) 'p_longitude': longitude,
-      if (batteryLevel != null) 'p_battery_level': batteryLevel,
-      if (reason != null) 'p_reason': reason,
-    });
+    await _api.rpc<dynamic>(
+      'set_duty_state',
+      params: {
+        'p_state': state.code,
+        if (batteryLevel != null) 'p_battery_level': batteryLevel,
+        if (reason != null) 'p_reason': reason,
+      },
+    );
+  }
+
+  Future<void> setLocationSharing({
+    required String assignmentId,
+    required bool enabled,
+  }) async {
+    await _api.rpc<dynamic>(
+      'set_delivery_location_sharing',
+      params: {'p_assignment_id': assignmentId, 'p_enabled': enabled},
+    );
+  }
+
+  Future<void> stopMyLocationSharing() async {
+    await _api.rpc<dynamic>('stop_my_delivery_location_sharing');
   }
 
   Future<void> respondToOffer({
@@ -114,15 +140,18 @@ class DeliveryRepository {
     String? proofPhotoPath,
     bool managerOverride = false,
   }) async {
-    await _api.rpc<dynamic>('complete_delivery', params: {
-      'p_assignment_id': assignmentId,
-      'p_manager_override': managerOverride,
-      if (otp != null && otp.trim().isNotEmpty) 'p_otp': otp.trim(),
-      if (cashCollected != null) 'p_cash_collected': cashCollected,
-      if (note != null && note.trim().isNotEmpty) 'p_note': note.trim(),
-      if (proofPhotoPath != null && proofPhotoPath.trim().isNotEmpty)
-        'p_proof_photo_path': proofPhotoPath.trim(),
-    });
+    await _api.rpc<dynamic>(
+      'complete_delivery',
+      params: {
+        'p_assignment_id': assignmentId,
+        'p_manager_override': managerOverride,
+        if (otp != null && otp.trim().isNotEmpty) 'p_otp': otp.trim(),
+        if (cashCollected != null) 'p_cash_collected': cashCollected,
+        if (note != null && note.trim().isNotEmpty) 'p_note': note.trim(),
+        if (proofPhotoPath != null && proofPhotoPath.trim().isNotEmpty)
+          'p_proof_photo_path': proofPhotoPath.trim(),
+      },
+    );
   }
 
   Future<void> failDelivery({
@@ -130,11 +159,14 @@ class DeliveryRepository {
     required String reason,
     String? note,
   }) async {
-    await _api.rpc<dynamic>('fail_delivery', params: {
-      'p_assignment_id': assignmentId,
-      'p_reason': reason,
-      if (note != null && note.trim().isNotEmpty) 'p_note': note.trim(),
-    });
+    await _api.rpc<dynamic>(
+      'fail_delivery',
+      params: {
+        'p_assignment_id': assignmentId,
+        'p_reason': reason,
+        if (note != null && note.trim().isNotEmpty) 'p_note': note.trim(),
+      },
+    );
   }
 
   /// Publishes a GPS fix. Returns false once there is nothing live to track, which
@@ -142,21 +174,26 @@ class DeliveryRepository {
   Future<bool> publishLocation({
     required double latitude,
     required double longitude,
+    required DateTime capturedAt,
     double? accuracyMeters,
     double? headingDegrees,
     double? speedKmph,
     int? batteryLevel,
     bool isMoving = true,
   }) async {
-    final result = await _api.rpc<dynamic>('publish_rider_location', params: {
-      'p_latitude': latitude,
-      'p_longitude': longitude,
-      'p_is_moving': isMoving,
-      if (accuracyMeters != null) 'p_accuracy_meters': accuracyMeters,
-      if (headingDegrees != null) 'p_heading_degrees': headingDegrees,
-      if (speedKmph != null) 'p_speed_kmph': speedKmph,
-      if (batteryLevel != null) 'p_battery_level': batteryLevel,
-    });
+    final result = await _api.rpc<dynamic>(
+      'publish_rider_location_v2',
+      params: {
+        'p_latitude': latitude,
+        'p_longitude': longitude,
+        'p_captured_at': capturedAt.toUtc().toIso8601String(),
+        'p_is_moving': isMoving,
+        if (accuracyMeters != null) 'p_accuracy_meters': accuracyMeters,
+        if (headingDegrees != null) 'p_heading_degrees': headingDegrees,
+        if (speedKmph != null) 'p_speed_kmph': speedKmph,
+        if (batteryLevel != null) 'p_battery_level': batteryLevel,
+      },
+    );
 
     if (result is! Map) return false;
     return result['should_keep_publishing'] == true;
@@ -218,15 +255,19 @@ class DeliveryRepository {
     String? upiId,
     String? photoPath,
   }) async {
-    await _api.rpc<dynamic>('update_my_rider_profile', params: {
-      if (_present(alternatePhone)) 'p_alternate_phone': alternatePhone!.trim(),
-      if (_present(emergencyContactName))
-        'p_emergency_contact_name': emergencyContactName!.trim(),
-      if (_present(emergencyContactPhone))
-        'p_emergency_contact_phone': emergencyContactPhone!.trim(),
-      if (_present(upiId)) 'p_upi_id': upiId!.trim(),
-      if (_present(photoPath)) 'p_photo_path': photoPath!.trim(),
-    });
+    await _api.rpc<dynamic>(
+      'update_my_rider_profile',
+      params: {
+        if (_present(alternatePhone))
+          'p_alternate_phone': alternatePhone!.trim(),
+        if (_present(emergencyContactName))
+          'p_emergency_contact_name': emergencyContactName!.trim(),
+        if (_present(emergencyContactPhone))
+          'p_emergency_contact_phone': emergencyContactPhone!.trim(),
+        if (_present(upiId)) 'p_upi_id': upiId!.trim(),
+        if (_present(photoPath)) 'p_photo_path': photoPath!.trim(),
+      },
+    );
   }
 
   /// Signals when this rider's assignments change, so a new offer appears without
@@ -280,5 +321,6 @@ class DeliveryRepository {
 
   /// Omitted rather than nulled: every parameter on `update_my_rider_profile`
   /// coalesces, so a null means "leave unchanged" and sending one is pointless.
-  static bool _present(String? value) => value != null && value.trim().isNotEmpty;
+  static bool _present(String? value) =>
+      value != null && value.trim().isNotEmpty;
 }

@@ -107,6 +107,10 @@ jobs:
         working-directory: supabase/functions
         run: deno fmt --check
 
+      - name: Shared provider and telemetry contract tests
+        working-directory: supabase/functions
+        run: deno test --allow-env _shared/logger_test.ts _shared/razorpay_test.ts
+
   # ───────────────────────────────────────────────────────────────────────────
   # Admin dashboard
   # ───────────────────────────────────────────────────────────────────────────
@@ -133,6 +137,12 @@ jobs:
 
       - name: Unit and component tests
         run: npm run test --workspace=@bitesbox/admin
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Staff sign-in, permission and refund browser journey
+        run: npm run e2e --workspace=@bitesbox/admin
 
       # Build-time env only. The publishable key is designed to ship in a client and
       # is useless without a session that passes RLS.
