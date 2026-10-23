@@ -256,9 +256,12 @@ final addressesProvider = FutureProvider<List<CustomerAddress>>((ref) async {
 
 /// The address the customer is ordering to. Falls back to their default.
 final selectedAddressProvider = Provider<CustomerAddress?>((ref) {
-  final addresses = ref
-      .watch(addressesProvider)
-      .maybeWhen(data: (list) => list, orElse: () => const <CustomerAddress>[]);
+  final addressState = ref.watch(addressesProvider);
+  // A session change can briefly leave the previous account's async value
+  // attached while Riverpod reloads the list. Never expose that address during
+  // the reload; ordinary same-account refreshes may keep the last good value.
+  if (addressState.isReloading) return null;
+  final addresses = addressState.valueOrNull ?? const <CustomerAddress>[];
   if (addresses.isEmpty) return null;
 
   final selectedId = ref.watch(selectedAddressIdProvider);

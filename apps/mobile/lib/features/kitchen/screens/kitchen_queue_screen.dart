@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,20 +28,26 @@ class KitchenQueueScreen extends ConsumerStatefulWidget {
 
 class _KitchenQueueScreenState extends ConsumerState<KitchenQueueScreen> {
   Timer? _ticker;
-  DateTime _now = DateTime.now();
+  final ValueNotifier<DateTime> _now = ValueNotifier(DateTime.now());
+  final ScrollController _scrollController = ScrollController(
+    keepScrollOffset: false,
+  );
 
   @override
   void initState() {
     super.initState();
-    // Only the timers redraw each second; the data itself comes from realtime.
+    // Update only the small elapsed-time labels. Rebuilding the whole live board
+    // every second made the scrollable tickets feel sticky on busy tablets.
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
+      _now.value = DateTime.now();
     });
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _now.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -49,6 +56,9 @@ class _KitchenQueueScreenState extends ConsumerState<KitchenQueueScreen> {
     final brand = context.brand;
     final queue = ref.watch(kitchenQueueProvider);
     final stage = ref.watch(kitchenStageProvider);
+    ref.listen(kitchenStageProvider, (previous, next) {
+      if (_scrollController.hasClients) _scrollController.jumpTo(0);
+    });
 
     return AsyncValueView<KitchenQueue>(
       value: queue,
@@ -68,7 +78,8 @@ class _KitchenQueueScreenState extends ConsumerState<KitchenQueueScreen> {
                         KitchenStage.preparing => 'Nothing on the stove',
                         KitchenStage.ready => 'Nothing waiting for pickup',
                       },
-                      message: 'New orders appear here the moment they are placed.',
+                      message:
+                          'New orders appear here the moment they are placed.',
                       icon: Icons.check_circle_outline_rounded,
                     )
                   : RefreshIndicator(
@@ -83,20 +94,57 @@ class _KitchenQueueScreenState extends ConsumerState<KitchenQueueScreen> {
                               ? 3
                               : (constraints.maxWidth > 720 ? 2 : 1);
 
-                          return GridView.builder(
+                          if (columns == 1) {
+                            return ListView.separated(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.all(12),
+                              itemCount: orders.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) =>
+                                  KitchenTicketCard(
+                                    order: orders[index],
+                                    now: _now,
+                                  ),
+                            );
+                          }
+
+                          return ListView.separated(
+                            controller: _scrollController,
                             padding: const EdgeInsets.all(12),
-                            itemCount: orders.length,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: columns,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              mainAxisExtent: 320,
-                            ),
-                            itemBuilder: (context, index) => KitchenTicketCard(
-                              order: orders[index],
-                              now: _now,
-                            ),
+                            itemCount: (orders.length + columns - 1) ~/ columns,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, rowIndex) {
+                              final rowOrders = orders
+                                  .skip(rowIndex * columns)
+                                  .take(columns)
+                                  .toList(growable: false);
+
+                              return IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    for (
+                                      var column = 0;
+                                      column < columns;
+                                      column++
+                                    ) ...[
+                                      if (column > 0) const SizedBox(width: 12),
+                                      Expanded(
+                                        child: column < rowOrders.length
+                                            ? KitchenTicketCard(
+                                                order: rowOrders[column],
+                                                now: _now,
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -134,7 +182,8 @@ class _StageTabs extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: InkWell(
-                onTap: () => ref.read(kitchenStageProvider.notifier).state = stage,
+                onTap: () =>
+                    ref.read(kitchenStageProvider.notifier).state = stage,
                 borderRadius: BorderRadius.circular(brand.radiusSm),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -179,7 +228,7 @@ class KitchenTicketCard extends ConsumerStatefulWidget {
   const KitchenTicketCard({required this.order, required this.now, super.key});
 
   final KitchenOrder order;
-  final DateTime now;
+  final ValueListenable<DateTime> now;
 
   @override
   ConsumerState<KitchenTicketCard> createState() => _KitchenTicketCardState();
@@ -216,9 +265,8 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
   Future<void> _accept() async {
     final minutes = await AppFeedback.sheet<int?>(
       context,
-      builder: (_) => _PrepTimeSheet(
-        suggested: widget.order.prepMinutesEstimate ?? 20,
-      ),
+      builder: (_) =>
+          _PrepTimeSheet(suggested: widget.order.prepMinutesEstimate ?? 20),
     );
 
     if (minutes == null) return;
@@ -238,7 +286,9 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
     if (result == null) return;
 
     await _run(
-      () => ref.read(kitchenQueueProvider.notifier).reject(
+      () => ref
+          .read(kitchenQueueProvider.notifier)
+          .reject(
             orderId: widget.order.id,
             reason: result.reason,
             note: result.note,
@@ -306,7 +356,11 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
               const SizedBox(height: 12),
               Text(
                 'Valid for 6 hours. If dispatch assigns a replacement rider, issue a fresh code; the earlier code is invalidated.',
-                style: TextStyle(fontSize: 12.5, color: brand.inkMuted, height: 1.35),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: brand.inkMuted,
+                  height: 1.35,
+                ),
               ),
             ],
           ),
@@ -369,7 +423,6 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
   Widget build(BuildContext context) {
     final brand = context.brand;
     final order = widget.order;
-    final elapsed = order.elapsedSecondsAt(widget.now);
     final urgent = order.needsAttention;
 
     return Container(
@@ -384,11 +437,15 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
       child: Column(
         children: [
           // ── Header: number, timer, flags ──
-          Container
-            (padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: urgent ? brand.error.withValues(alpha: 0.06) : brand.surfaceMuted,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(brand.radiusMd)),
+              color: urgent
+                  ? brand.error.withValues(alpha: 0.06)
+                  : brand.surfaceMuted,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(brand.radiusMd),
+              ),
             ),
             child: Row(
               children: [
@@ -416,13 +473,16 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      Fmt.elapsed(elapsed),
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        fontFeatures: const [],
-                        color: urgent ? brand.error : brand.ink,
+                    ValueListenableBuilder<DateTime>(
+                      valueListenable: widget.now,
+                      builder: (context, now, _) => Text(
+                        Fmt.elapsed(order.elapsedSecondsAt(now)),
+                        style: TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          fontFeatures: const [],
+                          color: urgent ? brand.error : brand.ink,
+                        ),
                       ),
                     ),
                     Text(
@@ -485,9 +545,10 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
               ),
             ),
           // ── Items ──
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ...order.items.map(
                   (item) => Padding(
@@ -520,7 +581,10 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                             children: [
                               Row(
                                 children: [
-                                  FoodTypeMark(foodType: item.foodType, size: 11),
+                                  FoodTypeMark(
+                                    foodType: item.foodType,
+                                    size: 11,
+                                  ),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
@@ -559,7 +623,9 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: brand.warning.withValues(alpha: 0.12),
+                                    color: brand.warning.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(5),
                                   ),
                                   child: Text(
@@ -588,7 +654,11 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.priority_high_rounded, size: 15, color: brand.warning),
+                        Icon(
+                          Icons.priority_high_rounded,
+                          size: 15,
+                          color: brand.warning,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -625,10 +695,10 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                           order.isPickup
                               ? 'Waiting at the counter'
                               : (order.rider?.isWaiting == true
-                                  ? '${order.rider!.name} is waiting for handoff'
-                                  : (order.rider == null
-                                      ? 'Waiting for a delivery partner'
-                                      : 'Rider assigned: ${order.rider!.name}')),
+                                    ? '${order.rider!.name} is waiting for handoff'
+                                    : (order.rider == null
+                                          ? 'Waiting for a delivery partner'
+                                          : 'Rider assigned: ${order.rider!.name}')),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -654,7 +724,9 @@ class _KitchenTicketCardState extends ConsumerState<KitchenTicketCard> {
                                   )
                                 : const Icon(Icons.share_rounded),
                             label: Text(
-                              _busy ? 'Preparing code…' : 'Share pickup code with rider',
+                              _busy
+                                  ? 'Preparing code…'
+                                  : 'Share pickup code with rider',
                             ),
                             style: FilledButton.styleFrom(
                               backgroundColor: brand.primary,
@@ -867,7 +939,9 @@ class _RejectSheetState extends State<_RejectSheet> {
                       onPressed: () => Navigator.of(context).pop(
                         _RejectionChoice(reason: _reason, note: _note.text),
                       ),
-                      style: FilledButton.styleFrom(backgroundColor: brand.error),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: brand.error,
+                      ),
                       child: const Text('Reject order'),
                     ),
                   ),

@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, InlineNotice } from '@/components/ui/states';
 import { Table, TableWrap, TBody, TD, TH, THead, TR, TableMessageRow } from '@/components/ui/table';
 import { RangePicker } from '@/features/dashboard/range-picker';
 import { resolveRange, type RangeKey } from '@/features/dashboard/range';
+import { CodSettlementAction } from '@/features/payments/cod-settlement-action';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 import { dateTime, money, percent, humanise } from '@/lib/utils';
 
@@ -57,7 +58,7 @@ export default async function PaymentsPage({
         supabase
             .from('cod_collections')
             .select(
-                `id, order_id, expected_amount, collected_amount, status, collected_at, settled_at,
+                `id, order_id, delivery_partner_id, expected_amount, collected_amount, status, collected_at, settled_at,
          discrepancy_amount, delivery_partners(full_name), orders!inner(order_number)`,
             )
             .eq('status', 'COD_COLLECTED')
@@ -88,6 +89,7 @@ export default async function PaymentsPage({
     const unreconciled = unreconciledResult.data ?? [];
     const cod = codResult.data ?? [];
     const summary = report.summary ?? {};
+    const canSettleCod = (session.permissions ?? []).includes(PERMISSIONS.PAYMENT_RECONCILE);
 
     return (
         <>
@@ -154,6 +156,7 @@ export default async function PaymentsPage({
                                         <TH numeric>Collected</TH>
                                         <TH numeric>Difference</TH>
                                         <TH>Collected at</TH>
+                                        {canSettleCod ? <TH>Handover</TH> : null}
                                     </TR>
                                 </THead>
                                 <TBody>
@@ -186,6 +189,21 @@ export default async function PaymentsPage({
                                             <TD className="text-[12.5px] whitespace-nowrap text-ink-muted">
                                                 {dateTime(row.collected_at)}
                                             </TD>
+                                            {canSettleCod ? (
+                                                <TD>
+                                                    {row.delivery_partner_id ? (
+                                                        <CodSettlementAction
+                                                            riderId={row.delivery_partner_id}
+                                                            riderName={row.delivery_partners?.full_name ?? 'delivery partner'}
+                                                            orderId={row.order_id}
+                                                            orderNumber={row.orders?.order_number ?? row.order_id}
+                                                            amount={Number(row.collected_amount)}
+                                                        />
+                                                    ) : (
+                                                        <span className="text-[12px] text-ink-muted">No rider</span>
+                                                    )}
+                                                </TD>
+                                            ) : null}
                                         </TR>
                                     ))}
                                 </TBody>

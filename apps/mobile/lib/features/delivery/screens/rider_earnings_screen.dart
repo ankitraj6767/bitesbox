@@ -75,7 +75,9 @@ class RiderEarningsScreen extends ConsumerWidget {
                     child: RiderStat(
                       label: 'Cash in hand',
                       value: Fmt.moneySmart(data.cashInHand),
-                      caption: data.cashInHand > 0 ? 'Owed to the outlet' : 'All settled',
+                      caption: data.cashInHand > 0
+                          ? 'Owed to the outlet'
+                          : 'All settled',
                       tone: data.cashInHand > 0 ? brand.warning : null,
                     ),
                   ),
@@ -88,8 +90,8 @@ class RiderEarningsScreen extends ConsumerWidget {
                   icon: Icons.account_balance_wallet_outlined,
                   message:
                       'You are carrying ${Fmt.moneySmart(data.unsettledCash)} in COD '
-                      'cash. Hand it to the outlet at the end of your shift — a '
-                      'manager settles it and it clears from here.',
+                      'cash. Hand it to the outlet manager. They record the handover '
+                      'in Admin → Payments; pull down to refresh after it is settled.',
                 ),
               ],
               const SizedBox(height: 20),
@@ -109,7 +111,8 @@ class RiderEarningsScreen extends ConsumerWidget {
                   compact: true,
                   icon: Icons.receipt_long_outlined,
                   title: 'Nothing yet',
-                  message: 'Your payouts appear here as soon as you finish a delivery.',
+                  message:
+                      'Your payouts appear here as soon as you finish a delivery.',
                 )
               else
                 ...data.entries.map((entry) => _EntryRow(entry: entry)),
@@ -240,7 +243,9 @@ class _DailyChart extends StatelessWidget {
                           day.date == null ? '' : '${day.date!.toLocal().day}',
                           style: TextStyle(
                             fontSize: 9.5,
-                            fontWeight: today ? FontWeight.w800 : FontWeight.w500,
+                            fontWeight: today
+                                ? FontWeight.w800
+                                : FontWeight.w500,
                             color: today ? brand.primary : brand.inkMuted,
                           ),
                         ),
@@ -259,7 +264,9 @@ class _DailyChart extends StatelessWidget {
   static bool _isToday(DateTime value) {
     final now = DateTime.now();
     final local = value.toLocal();
-    return local.year == now.year && local.month == now.month && local.day == now.day;
+    return local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
   }
 }
 
@@ -281,7 +288,9 @@ class _EntryRow extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: (deduction ? brand.error : brand.success).withValues(alpha: 0.1),
+              color: (deduction ? brand.error : brand.success).withValues(
+                alpha: 0.1,
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(

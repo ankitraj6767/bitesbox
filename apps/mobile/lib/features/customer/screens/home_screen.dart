@@ -112,18 +112,32 @@ class _TopBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
     final address = ref.watch(selectedAddressProvider);
+    final addressesState = ref.watch(addressesProvider);
+    final sessionState = ref.watch(sessionProvider);
+    final sessionLoading = sessionState.isLoading;
     final session = ref.watch(currentSessionProvider);
-    final config = ref.watch(appConfigProvider).valueOrNull;
+    final addressLoading =
+        sessionLoading ||
+        (!session.isGuest &&
+            (addressesState.isReloading ||
+                (!addressesState.hasValue && addressesState.isLoading)));
+    final addressError =
+        !session.isGuest &&
+        addressesState.hasError &&
+        !addressesState.hasValue &&
+        !addressLoading;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         children: [
           Row(
             children: [
               Expanded(
                 child: InkWell(
-                  onTap: session.isGuest
+                  onTap: sessionLoading
+                      ? null
+                      : session.isGuest
                       ? () => context.push(Routes.signIn)
                       : () => context.push(Routes.addresses),
                   borderRadius: BorderRadius.circular(brand.radiusSm),
@@ -138,33 +152,54 @@ class _TopBar extends ConsumerWidget {
                         ),
                         const SizedBox(width: 6),
                         Flexible(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                session.isGuest
-                                    ? 'Sign in to set your address'
-                                    : (address?.labelText ??
-                                          'Add a delivery address'),
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: brand.ink,
+                          child: addressLoading
+                              ? Semantics(
+                                  label: 'Loading saved delivery address',
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: const [
+                                      SkeletonBox(width: 112, height: 13),
+                                      SizedBox(height: 5),
+                                      SkeletonBox(width: 174, height: 11),
+                                    ],
+                                  ),
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      session.isGuest
+                                          ? 'Sign in to set your address'
+                                          : addressError
+                                          ? 'Saved address unavailable'
+                                          : address?.labelText ??
+                                                'Add a delivery address',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: brand.ink,
+                                      ),
+                                    ),
+                                    Text(
+                                      session.isGuest
+                                          ? 'Choose a delivery location after sign in'
+                                          : addressError
+                                          ? 'Tap to choose an address'
+                                          : address == null
+                                          ? 'Tap to choose where to deliver'
+                                          : (address.secondary.trim().isNotEmpty
+                                                ? address.secondary
+                                                : '${address.city}, ${address.state}'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: brand.inkMuted,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              Text(
-                                address?.secondary ??
-                                    config?.branchName ??
-                                    'Bakhtiyarpur',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: brand.inkMuted,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                         Icon(
                           Icons.keyboard_arrow_down_rounded,
