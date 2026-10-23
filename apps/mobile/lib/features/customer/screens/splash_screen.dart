@@ -20,14 +20,12 @@ class SplashScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(brand.radiusLg),
-              ),
-              child: Icon(Icons.lunch_dining_rounded, size: 46, color: brand.primary),
+            Image.asset(
+              'assets/branding/bitesbox-app-mark.png',
+              width: 112,
+              height: 112,
+              fit: BoxFit.contain,
+              semanticLabel: '${brand.name} logo',
             ),
             const SizedBox(height: 22),
             Text(
