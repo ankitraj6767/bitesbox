@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import type { LiveOperations } from '@bitesbox/shared-types';
+import type { LiveOperations, OperationalHealthAlert } from '@bitesbox/shared-types';
 
 export const LIVE_OPS_KEY = ['live-operations'] as const;
 
@@ -35,6 +35,20 @@ export function useLiveOperations(branchId: string | null) {
         },
     });
 
+    const healthQuery = useQuery<OperationalHealthAlert[]>({
+        queryKey: ['operational-health', branchId],
+        refetchInterval: 60_000,
+        staleTime: 15_000,
+        queryFn: async () => {
+            const supabase = createSupabaseBrowserClient();
+            const { data, error } = await supabase.rpc('operational_health_alerts', {
+                p_branch_id: branchId ?? undefined,
+            });
+            if (error) throw error;
+            return (data ?? []) as unknown as OperationalHealthAlert[];
+        },
+    });
+
     React.useEffect(() => {
         const supabase = createSupabaseBrowserClient();
 
@@ -46,6 +60,9 @@ export function useLiveOperations(branchId: string | null) {
             timer = setTimeout(() => {
                 void queryClient.invalidateQueries({ queryKey: LIVE_OPS_KEY });
                 void queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] });
+                void queryClient.invalidateQueries({
+                    queryKey: ['operational-health'],
+                });
             }, 400);
         };
 
@@ -62,5 +79,5 @@ export function useLiveOperations(branchId: string | null) {
         };
     }, [queryClient]);
 
-    return { ...query, connected, lastEventAt };
+    return { ...query, healthQuery, connected, lastEventAt };
 }

@@ -18,6 +18,7 @@ import '../../../shared/widgets/states.dart';
 import '../data/delivery_models.dart';
 import '../data/delivery_repository.dart';
 import '../providers/delivery_providers.dart';
+import '../widgets/location_sharing_card.dart';
 import 'rider_shell.dart';
 
 /// One delivery, start to finish.
@@ -243,6 +244,12 @@ class _RiderDeliveryScreenState extends ConsumerState<RiderDeliveryScreen> {
                 const SizedBox(height: 14),
                 _StepTracker(job: job),
                 const SizedBox(height: 14),
+                LocationSharingCard(
+                  assignment: job,
+                  enabled: data.isSharingLocationFor(job.assignmentId),
+                  canEnable: data.current?.assignmentId == job.assignmentId,
+                ),
+                const SizedBox(height: 14),
                 _RouteMap(job: job),
                 const SizedBox(height: 14),
                 _StopCard(job: job),
@@ -467,6 +474,11 @@ class _RouteMap extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final fix = ref.watch(riderLastFixProvider);
     final toStore = job.navigatesToBranch;
+    final fixAge = fix == null || fix.recordedAt == null
+        ? null
+        : DateTime.now().toUtc().difference(fix.recordedAt!.toUtc());
+    final fixIsFresh = fixAge != null &&
+        !fixAge.isNegative && fixAge <= const Duration(minutes: 2);
 
     final destinationLat = toStore ? job.branch.latitude : job.order.latitude;
     final destinationLng = toStore ? job.branch.longitude : job.order.longitude;
@@ -475,7 +487,7 @@ class _RouteMap extends ConsumerWidget {
       height: 180,
       emptyMessage: 'No map location was saved for this stop.',
       points: [
-        if (fix != null)
+        if (fixIsFresh && fix != null)
           MapPoint(
             id: 'me',
             latitude: fix.latitude,

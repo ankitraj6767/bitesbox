@@ -36,7 +36,7 @@ import { sendSms } from "../_shared/providers/sms.ts";
 import { sendEmail } from "../_shared/providers/email.ts";
 import { env } from "../_shared/env.ts";
 import { AppError } from "../_shared/errors.ts";
-import { logger } from "../_shared/logger.ts";
+import { logger, reportToSentry } from "../_shared/logger.ts";
 
 interface QueuedNotification {
     id: string;
@@ -95,7 +95,7 @@ serveFunction("send-notification", async ({ req, requestId, origin }) => {
             targeted: result.targeted,
             queued: result.queued,
             changed: result.changed,
-            actor: caller.userId,
+            role_category: caller.primaryRole.toLowerCase(),
         });
 
         // Flush a first batch so pressing Send produces visible delivery rather than
@@ -143,7 +143,7 @@ serveFunction("send-notification", async ({ req, requestId, origin }) => {
         logger.info("notification.enqueued", {
             request_id: requestId,
             queued,
-            actor: caller.userId,
+            role_category: caller.primaryRole.toLowerCase(),
         });
 
         return jsonResponse({ queued }, { status: 202, origin, requestId });
@@ -220,6 +220,12 @@ async function drainQueue(
                 notification_id: notification.id,
                 channel: notification.channel,
                 error: String(error),
+            });
+            await reportToSentry(error, {
+                fn: "send-notification",
+                request_id: options.requestId,
+                stage: "provider_delivery",
+                channel: notification.channel,
             });
 
             await rpc(admin, "svc_settle_notification", {

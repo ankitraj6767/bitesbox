@@ -24,14 +24,42 @@ const REDACT_KEYS = new Set([
     "key_secret",
     "signature",
     "otp",
-    "code",
+    "otp_code",
+    "verification_code",
     "delivery_otp",
     "pickup_code",
     "card",
     "card_number",
     "cvv",
     "private_key",
+    "email",
+    "phone",
+    "full_phone",
+    "address",
+    "street_address",
+    "customer_address",
+    "document_path",
+    "document_url",
+    "image",
+    "image_url",
+    "raw_body",
+    "request_body",
+    "response_body",
 ]);
+
+const REDACT_KEY_PATTERN =
+    /(authorization|token|secret|password|signature|otp|phone|email|address|document|image|base64|raw.?body|contact)/i;
+
+function sanitizeText(value: string): string {
+    return value
+        .replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer [redacted]")
+        .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[email]")
+        .replace(/(?:\+?\d[\d\s().-]{7,}\d)/g, "[phone]")
+        .replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, "[image redacted]")
+        .replace(/https?:\/\/[^\s?]+\?[^\s)]+/gi, "[url with query redacted]")
+        .replace(/[A-Za-z0-9_-]{80,}/g, "[long value redacted]")
+        .slice(0, 2000);
+}
 
 function redact(value: unknown, depth = 0): unknown {
     if (depth > 6) return "[truncated]";
@@ -44,16 +72,22 @@ function redact(value: unknown, depth = 0): unknown {
     if (typeof value === "object") {
         const out: Record<string, unknown> = {};
         for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-            out[key] = REDACT_KEYS.has(key.toLowerCase()) ? "[redacted]" : redact(item, depth + 1);
+            out[key] = REDACT_KEYS.has(key.toLowerCase()) || REDACT_KEY_PATTERN.test(key)
+                ? "[redacted]"
+                : redact(item, depth + 1);
         }
         return out;
     }
 
-    if (typeof value === "string" && value.length > 2000) {
-        return `${value.slice(0, 2000)}…[truncated]`;
+    if (typeof value === "string") {
+        return sanitizeText(value);
     }
 
     return value;
+}
+
+export function sanitizeTelemetry(value: unknown): unknown {
+    return redact(value);
 }
 
 function emit(level: Level, message: string, context: Record<string, unknown> = {}): void {
@@ -118,21 +152,34 @@ export async function reportToSentry(
                 exception: {
                     values: [{
                         type: error instanceof Error ? error.name : "Error",
-                        value: error instanceof Error ? error.message : String(error),
+                        value: sanitizeText(error instanceof Error ? error.message : String(error)),
                         stacktrace: error instanceof Error && error.stack
                             ? {
                                 frames: [{
                                     filename: "edge",
-                                    function: error.stack.split("\n")[1]?.trim(),
+                                    function: sanitizeText(
+                                        error.stack.split("\n")[1]?.trim() ?? "edge",
+                                    ),
                                 }],
                             }
                             : undefined,
                     }],
                 },
-                extra: redact(context),
+                release: optionalRelease(),
+                tags: {
+                    function: String(context.fn ?? "edge"),
+                    role_category: String(context.role_category ?? "system"),
+                },
+                extra: sanitizeTelemetry(context),
             }),
+            signal: AbortSignal.timeout(1500),
         });
     } catch {
         // Never let telemetry break a food order.
     }
+}
+
+function optionalRelease(): string | undefined {
+    const value = Deno.env.get("SENTRY_RELEASE")?.trim();
+    return value ? sanitizeText(value) : undefined;
 }

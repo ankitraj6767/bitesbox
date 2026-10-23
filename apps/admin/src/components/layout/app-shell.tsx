@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 import { Sidebar, type SidebarCounts } from './sidebar';
 import { Topbar } from './topbar';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -22,6 +24,18 @@ export function AppShell({
 }) {
     const [navOpen, setNavOpen] = React.useState(false);
     const permissions = session.permissions ?? [];
+    const pathname = usePathname();
+
+    React.useEffect(() => {
+        const primaryRole = session.primary_role ?? 'STAFF';
+        const roleCategory = ['OWNER', 'ADMIN'].includes(primaryRole)
+            ? 'admin'
+            : ['FINANCE', 'SUPPORT', 'MARKETING'].includes(primaryRole)
+                ? primaryRole.toLowerCase()
+                : 'operations';
+        Sentry.setTags({ role_category: roleCategory, route: pathname.split('/').filter(Boolean)[0] ?? 'overview' });
+        return () => Sentry.setTags({ route: 'unknown' });
+    }, [pathname, session.primary_role]);
 
     // Sidebar badges. Cheap head-only counts, refreshed on a slow interval so a
     // long-lived dashboard tab stays roughly accurate without polling hard.

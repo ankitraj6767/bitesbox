@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/auth/session.dart' show UserProfile;
+import '../../../core/errors/app_error.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
+import '../../../shared/widgets/states.dart';
 import '../providers/customer_providers.dart';
 
 /// Edit profile and notification preferences.
@@ -21,19 +24,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _name = TextEditingController();
   final _email = TextEditingController();
 
-  late bool _marketingOptIn;
+  bool _preferencesReady = false;
+  String? _hydratedUserId;
+  bool _marketingOptIn = false;
   bool _push = true;
   bool _sms = true;
-  bool _whatsapp = true;
+  bool _whatsapp = false;
+  bool _marketingChanged = false;
+  bool _pushChanged = false;
+  bool _smsChanged = false;
+  bool _whatsappChanged = false;
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
-    final profile = ref.read(currentSessionProvider).profile;
-    _name.text = profile?.fullName ?? '';
-    _email.text = profile?.email ?? '';
-    _marketingOptIn = profile?.marketingOptIn ?? true;
+    _hydrate(ref.read(currentSessionProvider).profile);
+  }
+
+  void _hydrate(UserProfile? profile, {bool force = false}) {
+    if (profile == null || (!force && _hydratedUserId == profile.id)) return;
+    _hydratedUserId = profile.id;
+    _name.text = profile.fullName ?? '';
+    _email.text = profile.email ?? '';
+    _marketingOptIn = profile.marketingOptIn;
+    _push = profile.pushEnabled;
+    _sms = profile.smsEnabled;
+    _whatsapp = profile.whatsappEnabled;
+    _marketingChanged = false;
+    _pushChanged = false;
+    _smsChanged = false;
+    _whatsappChanged = false;
+    _preferencesReady = true;
   }
 
   @override
@@ -55,14 +77,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await ref.read(accountRepositoryProvider).updateProfile(
             fullName: _name.text,
             email: _email.text,
-            marketingOptIn: _marketingOptIn,
-            pushEnabled: _push,
-            smsEnabled: _sms,
-            whatsappEnabled: _whatsapp,
+            marketingOptIn: _marketingChanged ? _marketingOptIn : null,
+            pushEnabled: _pushChanged ? _push : null,
+            smsEnabled: _smsChanged ? _sms : null,
+            whatsappEnabled: _whatsappChanged ? _whatsapp : null,
           );
-
-      await ref.read(sessionProvider.notifier).refresh();
+      final currentProfile = ref.read(currentSessionProvider).profile!;
+      final savedProfile = currentProfile.copyWith(
+        fullName: _name.text.trim(),
+        email: _email.text.trim().isEmpty ? null : _email.text.trim().toLowerCase(),
+        marketingOptIn: _marketingChanged ? _marketingOptIn : null,
+        pushEnabled: _pushChanged ? _push : null,
+        smsEnabled: _smsChanged ? _sms : null,
+        whatsappEnabled: _whatsappChanged ? _whatsapp : null,
+      );
+      ref.read(sessionProvider.notifier).updateProfile(savedProfile);
       if (!mounted) return;
+      _hydrate(savedProfile, force: true);
       AppFeedback.showSuccess(context, 'Profile updated.');
     } catch (error) {
       if (!mounted) return;
@@ -77,6 +108,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final brand = context.brand;
     final session = ref.watch(currentSessionProvider);
     final profile = session.profile;
+
+    if (profile != null &&
+        (!_preferencesReady || profile.id != _hydratedUserId)) {
+      _hydrate(profile, force: true);
+    }
+
+    if (!session.authenticated || profile == null || !_preferencesReady) {
+      final sessionState = ref.watch(sessionProvider);
+      return Scaffold(
+        appBar: AppBar(title: const Text('Your profile')),
+        body: sessionState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => AppErrorState(
+            error: error,
+            onRetry: () => ref.read(sessionProvider.notifier).refresh(),
+          ),
+          data: (loadedSession) => loadedSession.authenticated
+              ? AppErrorState(
+                  error: const AppError(
+                    code: 'PROFILE_UNAVAILABLE',
+                    message: 'Your profile could not be loaded.',
+                  ),
+                  onRetry: () => ref.read(sessionProvider.notifier).refresh(),
+                )
+              : const Center(child: Text('Sign in to view your profile.')),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Your profile')),
@@ -105,7 +164,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 14),
           TextField(
             enabled: false,
-            controller: TextEditingController(text: profile?.phone ?? ''),
+            controller: TextEditingController(text: profile.phone),
             decoration: InputDecoration(
               labelText: 'Mobile number',
               helperText: 'Sign in with a different number to change this',
@@ -124,26 +183,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Order updates are always sent. These control everything else.',
+            'Order-critical updates may still be sent when needed. These settings control your delivery channels; offers are separate.',
             style: TextStyle(fontSize: 12.5, height: 1.4, color: brand.inkMuted),
           ),
           SwitchListTile.adaptive(
             value: _push,
             contentPadding: EdgeInsets.zero,
             title: const Text('Push notifications'),
-            onChanged: (value) => setState(() => _push = value),
+            onChanged: (value) => setState(() {
+              _push = value;
+              _pushChanged = true;
+            }),
           ),
           SwitchListTile.adaptive(
             value: _sms,
             contentPadding: EdgeInsets.zero,
             title: const Text('SMS'),
-            onChanged: (value) => setState(() => _sms = value),
+            onChanged: (value) => setState(() {
+              _sms = value;
+              _smsChanged = true;
+            }),
           ),
           SwitchListTile.adaptive(
             value: _whatsapp,
             contentPadding: EdgeInsets.zero,
             title: const Text('WhatsApp'),
-            onChanged: (value) => setState(() => _whatsapp = value),
+            onChanged: (value) => setState(() {
+              _whatsapp = value;
+              _whatsappChanged = true;
+            }),
           ),
           Divider(height: 24, color: brand.hairline),
           SwitchListTile.adaptive(
@@ -154,7 +222,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               'Occasional messages about discounts and additions to the menu.',
               style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
             ),
-            onChanged: (value) => setState(() => _marketingOptIn = value),
+            onChanged: (value) => setState(() {
+              _marketingOptIn = value;
+              _marketingChanged = true;
+            }),
           ),
           const SizedBox(height: 20),
           FilledButton(

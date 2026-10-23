@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'app/app.dart';
 import 'core/config/env.dart';
+import 'core/telemetry/scrub.dart';
 
 /// Bites Box — one app for customers, delivery partners and the kitchen.
 ///
@@ -45,5 +48,32 @@ Future<void> main() async {
     debug: Env.isDevelopment,
   );
 
-  runApp(const ProviderScope(child: BitesBoxApp()));
+  Future<void> runApplication() async {
+    runApp(const ProviderScope(child: BitesBoxApp()));
+  }
+
+  var release = 'bitesbox/unknown';
+  try {
+    final package = await PackageInfo.fromPlatform();
+    release = 'bitesbox/${package.version}+${package.buildNumber}';
+  } catch (_) {
+    // Package metadata is diagnostic context only.
+  }
+
+  try {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = Env.sentryDsn;
+        options.environment = Env.appEnv;
+        options.release = release;
+        options.sendDefaultPii = false;
+        options.tracesSampleRate = 0;
+        options.beforeSend = (event, _) => scrubSentryEvent(event);
+      },
+      appRunner: runApplication,
+    );
+  } catch (_) {
+    // Telemetry initialization is best-effort and cannot block ordering.
+    await runApplication();
+  }
 }

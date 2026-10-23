@@ -410,8 +410,7 @@ serveFunction("admin-operation", async ({ req, requestId, origin }) => {
     logger.info("admin.operation", {
         request_id: requestId,
         operation,
-        actor: caller.userId,
-        role: caller.primaryRole,
+        role_category: caller.primaryRole.toLowerCase(),
     });
 
     return jsonResponse({ operation, result }, { origin, requestId });

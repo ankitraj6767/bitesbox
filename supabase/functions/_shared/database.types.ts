@@ -1616,6 +1616,8 @@ export type Database = {
           failed_at: string | null;
           failure_reason: string | null;
           id: string;
+          location_sharing_enabled: boolean;
+          location_sharing_started_at: string | null;
           mode: Database["public"]["Enums"]["assignment_mode"];
           offered_at: string;
           order_id: string;
@@ -1654,6 +1656,8 @@ export type Database = {
           failed_at?: string | null;
           failure_reason?: string | null;
           id?: string;
+          location_sharing_enabled?: boolean;
+          location_sharing_started_at?: string | null;
           mode?: Database["public"]["Enums"]["assignment_mode"];
           offered_at?: string;
           order_id: string;
@@ -1692,6 +1696,8 @@ export type Database = {
           failed_at?: string | null;
           failure_reason?: string | null;
           id?: string;
+          location_sharing_enabled?: boolean;
+          location_sharing_started_at?: string | null;
           mode?: Database["public"]["Enums"]["assignment_mode"];
           offered_at?: string;
           order_id?: string;
@@ -3899,9 +3905,11 @@ export type Database = {
       };
       payment_events: {
         Row: {
+          duplicate_delivery_count: number;
           event_type: string;
           gateway: Database["public"]["Enums"]["payment_gateway"];
           id: string;
+          last_duplicate_at: string | null;
           order_id: string | null;
           payload: Json;
           payment_id: string | null;
@@ -3914,9 +3922,11 @@ export type Database = {
           source: string;
         };
         Insert: {
+          duplicate_delivery_count?: number;
           event_type: string;
           gateway?: Database["public"]["Enums"]["payment_gateway"];
           id?: string;
+          last_duplicate_at?: string | null;
           order_id?: string | null;
           payload: Json;
           payment_id?: string | null;
@@ -3929,9 +3939,11 @@ export type Database = {
           source?: string;
         };
         Update: {
+          duplicate_delivery_count?: number;
           event_type?: string;
           gateway?: Database["public"]["Enums"]["payment_gateway"];
           id?: string;
+          last_duplicate_at?: string | null;
           order_id?: string | null;
           payload?: Json;
           payment_id?: string | null;
@@ -6675,6 +6687,7 @@ export type Database = {
         Returns: Json;
       };
       my_deliveries: { Args: { p_include_history?: boolean }; Returns: Json };
+      my_delivery_location_sharing: { Args: never; Returns: Json };
       my_earnings: { Args: { p_from?: string; p_to?: string }; Returns: Json };
       my_orders: {
         Args: { p_limit?: number; p_offset?: number; p_scope?: string };
@@ -6684,6 +6697,10 @@ export type Database = {
       my_session: { Args: never; Returns: Json };
       my_support_tickets: { Args: { p_limit?: number }; Returns: Json };
       my_wallet: { Args: never; Returns: Json };
+      operational_health_alerts: {
+        Args: { p_branch_id?: string };
+        Returns: Json;
+      };
       order_detail: { Args: { p_order_id: string }; Returns: Json };
       order_invoice: { Args: { p_order_id: string }; Returns: Json };
       post_delivery_earning: {
@@ -6713,6 +6730,19 @@ export type Database = {
         Args: {
           p_accuracy_meters?: number;
           p_battery_level?: number;
+          p_heading_degrees?: number;
+          p_is_moving?: boolean;
+          p_latitude: number;
+          p_longitude: number;
+          p_speed_kmph?: number;
+        };
+        Returns: Json;
+      };
+      publish_rider_location_v2: {
+        Args: {
+          p_accuracy_meters?: number;
+          p_battery_level?: number;
+          p_captured_at: string;
           p_heading_degrees?: number;
           p_is_moving?: boolean;
           p_latitude: number;
@@ -6887,6 +6917,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      set_delivery_location_sharing: {
+        Args: { p_assignment_id: string; p_enabled: boolean };
+        Returns: Json;
+      };
       set_duty_state: {
         Args: {
           p_battery_level?: number;
@@ -6926,6 +6960,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      stop_my_delivery_location_sharing: { Args: never; Returns: Json };
       staff_directory: { Args: { p_branch_id?: string }; Returns: Json };
       start_preparing: { Args: { p_order_id: string }; Returns: Json };
       submit_review: {
@@ -7029,6 +7064,10 @@ export type Database = {
           p_provider_status?: string;
           p_refund_id: string;
         };
+        Returns: undefined;
+      };
+      svc_note_duplicate_webhook_delivery: {
+        Args: { p_event_id: string };
         Returns: undefined;
       };
       svc_place_order: {

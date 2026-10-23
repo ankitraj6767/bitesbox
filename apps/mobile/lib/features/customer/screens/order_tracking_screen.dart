@@ -346,7 +346,9 @@ class _RiderMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final location = rider.liveLocation;
-    if (location == null || !location.hasPosition) return const SizedBox.shrink();
+    if (location == null || !location.hasPosition || !location.isFresh) {
+      return const SizedBox.shrink();
+    }
 
     return LiveMap(
       height: 210,
@@ -477,6 +479,34 @@ class _RiderCard extends StatelessWidget {
                       ),
                       child: const Text('View on map'),
                     ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Last location update ${Fmt.relative(location.recordedAt)}',
+              style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: brand.warning.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(brand.radiusSm),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.location_off_outlined, size: 17, color: brand.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      location?.recordedAt == null
+                          ? 'Live location is unavailable right now.'
+                          : 'Location last updated ${Fmt.relative(location!.recordedAt)}. This point may be out of date.',
+                      style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -13,10 +13,10 @@ Unit-testing a Dart function that formats a duration is cheap and worth having;
 it is not where the risk lives.
 
 ```
-supabase/tests/      10 suites · 340 assertions   ← the security boundary
-apps/admin/           4 files  · 63 tests
-apps/mobile/test/     9 files  · 125 tests
-supabase/functions/   deno check · lint · fmt --check
+supabase/tests/      11 suites · 394 assertion calls in source   ← the security boundary
+apps/admin/           6 unit files · 67 tests; deterministic Playwright journey
+apps/mobile/test/     14 files · see final run record below
+supabase/functions/   Deno checks · lint · fmt · logger/provider contracts
 schema                db-lint.sh — fails on error-level findings
 ```
 
@@ -28,24 +28,25 @@ schema                db-lint.sh — fails on error-level findings
 npm run db:test                  # same thing
 ```
 
-The repository's last recorded full local run passed **9 suites / 330
-assertions** on 20 August 2026. Suite `100_group_orders` adds 10 assertions. It
-could not be run in this environment because the local Docker/Supabase stack is unavailable;
-the three new migrations were applied to the linked project and its RLS/table
-grants were inspected after deployment.
+The 394 SQL assertion calls are counted from the checked-in SQL test files. They
+were **not executed for this release** because Docker/Colima was unavailable in
+the implementation environment. A read-only linked migration check observed two
+local migrations pending on 23 October 2026; no migration was pushed. See
+[status.md](status.md) for that observation and its limits.
 
 | Suite | Assertions | Covers |
 | --- | --- | --- |
-| `010_rbac_rls` | 41 | Role/permission boundaries, cross-customer isolation, branch scoping, the role-assignment rank guard |
+| `010_rbac_rls` | 48 | Role/permission boundaries, cross-customer isolation, branch scoping, the role-assignment rank guard |
 | `020_order_state_machine` | 20 | Legal edges, guards, direct-write refusal, terminal states |
 | `030_pricing_and_coupons` | 40 | Server pricing, coupon eligibility, quantity limits, serviceability |
-| `040_delivery_flow` | 28 | Dispatch → pickup → OTP → delivered, rider scoping, payout |
-| `050_payments_and_idempotency` | 14 | Placement idempotency, webhook dedupe, unpaid-order isolation |
-| `060_refunds` | 25 | Refundable balance, approval separation, ledger settlement |
+| `040_delivery_flow` | 48 | Dispatch → pickup → OTP → delivered, timestamped assignment-scoped location, rider scoping, payout |
+| `050_payments_and_idempotency` | 15 | Placement idempotency, webhook dedupe counters, unpaid-order isolation |
+| `060_refunds` | 27 | Refundable balance, approval separation, ledger settlement |
 | `070_rider_lifecycle` | 64 | Onboarding chain, document review, self-promotion refusal, the staff read surface |
-| `080_campaigns_and_reviews` | 33 | Audience resolution, opt-out honouring, review moderation |
+| `080_campaigns_and_reviews` | 34 | Audience resolution, opt-out honouring, review moderation |
 | `090_read_surfaces` | 65 | Every client-callable read RPC actually executes, as a role allowed to call it |
 | `100_group_orders` | 10 | Invite privacy, membership checks, host authority, server-validated merge and participant-cart clearing |
+| `110_staff_mfa_and_location` | 23 | Signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
 
 ### Why 090 exists
 
@@ -174,7 +175,8 @@ proves that pickup is what issues it.
 npm run test --workspace=@bitesbox/admin
 ```
 
-Vitest with jsdom. **4 files, 63 tests passing.**
+Vitest with jsdom. The release suite contains **6 files and 67 tests**;
+`npm run test --workspace=@bitesbox/admin` passed all 67 on 23 October 2026.
 
 | File | Tests | Covers |
 | --- | --- | --- |
@@ -182,6 +184,8 @@ Vitest with jsdom. **4 files, 63 tests passing.**
 | `src/lib/errors.test.ts` | 10 | `normaliseError`, `errorMessage` — code extraction from PostgREST and Edge shapes, customer-safe copy |
 | `src/lib/navigation.test.ts` | 13 | `visibleNavigation` permission filtering, `NAV_GROUPS` integrity |
 | `src/components/ui/badge.test.tsx` | 14 | `orderStatusTone` / `paymentStatusTone` / `refundStatusTone` mapping, `OrderStatusBadge`, `Badge`, `FoodTypeMark` |
+| `src/lib/mfa-policy.test.ts` | 3 | Back-office AAL2 routing, customer exemption, safe next path |
+| `src/lib/telemetry/scrub.test.ts` | 1 | PII, credentials, request content, and image redaction |
 
 `toCsv` and `csvEscape` are tested because CSV export is where a comma in a
 customer's address quietly corrupts a finance report.
@@ -195,6 +199,12 @@ already proven by the SQL suites against a real database. Mocking Supabase to
 re-assert it in TypeScript would test the mock. So the unit tests here cover the
 pure functions and presentational mapping, and `npm run build` covers the rest by
 type-checking every page against the generated database types.
+
+The Playwright browser suite runs separately with
+`npm run e2e --workspace=@bitesbox/admin`. It starts a local deterministic Supabase
+Auth/REST fake and covers valid and invalid staff login, refund approval, missing
+refund permission, and the AAL1 challenge gate. It uses no hosted account and does
+not call the Razorpay gateway.
 
 ### Lint
 
@@ -211,7 +221,8 @@ pages, all now removed.
 cd apps/mobile && flutter test
 ```
 
-**9 files, 125 tests passing.** `flutter analyze` reports "No issues found!".
+The release branch has 14 test files. `flutter test --reporter compact` passed
+**139 tests** on 23 October 2026.
 
 | File | Covers |
 | --- | --- |
@@ -224,6 +235,11 @@ cd apps/mobile && flutter test
 | `test/core/update_test.dart` | Version comparison and compatible release artifact selection |
 | `test/features/account_notifications_test.dart` | Notification ownership, persisted read state and channel isolation |
 | `test/features/group_order_models_test.dart` | Group snapshots, member contributions, configured dishes and malformed optional fields |
+| `test/features/account_profile_repository_test.dart` | Profile updates send only explicitly changed notification channels |
+| `test/features/profile_screen_test.dart` | Preference hydration, isolated marketing consent, channel save, reload, loading, and recovery after errors |
+| `test/features/delivery/location_fix_policy_test.dart` | OS capture timestamp freshness, ordering, throttling, and no stale replay |
+| `test/core/telemetry_scrub_test.dart` | Mobile Sentry event redaction and safe route context |
+| `test/integration/order_and_rider_flow_test.dart` | Deterministic Supabase-client contract for order placement/status and rider pickup/completion without GPS |
 
 `shell selection` is the one worth calling out: it asserts which shell each role
 lands in, so a customer cannot be routed into the kitchen UI by a role-mapping
@@ -307,16 +323,13 @@ holds no entry point). `supabase/functions/deno.json` sets
 `fmt.indentWidth: 4` to match the actual style and excludes the generated
 `_shared/database.types.ts`.
 
-There are no unit tests for the functions, and that is a deliberate boundary rather
-than an omission: every one of them is thin. Validate the request, call an RPC that
-already has SQL coverage, shape the response. The parts worth testing —
-idempotency, permission checks, amount validation — live in Postgres where the
-suites already exercise them. Testing the functions would mean mocking both
-Supabase and Razorpay, which proves the mocks agree with each other.
-
-The gap that leaves is the Razorpay integration itself, which is covered by test-mode
-manual verification and by the webhook event log rather than by automated tests.
-That is stated plainly here because it is the weakest link in this matrix.
+The standard RPC façades stay covered by SQL authorization tests. Deno tests cover
+the new logger scrubber/failure behavior and deterministic Razorpay helper
+contracts: valid/invalid signatures, exact paise and currency, bounded safe GET
+retry, and no automatic replay of ambiguous money-moving POST requests. SQL tests
+cover database idempotency, duplicate webhook counting, and out-of-order refund
+settlement. These are local fakes and cryptographic fixtures; CI never performs a
+real charge or refund.
 
 ## Full sweep
 
@@ -327,7 +340,16 @@ npm run verify:db     # schema lint + SQL suites
 
 `verify` runs: `check-secrets` → `fn:check` → `fn:lint` → `admin:lint` →
 `admin:typecheck` → `admin:test` → `admin:build` → `mobile:analyze` →
-`mobile:test`. It needs no database. `verify:db` needs the local stack up.
+`mobile:test`. It needs no database. `verify:db` needs the local stack up. CI also
+runs the Deno logger/provider contract tests and the separate Playwright journey.
+
+On 23 October 2026, `npm run verify` passed end to end with placeholder Supabase
+configuration. A separate `deno test --allow-env _shared/logger_test.ts
+_shared/razorpay_test.ts` passed 4 tests across 5 steps, and
+`npm run e2e --workspace=@bitesbox/admin` passed all 5 browser tests. The attempted
+`npm run db:test` could not install its harness because the local Supabase stack
+was not running; Docker/Colima was unavailable. No SQL suite or generated database
+type comparison is reported as locally verified.
 
 ## CI
 
@@ -337,8 +359,8 @@ and on demand:
 | Job | Does |
 | --- | --- |
 | **Database** | `supabase start` → `db reset` → `db-lint.sh` → SQL suites → assert the committed types match the schema |
-| **Edge Functions** | `deno check` each entry, `deno lint`, `deno fmt --check` |
-| **Admin dashboard** | `npm ci` → lint → typecheck → vitest → `next build` |
+| **Edge Functions** | `deno check` each entry, `deno lint`, `deno fmt --check`, logger and Razorpay contract tests |
+| **Admin dashboard** | `npm ci` → lint → typecheck → vitest → Playwright staff/refund journey → `next build` |
 | **Mobile app** | `flutter pub get` → `analyze` → `test` → debug APK build |
 | **Secret scan** | `scripts/check-secrets.sh` |
 
@@ -362,12 +384,48 @@ existing breaks than with reflowed ones. `deno fmt --check` *is* enforced, becau
 
 Stated plainly rather than implied:
 
-- **No end-to-end browser tests.** No Playwright suite drives the admin dashboard
-  through a real login.
-- **No Flutter integration tests.** No `integration_test/` driving a real device
-  against a real backend.
+- **No physical-device tracking verification in CI.** Permission revocation,
+  lock-screen/background collection, battery saver, notification behavior, and
+  app termination/restart need Android and iOS devices. Follow the plan below.
+- **No live backend mobile integration test.** The customer and rider flow tests
+  use an HTTP fake with the Supabase client's real transport contract; they do not
+  prove hosted credentials, RLS, or device behavior.
 - **No load testing.** Index choices are reasoned about (partial indexes on the hot
   reconciliation and dispatch queries) but not measured under load.
-- **No Razorpay contract tests.** Verified manually in test mode.
+- **No live Razorpay test-mode call in CI.** Provider helper contracts run against
+  a deterministic fake HTTP transport and never move money.
 - **No penetration test.** The security claims in [security.md](security.md) are
   what the SQL suites prove, not a third-party assessment.
+
+## Device validation plan (manual, before a store release)
+
+Use test accounts, test orders, and a development/staging backend. Never use a
+real customer's delivery. Record OS version, device model, app build, permission
+choice, and whether the customer saw an accurately stale state.
+
+**Android (supported target devices):** accept an assignment; start sharing while
+the app is visible; confirm the persistent notification and a recent customer
+point; switch to navigation, background the app, and lock the screen; verify fresh
+capture times continue. Then disable location services, revoke permission in
+Settings, deny notifications on Android 13+ and verify the foreground service is
+still listed in Task Manager (its notice may be absent from the notification
+drawer), enable battery saver/Doze, lose and
+restore network, reassign the delivery, complete/cancel it, sign out, and force
+stop/relaunch. Confirm location stops or becomes stale, no old fix is replayed,
+the stop marker is reconciled after resume, and pickup/completion remain usable
+without GPS. Do not grant “Allow all the time”; the implementation is designed
+for a foreground-started location service and visible notification.
+
+**iOS (supported iPhone versions):** accept an assignment and consent while the
+app is foregrounded; verify the system location indicator; switch to Apple/Google
+Maps, background and lock the phone, then confirm capture times continue while
+the OS permits When In Use background updates. Test While Using permission denied
+or revoked, Precise Location off, Location Services off, Low Power Mode, network
+loss/recovery, process termination/restart, reassignment, completion, cancellation,
+and sign-out. Confirm unavailable/stale states are clear and delivery actions
+remain available. If the OS stops updates under When In Use authorization, do not
+upgrade to Always by default; surface the stale state and review current App
+Store/Core Location policy before any authorization change.
+
+No Android/iOS device validation was performed for this release in CI or the
+implementation environment.

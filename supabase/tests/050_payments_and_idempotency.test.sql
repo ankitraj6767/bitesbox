@@ -159,12 +159,21 @@ select tap.remember(
    ))::text
 );
 
+select public.svc_note_duplicate_webhook_delivery((tap.recall('event_2')::jsonb ->> 'event_id')::uuid);
+select public.svc_note_duplicate_webhook_delivery((tap.recall('event_2')::jsonb ->> 'event_id')::uuid);
+select public.svc_note_duplicate_webhook_delivery((tap.recall('event_2')::jsonb ->> 'event_id')::uuid);
+
 select tap.reset();
 
 select tap.eq(
   (select count(*) from public.payment_events where provider_event_id = 'evt_test_dedupe_1'),
   1::bigint,
   'a replayed webhook event is stored once'
+);
+select tap.eq(
+  (select duplicate_delivery_count from public.payment_events where provider_event_id = 'evt_test_dedupe_1'),
+  3,
+  'replayed webhook deliveries are counted without storing another payload'
 );
 
 -- ─── COD limits are enforced server-side ────────────────────────────────────

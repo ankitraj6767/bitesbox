@@ -34,10 +34,10 @@ export function serveRpcProxy(functionName: string, options: ProxyOptions): void
     serveFunction(functionName, async ({ req, requestId, origin }) => {
         const body = await readJson<Record<string, unknown>>(req);
 
-        let actorId: string | null = null;
+        let actorRole: string | null = null;
         if (!options.allowAnonymous) {
             const caller = await requireCaller(req);
-            actorId = caller.userId;
+            actorRole = caller.primaryRole;
         }
 
         const client = userClient(req);
@@ -49,7 +49,7 @@ export function serveRpcProxy(functionName: string, options: ProxyOptions): void
             fn: functionName,
             request_id: requestId,
             rpc: options.rpcName,
-            actor: actorId,
+            ...(actorRole ? { role_category: actorRole.toLowerCase() } : {}),
             ...(options.logFields?.(body) ?? {}),
         });
 

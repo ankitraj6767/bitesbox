@@ -12,6 +12,7 @@ import { Field, Input } from '@/components/ui/form-controls';
 import { InlineNotice } from '@/components/ui/states';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
+import { safeAdminNextPath } from '@/lib/mfa-policy';
 
 const schema = z.object({
     email: z.string().min(1, 'Enter your email address').email('That does not look like an email'),
@@ -76,8 +77,11 @@ export function LoginForm({
 
         toast.success(`Welcome back, ${data.user.user_metadata?.full_name ?? 'there'}`);
 
-        const target = nextPath && nextPath.startsWith('/') ? nextPath : '/overview';
-        router.replace(target);
+        const target = safeAdminNextPath(nextPath) ?? '/overview';
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        router.replace(assurance?.currentLevel === 'aal2'
+            ? target
+            : `/mfa?next=${encodeURIComponent(target)}`);
         router.refresh();
     };
 

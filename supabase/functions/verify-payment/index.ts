@@ -28,7 +28,7 @@ import {
     toPaise,
     verifyPaymentSignature,
 } from "../_shared/razorpay.ts";
-import { logger } from "../_shared/logger.ts";
+import { logger, reportToSentry } from "../_shared/logger.ts";
 
 serveFunction("verify-payment", async ({ req, requestId, origin }) => {
     const caller = await requireCaller(req);
@@ -123,6 +123,13 @@ serveFunction("verify-payment", async ({ req, requestId, origin }) => {
             expected_paise: toPaise(Number(payment.amount)),
             gateway_paise: gatewayPayment.amount,
         });
+        await reportToSentry(new Error("verify_payment.amount_mismatch"), {
+            fn: "verify-payment",
+            request_id: requestId,
+            payment_id: payment.id,
+            role_category: caller.primaryRole.toLowerCase(),
+            error_code: "AMOUNT_MISMATCH",
+        });
         throw new AppError(
             "PAYMENT_FAILED",
             "The paid amount does not match this order. Our team will review it.",
@@ -131,6 +138,13 @@ serveFunction("verify-payment", async ({ req, requestId, origin }) => {
     }
 
     if ((gatewayPayment.currency ?? "INR") !== (payment.currency_code ?? "INR")) {
+        await reportToSentry(new Error("verify_payment.currency_mismatch"), {
+            fn: "verify-payment",
+            request_id: requestId,
+            payment_id: payment.id,
+            role_category: caller.primaryRole.toLowerCase(),
+            error_code: "CURRENCY_MISMATCH",
+        });
         throw new AppError("PAYMENT_FAILED", "Currency mismatch on this payment.", {
             reason: "CURRENCY_MISMATCH",
         });

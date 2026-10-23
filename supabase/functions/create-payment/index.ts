@@ -20,7 +20,7 @@ import { v } from "../_shared/validate.ts";
 import { AppError, fromPostgrestError } from "../_shared/errors.ts";
 import { razorpay, toPaise } from "../_shared/razorpay.ts";
 import { env } from "../_shared/env.ts";
-import { logger } from "../_shared/logger.ts";
+import { logger, reportToSentry } from "../_shared/logger.ts";
 
 serveFunction("create-payment", async ({ req, requestId, origin }) => {
     const caller = await requireCaller(req);
@@ -114,7 +114,9 @@ serveFunction("create-payment", async ({ req, requestId, origin }) => {
 
     const attemptNumber = (existing?.attempt_number ?? 0) + 1;
 
-    // Deterministic per (order, attempt) so a retried call reuses the gateway order.
+    // This key makes the database payment attempt idempotent. It is deliberately
+    // not sent as a provider header: Razorpay's Orders API has no documented
+    // idempotency-key contract for payment gateway orders.
     const idempotencyKey = `bb-pay-${orderId}-${attemptNumber}`;
 
     const gatewayOrder = await razorpay.createOrder({
@@ -127,7 +129,6 @@ serveFunction("create-payment", async ({ req, requestId, origin }) => {
             branch_id: order.branch_id,
             user_id: caller.userId,
         },
-        idempotencyKey,
     });
 
     // Defence in depth: the gateway must be charging exactly what we computed.
@@ -137,6 +138,13 @@ serveFunction("create-payment", async ({ req, requestId, origin }) => {
             order_id: orderId,
             expected_paise: toPaise(payable),
             gateway_paise: gatewayOrder.amount,
+        });
+        await reportToSentry(new Error("payment.gateway_amount_mismatch"), {
+            fn: "create-payment",
+            request_id: requestId,
+            order_id: orderId,
+            role_category: caller.primaryRole.toLowerCase(),
+            error_code: "PAYMENT_GATEWAY_ERROR",
         });
         throw new AppError(
             "PAYMENT_GATEWAY_ERROR",

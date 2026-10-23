@@ -51,6 +51,14 @@ class SessionController extends AsyncNotifier<AppSession> {
     state = await AsyncValue.guard(() => ref.read(authRepositoryProvider).loadSession());
   }
 
+  /// Updates the in-memory session from the profile RPC that just succeeded.
+  /// Consent changes are reflected immediately without another network read.
+  void updateProfile(UserProfile profile) {
+    final session = state.valueOrNull;
+    if (session == null || !session.authenticated || session.userId != profile.id) return;
+    state = AsyncValue.data(session.copyWith(profile: profile));
+  }
+
   Future<void> signOut({String? deviceToken}) async {
     await ref.read(authRepositoryProvider).signOut(deviceToken: deviceToken);
     state = const AsyncValue.data(AppSession.guest());

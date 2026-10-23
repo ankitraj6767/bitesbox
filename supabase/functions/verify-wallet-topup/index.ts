@@ -9,7 +9,7 @@ import { requireCaller, rpc, serviceClient } from "../_shared/supabase.ts";
 import { v } from "../_shared/validate.ts";
 import { AppError, fromPostgrestError } from "../_shared/errors.ts";
 import { fromPaise, razorpay, toPaise, verifyPaymentSignature } from "../_shared/razorpay.ts";
-import { logger } from "../_shared/logger.ts";
+import { logger, reportToSentry } from "../_shared/logger.ts";
 
 serveFunction("verify-wallet-topup", async ({ req, requestId, origin }) => {
     const caller = await requireCaller(req);
@@ -60,12 +60,26 @@ serveFunction("verify-wallet-topup", async ({ req, requestId, origin }) => {
             expected_paise: toPaise(Number(topup.amount)),
             gateway_paise: gatewayPayment.amount,
         });
+        await reportToSentry(new Error("wallet_topup.amount_mismatch"), {
+            fn: "verify-wallet-topup",
+            request_id: requestId,
+            topup_id: topup.id,
+            role_category: caller.primaryRole.toLowerCase(),
+            error_code: "AMOUNT_MISMATCH",
+        });
         throw new AppError(
             "PAYMENT_FAILED",
             "The paid amount does not match this wallet top-up. Please contact support.",
         );
     }
     if ((gatewayPayment.currency ?? "INR") !== topup.currency_code) {
+        await reportToSentry(new Error("wallet_topup.currency_mismatch"), {
+            fn: "verify-wallet-topup",
+            request_id: requestId,
+            topup_id: topup.id,
+            role_category: caller.primaryRole.toLowerCase(),
+            error_code: "CURRENCY_MISMATCH",
+        });
         throw new AppError(
             "PAYMENT_FAILED",
             "The payment currency does not match this wallet top-up.",

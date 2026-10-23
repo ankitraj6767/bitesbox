@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { LogOut, Menu, UserRound } from 'lucide-react';
+import { LogOut, Menu, ShieldCheck, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -87,6 +87,13 @@ export function Topbar({
                         <Link href="/settings/profile">
                             <UserRound />
                             My profile
+                        </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild>
+                        <Link href="/mfa">
+                            <ShieldCheck />
+                            Sign-in security
                         </Link>
                     </DropdownMenuItem>
 

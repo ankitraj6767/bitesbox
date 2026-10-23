@@ -154,8 +154,9 @@ serveFunction("process-refund", async ({ req, requestId, origin }) => {
         );
     }
 
+    let gatewayRefund: Awaited<ReturnType<typeof razorpay.createRefund>> | null = null;
     try {
-        const gatewayRefund = await razorpay.createRefund({
+        gatewayRefund = await razorpay.createRefund({
             paymentId: decision.provider_payment_id,
             amountRupees: Number(decision.amount),
             speed: "normal",
@@ -164,8 +165,6 @@ serveFunction("process-refund", async ({ req, requestId, origin }) => {
                 order_id: decision.order_id ?? "",
                 requested_by: caller.userId,
             },
-            // Deterministic per refund row, so a retried call never double-refunds.
-            idempotencyKey: `bb-refund-${decision.refund_id}`,
         });
 
         await rpc(admin, "svc_mark_refund_processing", {
@@ -212,22 +211,35 @@ serveFunction("process-refund", async ({ req, requestId, origin }) => {
             { origin, requestId },
         );
     } catch (error) {
-        // Mark it failed so finance sees it rather than a silently stuck refund.
-        await rpc(admin, "svc_fail_refund", {
-            p_refund_id: decision.refund_id,
-            p_failure_code: error instanceof AppError ? error.code : "REFUND_GATEWAY_ERROR",
-            p_failure_reason: error instanceof Error
-                ? error.message
-                : "Unknown gateway error while refunding.",
-        }).catch(() => {});
+        // A timeout/5xx may happen after Razorpay accepted the refund. Keep the
+        // row PROCESSING so the stuck-refund alert and reconciliation runbook
+        // surface it; marking it failed would enable a duplicate financial write.
+        if (gatewayRefund === null && error instanceof AppError && error.status < 500) {
+            await rpc(admin, "svc_fail_refund", {
+                p_refund_id: decision.refund_id,
+                p_failure_code: error.code,
+                p_failure_reason: error.message,
+            }).catch(() => {});
+        } else {
+            await rpc(admin, "svc_mark_refund_processing", {
+                p_refund_id: decision.refund_id,
+                p_provider_refund_id: gatewayRefund?.id ?? null,
+                p_provider_status: gatewayRefund?.status ?? "OUTCOME_UNKNOWN",
+            }).catch(() => {});
+        }
 
-        logger.error("refund.gateway_failed", {
+        logger.error("refund.gateway_outcome_unresolved", {
             request_id: requestId,
             refund_id: decision.refund_id,
             error: String(error),
         });
 
-        await reportToSentry(error, { fn: "process-refund", refundId: decision.refund_id });
+        await reportToSentry(error, {
+            fn: "process-refund",
+            request_id: requestId,
+            role_category: caller.primaryRole.toLowerCase(),
+            refund_id: decision.refund_id,
+        });
 
         throw error instanceof AppError ? error : new AppError(
             "REFUND_GATEWAY_ERROR",

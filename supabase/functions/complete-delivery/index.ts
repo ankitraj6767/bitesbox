@@ -71,8 +71,7 @@ serveFunction("complete-delivery", async ({ req, requestId, origin }) => {
                 logger.warn("delivery.manager_override_used", {
                     request_id: requestId,
                     assignment_id: assignmentId,
-                    actor: caller.userId,
-                    role: caller.primaryRole,
+                    role_category: caller.primaryRole.toLowerCase(),
                 });
             }
             break;
@@ -91,7 +90,7 @@ serveFunction("complete-delivery", async ({ req, requestId, origin }) => {
         request_id: requestId,
         step,
         assignment_id: assignmentId,
-        actor: caller.userId,
+        role_category: caller.primaryRole.toLowerCase(),
     });
 
     return jsonResponse(result, { origin, requestId });

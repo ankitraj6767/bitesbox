@@ -1,5 +1,32 @@
 import '../../../shared/json.dart';
 
+enum RiderFixDecision { accept, stale, future, outOfOrder, tooSoon }
+
+/// Shared client-side guard for OS capture times. The database repeats these
+/// checks because a mobile client is never an authorization boundary.
+RiderFixDecision evaluateRiderFix({
+  required DateTime capturedAt,
+  required DateTime now,
+  required Duration staleAfter,
+  required Duration minimumInterval,
+  DateTime? lastSent,
+}) {
+  final capturedUtc = capturedAt.toUtc();
+  final nowUtc = now.toUtc();
+  if (capturedUtc.isAfter(nowUtc.add(const Duration(seconds: 15)))) {
+    return RiderFixDecision.future;
+  }
+  if (nowUtc.difference(capturedUtc) > staleAfter) {
+    return RiderFixDecision.stale;
+  }
+  if (lastSent != null) {
+    final sinceLastSent = capturedUtc.difference(lastSent.toUtc());
+    if (sinceLastSent <= Duration.zero) return RiderFixDecision.outOfOrder;
+    if (sinceLastSent < minimumInterval) return RiderFixDecision.tooSoon;
+  }
+  return RiderFixDecision.accept;
+}
+
 /// Rider models, mirroring `public.my_deliveries()` and `public.my_earnings()`.
 
 /// Duty state, as the database enum `rider_duty_state`.
@@ -15,9 +42,9 @@ enum DutyState {
   final String label;
 
   static DutyState fromCode(String? code) => DutyState.values.firstWhere(
-        (state) => state.code == code,
-        orElse: () => DutyState.offline,
-      );
+    (state) => state.code == code,
+    orElse: () => DutyState.offline,
+  );
 
   /// The rider is reachable by dispatch.
   bool get isWorking => this == available || this == busy;
@@ -59,14 +86,14 @@ class RiderProfile {
 
   /// Why the rider cannot go on duty yet, if anything.
   String? get onboardingBlocker => switch (onboardingStatus) {
-        'ACTIVE' => null,
-        'PENDING' => 'Complete your onboarding to start accepting deliveries.',
-        'DOCUMENTS_SUBMITTED' => 'Your documents are under review.',
-        'VERIFIED' => 'Your account is verified and awaiting activation.',
-        'SUSPENDED' => 'Your account is suspended. Please contact your manager.',
-        'REJECTED' => 'Your application was not approved.',
-        _ => 'Your account is not active.',
-      };
+    'ACTIVE' => null,
+    'PENDING' => 'Complete your onboarding to start accepting deliveries.',
+    'DOCUMENTS_SUBMITTED' => 'Your documents are under review.',
+    'VERIFIED' => 'Your account is verified and awaiting activation.',
+    'SUSPENDED' => 'Your account is suspended. Please contact your manager.',
+    'REJECTED' => 'Your application was not approved.',
+    _ => 'Your account is not active.',
+  };
 
   String get firstName {
     final parts = fullName.trim().split(RegExp(r'\s+'));
@@ -74,24 +101,28 @@ class RiderProfile {
   }
 
   factory RiderProfile.fromJson(Map<String, dynamic> json) => RiderProfile(
-        id: asString(json['id']),
-        fullName: asString(json['full_name']),
-        photoPath: asStringOrNull(json['photo_path']),
-        phone: asStringOrNull(json['phone']),
-        vehicleType: asStringOrNull(json['vehicle_type']),
-        vehicleNumber: asStringOrNull(json['vehicle_number']),
-        onboardingStatus: asString(json['onboarding_status'], 'PENDING'),
-        dutyState: DutyState.fromCode(asStringOrNull(json['duty_state'])),
-        ratingAverage: asDouble(json['rating_average']),
-        totalDeliveries: asInt(json['total_deliveries']),
-        cashInHand: asDouble(json['cash_in_hand']),
-        maxConcurrentOrders: asInt(json['max_concurrent_orders'], 1),
-        activeLoad: asInt(json['active_load']),
-      );
+    id: asString(json['id']),
+    fullName: asString(json['full_name']),
+    photoPath: asStringOrNull(json['photo_path']),
+    phone: asStringOrNull(json['phone']),
+    vehicleType: asStringOrNull(json['vehicle_type']),
+    vehicleNumber: asStringOrNull(json['vehicle_number']),
+    onboardingStatus: asString(json['onboarding_status'], 'PENDING'),
+    dutyState: DutyState.fromCode(asStringOrNull(json['duty_state'])),
+    ratingAverage: asDouble(json['rating_average']),
+    totalDeliveries: asInt(json['total_deliveries']),
+    cashInHand: asDouble(json['cash_in_hand']),
+    maxConcurrentOrders: asInt(json['max_concurrent_orders'], 1),
+    activeLoad: asInt(json['active_load']),
+  );
 }
 
 class AssignmentItem {
-  const AssignmentItem({required this.name, required this.quantity, this.variant});
+  const AssignmentItem({
+    required this.name,
+    required this.quantity,
+    this.variant,
+  });
 
   final String name;
   final int quantity;
@@ -100,10 +131,10 @@ class AssignmentItem {
   String get label => variant == null ? name : '$name ($variant)';
 
   factory AssignmentItem.fromJson(Map<String, dynamic> json) => AssignmentItem(
-        name: asString(json['name']),
-        quantity: asInt(json['quantity'], 1),
-        variant: asStringOrNull(json['variant']),
-      );
+    name: asString(json['name']),
+    quantity: asInt(json['quantity'], 1),
+    variant: asStringOrNull(json['variant']),
+  );
 }
 
 class AssignmentOrder {
@@ -156,7 +187,8 @@ class AssignmentOrder {
   bool get hasCoordinates => latitude != null && longitude != null;
   bool get canCall => (customerPhone ?? '').isNotEmpty;
 
-  factory AssignmentOrder.fromJson(Map<String, dynamic> json) => AssignmentOrder(
+  factory AssignmentOrder.fromJson(Map<String, dynamic> json) =>
+      AssignmentOrder(
         id: asString(json['id']),
         orderNumber: asString(json['order_number']),
         status: asString(json['status']),
@@ -199,13 +231,13 @@ class PickupBranch {
   bool get hasCoordinates => latitude != null && longitude != null;
 
   factory PickupBranch.fromJson(Map<String, dynamic> json) => PickupBranch(
-        id: asString(json['id']),
-        name: asString(json['name'], 'Bites Box'),
-        phone: asStringOrNull(json['phone']),
-        address: asStringOrNull(json['address']),
-        latitude: asDoubleOrNull(json['latitude']),
-        longitude: asDoubleOrNull(json['longitude']),
-      );
+    id: asString(json['id']),
+    name: asString(json['name'], 'Bites Box'),
+    phone: asStringOrNull(json['phone']),
+    address: asStringOrNull(json['address']),
+    latitude: asDoubleOrNull(json['latitude']),
+    longitude: asDoubleOrNull(json['longitude']),
+  );
 }
 
 /// One live job for the rider.
@@ -252,24 +284,25 @@ class DeliveryAssignment {
 
   /// The single next action, so the rider screen only ever shows one big button.
   String get nextActionLabel => switch (status) {
-        'OFFERED' => 'Accept delivery',
-        'ACCEPTED' => 'I have reached the restaurant',
-        'AT_STORE' => 'Verify pickup code',
-        'PICKED_UP' => 'I have reached the customer',
-        'AT_CUSTOMER' => 'Complete delivery',
-        _ => 'Continue',
-      };
+    'OFFERED' => 'Accept delivery',
+    'ACCEPTED' => 'I have reached the restaurant',
+    'AT_STORE' => 'Verify pickup code',
+    'PICKED_UP' => 'I have reached the customer',
+    'AT_CUSTOMER' => 'Complete delivery',
+    _ => 'Continue',
+  };
 
   String get statusLabel => switch (status) {
-        'OFFERED' => 'New offer',
-        'ACCEPTED' => 'Head to restaurant',
-        'AT_STORE' => 'At restaurant',
-        'PICKED_UP' => 'Delivering',
-        'AT_CUSTOMER' => 'At customer',
-        _ => status,
-      };
+    'OFFERED' => 'New offer',
+    'ACCEPTED' => 'Head to restaurant',
+    'AT_STORE' => 'At restaurant',
+    'PICKED_UP' => 'Delivering',
+    'AT_CUSTOMER' => 'At customer',
+    _ => status,
+  };
 
-  factory DeliveryAssignment.fromJson(Map<String, dynamic> json) => DeliveryAssignment(
+  factory DeliveryAssignment.fromJson(Map<String, dynamic> json) =>
+      DeliveryAssignment(
         assignmentId: asString(json['assignment_id']),
         status: asString(json['status']),
         order: AssignmentOrder.fromJson(asMap(json['order'])),
@@ -306,7 +339,8 @@ class DeliveryHistoryEntry {
 
   bool get succeeded => status == 'COMPLETED';
 
-  factory DeliveryHistoryEntry.fromJson(Map<String, dynamic> json) => DeliveryHistoryEntry(
+  factory DeliveryHistoryEntry.fromJson(Map<String, dynamic> json) =>
+      DeliveryHistoryEntry(
         assignmentId: asString(json['assignment_id']),
         status: asString(json['status']),
         orderNumber: asString(json['order_number']),
@@ -324,11 +358,17 @@ class RiderDashboard {
     required this.profile,
     required this.active,
     this.history = const [],
+    this.locationSharingAssignmentId,
+    this.locationSharingEnabled = false,
+    this.lastLocationAt,
   });
 
   final RiderProfile profile;
   final List<DeliveryAssignment> active;
   final List<DeliveryHistoryEntry> history;
+  final String? locationSharingAssignmentId;
+  final bool locationSharingEnabled;
+  final DateTime? lastLocationAt;
 
   List<DeliveryAssignment> get offers =>
       active.where((assignment) => assignment.isOffer).toList();
@@ -338,7 +378,12 @@ class RiderDashboard {
 
   /// The job the rider is actually working on, if any.
   DeliveryAssignment? get current {
-    for (final status in const ['AT_CUSTOMER', 'PICKED_UP', 'AT_STORE', 'ACCEPTED']) {
+    for (final status in const [
+      'AT_CUSTOMER',
+      'PICKED_UP',
+      'AT_STORE',
+      'ACCEPTED',
+    ]) {
       for (final assignment in active) {
         if (assignment.status == status) return assignment;
       }
@@ -349,11 +394,27 @@ class RiderDashboard {
   /// GPS publishing only makes sense while a job is live.
   bool get shouldPublishLocation => current != null;
 
+  bool isSharingLocationFor(String assignmentId) =>
+      locationSharingEnabled && locationSharingAssignmentId == assignmentId;
+
+  RiderDashboard withLocationSharing({
+    String? assignmentId,
+    bool enabled = false,
+    DateTime? lastLocationAt,
+  }) => RiderDashboard(
+    profile: profile,
+    active: active,
+    history: history,
+    locationSharingAssignmentId: assignmentId,
+    locationSharingEnabled: enabled,
+    lastLocationAt: lastLocationAt,
+  );
+
   factory RiderDashboard.fromJson(Map<String, dynamic> json) => RiderDashboard(
-        profile: RiderProfile.fromJson(asMap(json['partner'])),
-        active: asList(json['active'], DeliveryAssignment.fromJson),
-        history: asList(json['history'], DeliveryHistoryEntry.fromJson),
-      );
+    profile: RiderProfile.fromJson(asMap(json['partner'])),
+    active: asList(json['active'], DeliveryAssignment.fromJson),
+    history: asList(json['history'], DeliveryHistoryEntry.fromJson),
+  );
 }
 
 class EarningsEntry {
@@ -374,39 +435,43 @@ class EarningsEntry {
   final DateTime? createdAt;
 
   String get typeLabel => switch (entryType) {
-        'DELIVERY_PAYOUT' => 'Delivery',
-        'TIP' => 'Tip',
-        'INCENTIVE' => 'Incentive',
-        'BONUS' => 'Bonus',
-        'PENALTY' => 'Penalty',
-        'ADJUSTMENT' => 'Adjustment',
-        _ => entryType,
-      };
+    'DELIVERY_PAYOUT' => 'Delivery',
+    'TIP' => 'Tip',
+    'INCENTIVE' => 'Incentive',
+    'BONUS' => 'Bonus',
+    'PENALTY' => 'Penalty',
+    'ADJUSTMENT' => 'Adjustment',
+    _ => entryType,
+  };
 
   bool get isDeduction => amount < 0;
 
   factory EarningsEntry.fromJson(Map<String, dynamic> json) => EarningsEntry(
-        id: asString(json['id']),
-        entryType: asString(json['entry_type']),
-        amount: asDouble(json['amount']),
-        description: asStringOrNull(json['description']),
-        earnedOn: asDate(json['earned_on']),
-        createdAt: asDate(json['created_at']),
-      );
+    id: asString(json['id']),
+    entryType: asString(json['entry_type']),
+    amount: asDouble(json['amount']),
+    description: asStringOrNull(json['description']),
+    earnedOn: asDate(json['earned_on']),
+    createdAt: asDate(json['created_at']),
+  );
 }
 
 class EarningsDay {
-  const EarningsDay({required this.date, required this.amount, this.deliveries = 0});
+  const EarningsDay({
+    required this.date,
+    required this.amount,
+    this.deliveries = 0,
+  });
 
   final DateTime? date;
   final double amount;
   final int deliveries;
 
   factory EarningsDay.fromJson(Map<String, dynamic> json) => EarningsDay(
-        date: asDate(json['date']),
-        amount: asDouble(json['amount']),
-        deliveries: asInt(json['deliveries']),
-      );
+    date: asDate(json['date']),
+    amount: asDouble(json['amount']),
+    deliveries: asInt(json['deliveries']),
+  );
 }
 
 class RiderEarnings {
@@ -435,16 +500,16 @@ class RiderEarnings {
   final List<EarningsEntry> entries;
 
   factory RiderEarnings.fromJson(Map<String, dynamic> json) => RiderEarnings(
-        today: asDouble(json['today']),
-        thisWeek: asDouble(json['this_week']),
-        thisMonth: asDouble(json['this_month']),
-        lifetime: asDouble(json['lifetime']),
-        cashInHand: asDouble(json['cash_in_hand']),
-        unsettledCash: asDouble(json['unsettled_cash']),
-        deliveriesToday: asInt(json['deliveries_today']),
-        daily: asList(json['daily'], EarningsDay.fromJson),
-        entries: asList(json['entries'], EarningsEntry.fromJson),
-      );
+    today: asDouble(json['today']),
+    thisWeek: asDouble(json['this_week']),
+    thisMonth: asDouble(json['this_month']),
+    lifetime: asDouble(json['lifetime']),
+    cashInHand: asDouble(json['cash_in_hand']),
+    unsettledCash: asDouble(json['unsettled_cash']),
+    deliveriesToday: asInt(json['deliveries_today']),
+    daily: asList(json['daily'], EarningsDay.fromJson),
+    entries: asList(json['entries'], EarningsEntry.fromJson),
+  );
 }
 
 /// Where to go and how much to collect, returned by `verify_pickup`.
@@ -501,14 +566,26 @@ class PickupResult {
 
 /// One onboarding document type, as the database enum `rider_document_type`.
 enum RiderDocumentType {
-  drivingLicence('DRIVING_LICENCE', 'Driving licence', 'Front side, number readable'),
+  drivingLicence(
+    'DRIVING_LICENCE',
+    'Driving licence',
+    'Front side, number readable',
+  ),
   aadhaar('AADHAAR', 'Aadhaar card', 'Any side showing your name'),
   pan('PAN', 'PAN card', 'For tax records'),
   vehicleRc('VEHICLE_RC', 'Vehicle RC', 'Registration certificate'),
   insurance('INSURANCE', 'Vehicle insurance', 'Must be currently valid'),
-  bankPassbook('BANK_PASSBOOK', 'Bank passbook', 'First page with account details'),
+  bankPassbook(
+    'BANK_PASSBOOK',
+    'Bank passbook',
+    'First page with account details',
+  ),
   profilePhoto('PROFILE_PHOTO', 'Profile photo', 'A clear photo of your face'),
-  policeVerification('POLICE_VERIFICATION', 'Police verification', 'If your outlet asks for it');
+  policeVerification(
+    'POLICE_VERIFICATION',
+    'Police verification',
+    'If your outlet asks for it',
+  );
 
   const RiderDocumentType(this.code, this.label, this.hint);
 
@@ -525,13 +602,16 @@ enum RiderDocumentType {
     return null;
   }
 
-  static String labelFor(String code) => tryFromCode(code)?.label ?? humaniseCode(code);
+  static String labelFor(String code) =>
+      tryFromCode(code)?.label ?? humaniseCode(code);
 
   static String humaniseCode(String code) => code
       .split('_')
-      .map((word) => word.isEmpty
-          ? word
-          : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+      .map(
+        (word) => word.isEmpty
+            ? word
+            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+      )
       .join(' ');
 
   /// A face photo should be a selfie; everything else is a document held up to
@@ -600,16 +680,16 @@ class RiderDocument {
       isExpired ? RiderDocumentStatus.expired : status;
 
   factory RiderDocument.fromJson(Map<String, dynamic> json) => RiderDocument(
-        id: asString(json['id']),
-        documentType: asString(json['document_type']),
-        status: RiderDocumentStatus.fromCode(asStringOrNull(json['status'])),
-        documentNumber: asStringOrNull(json['document_number']),
-        issuedOn: asDate(json['issued_on']),
-        expiresOn: asDate(json['expires_on']),
-        rejectionReason: asStringOrNull(json['rejection_reason']),
-        reviewedAt: asDate(json['reviewed_at']),
-        isRequired: asBool(json['is_required']),
-      );
+    id: asString(json['id']),
+    documentType: asString(json['document_type']),
+    status: RiderDocumentStatus.fromCode(asStringOrNull(json['status'])),
+    documentNumber: asStringOrNull(json['document_number']),
+    issuedOn: asDate(json['issued_on']),
+    expiresOn: asDate(json['expires_on']),
+    rejectionReason: asStringOrNull(json['rejection_reason']),
+    reviewedAt: asDate(json['reviewed_at']),
+    isRequired: asBool(json['is_required']),
+  );
 }
 
 /// One row in the rider's checklist: a required or submitted document type, and
@@ -635,7 +715,8 @@ class OnboardingStep {
       document == null || document!.effectiveStatus.needsAction;
 
   String get statusLabel =>
-      document?.effectiveStatus.label ?? (isRequired ? 'Not uploaded' : 'Optional');
+      document?.effectiveStatus.label ??
+      (isRequired ? 'Not uploaded' : 'Optional');
 }
 
 class RiderOnboarding {
@@ -706,17 +787,20 @@ class RiderOnboarding {
 
   /// A single sentence explaining where they are, for the top of the screen.
   String get headline => switch (onboardingStatus) {
-        'ACTIVE' => 'You are approved and ready to ride.',
-        'VERIFIED' => 'Your documents are approved. A manager will activate you shortly.',
-        'DOCUMENTS_SUBMITTED' => 'Your documents are with the team for review.',
-        'SUSPENDED' => 'Your account is on hold.',
-        'REJECTED' => 'Your application was not approved.',
-        _ => actionableSteps.isEmpty
-            ? 'Almost there — submit your documents to finish.'
-            : 'Upload ${actionableSteps.length} document(s) to get started.',
-      };
+    'ACTIVE' => 'You are approved and ready to ride.',
+    'VERIFIED' =>
+      'Your documents are approved. A manager will activate you shortly.',
+    'DOCUMENTS_SUBMITTED' => 'Your documents are with the team for review.',
+    'SUSPENDED' => 'Your account is on hold.',
+    'REJECTED' => 'Your application was not approved.',
+    _ =>
+      actionableSteps.isEmpty
+          ? 'Almost there — submit your documents to finish.'
+          : 'Upload ${actionableSteps.length} document(s) to get started.',
+  };
 
-  factory RiderOnboarding.fromJson(Map<String, dynamic> json) => RiderOnboarding(
+  factory RiderOnboarding.fromJson(Map<String, dynamic> json) =>
+      RiderOnboarding(
         deliveryPartnerId: asString(json['delivery_partner_id']),
         onboardingStatus: asString(json['onboarding_status'], 'PENDING'),
         partnerCode: asStringOrNull(json['partner_code']),

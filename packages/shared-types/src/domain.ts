@@ -885,6 +885,14 @@ export interface LiveOperations {
     generated_at: string;
 }
 
+export interface OperationalHealthAlert {
+    type: string;
+    severity: '1' | '2';
+    count: number;
+    oldest_minutes: number | null;
+    message: string;
+}
+
 // ── Delivery partner app ───────────────────────────────────────────────────
 export interface RiderAssignmentOrder {
     id: string;

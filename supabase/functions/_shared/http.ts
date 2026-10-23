@@ -5,7 +5,7 @@
 
 import { AppError, ErrorBody, fromPostgrestError, isAppError } from "./errors.ts";
 import { env } from "./env.ts";
-import { logger } from "./logger.ts";
+import { logger, reportToSentry } from "./logger.ts";
 
 const DEFAULT_ALLOWED_HEADERS = [
     "authorization",
@@ -58,7 +58,8 @@ export function jsonResponse(
 }
 
 export function newRequestId(req: Request): string {
-    return req.headers.get("x-request-id") ?? crypto.randomUUID();
+    const supplied = req.headers.get("x-request-id");
+    return supplied && /^[A-Za-z0-9._:-]{8,128}$/.test(supplied) ? supplied : crypto.randomUUID();
 }
 
 export async function readJson<T>(req: Request): Promise<T> {
@@ -134,6 +135,12 @@ export function serveFunction(
 
             if (appError.status >= 500) {
                 logger.error("request.failed", { ...logPayload, stack: stackOf(error) });
+                await reportToSentry(error, {
+                    fn: functionName,
+                    request_id: requestId,
+                    error_code: appError.code,
+                    http_status: appError.status,
+                });
             } else {
                 logger.warn("request.rejected", logPayload);
             }

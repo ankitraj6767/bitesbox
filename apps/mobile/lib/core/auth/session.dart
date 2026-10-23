@@ -80,7 +80,11 @@ class UserProfile {
     this.preferredLanguage = 'en',
     this.onboardingCompleted = false,
     this.totalOrders = 0,
-    this.marketingOptIn = true,
+    this.marketingOptIn = false,
+    this.pushEnabled = true,
+    this.smsEnabled = true,
+    this.emailEnabled = true,
+    this.whatsappEnabled = false,
   });
 
   final String id;
@@ -93,9 +97,44 @@ class UserProfile {
   final bool onboardingCompleted;
   final int totalOrders;
   final bool marketingOptIn;
+  final bool pushEnabled;
+  final bool smsEnabled;
+  final bool emailEnabled;
+  final bool whatsappEnabled;
 
   bool get isActive => status == 'ACTIVE';
   bool get isBlocked => status == 'BLOCKED';
+
+  UserProfile copyWith({
+    String? phone,
+    String? email,
+    String? fullName,
+    String? avatarUrl,
+    String? status,
+    String? preferredLanguage,
+    bool? onboardingCompleted,
+    int? totalOrders,
+    bool? marketingOptIn,
+    bool? pushEnabled,
+    bool? smsEnabled,
+    bool? emailEnabled,
+    bool? whatsappEnabled,
+  }) => UserProfile(
+        id: id,
+        phone: phone ?? this.phone,
+        email: email ?? this.email,
+        fullName: fullName ?? this.fullName,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+        status: status ?? this.status,
+        preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+        totalOrders: totalOrders ?? this.totalOrders,
+        marketingOptIn: marketingOptIn ?? this.marketingOptIn,
+        pushEnabled: pushEnabled ?? this.pushEnabled,
+        smsEnabled: smsEnabled ?? this.smsEnabled,
+        emailEnabled: emailEnabled ?? this.emailEnabled,
+        whatsappEnabled: whatsappEnabled ?? this.whatsappEnabled,
+      );
 
   /// The greeting on the home screen prefers a first name.
   String get firstName {
@@ -114,7 +153,11 @@ class UserProfile {
         preferredLanguage: (json['preferred_language'] as String?) ?? 'en',
         onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
         totalOrders: (json['total_orders'] as num?)?.toInt() ?? 0,
-        marketingOptIn: json['marketing_opt_in'] as bool? ?? true,
+        marketingOptIn: json['marketing_opt_in'] as bool? ?? false,
+        pushEnabled: json['push_enabled'] as bool? ?? true,
+        smsEnabled: json['sms_enabled'] as bool? ?? true,
+        emailEnabled: json['email_enabled'] as bool? ?? true,
+        whatsappEnabled: json['whatsapp_enabled'] as bool? ?? false,
       );
 }
 
@@ -186,6 +229,17 @@ class AppSession {
   bool can(String permission) => permissions.contains(permission);
 
   bool canAny(Iterable<String> codes) => codes.any(permissions.contains);
+
+  AppSession copyWith({UserProfile? profile}) => AppSession(
+        authenticated: authenticated,
+        userId: userId,
+        profile: profile ?? this.profile,
+        primaryRole: primaryRole,
+        roles: roles,
+        permissions: permissions,
+        branches: branches,
+        accountActive: accountActive,
+      );
 
   /// Profile is complete enough to check out.
   bool get needsProfileSetup =>

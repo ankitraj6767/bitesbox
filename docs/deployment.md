@@ -35,7 +35,7 @@ cp .env.example .env                       # fill in what you have
 # Backend
 npm run db:start                           # supabase start
 npm run db:reset                           # migrations + seeds, ~3 min
-npm run db:test                            # 10 suites, expect 10 passed
+npm run db:test                            # 11 suites, expect 11 passed
 
 # Admin
 cd apps/admin && cp ../../.env.example .env.local
@@ -46,7 +46,7 @@ cd apps/mobile && flutter pub get
 flutter run --dart-define-from-file=env/local.json
 ```
 
-`db:reset` applies all 54 migrations to an empty database and then the seven seed
+`db:reset` applies all 56 migrations to an empty database and then the seven seed
 files in order. It is the only supported way to get a working local database —
 there is no snapshot to restore.
 
@@ -115,7 +115,7 @@ push supersedes an in-flight run.
 | --- | --- | --- |
 | Database | 25 min | `supabase start` → `db reset` → `db lint --level warning` → SQL suites → assert generated types are current |
 | Edge Functions | 15 min | `deno check` each entry point, `deno lint`, `deno fmt --check` |
-| Admin dashboard | 20 min | `npm ci` → lint → typecheck → vitest → `next build` |
+| Admin dashboard | 20 min | `npm ci` → lint → typecheck → vitest → deterministic Playwright staff/refund journey → `next build` |
 | Mobile app | 25 min | `pub get` → `analyze` → `test` → debug APK |
 | Secret scan | 10 min | `scripts/check-secrets.sh` |
 

@@ -75,7 +75,6 @@ serveFunction("assign-rider", async ({ req, requestId, origin }) => {
         logger.info("dispatch.auto_selected", {
             request_id: requestId,
             order_id: orderId,
-            delivery_partner_id: riderId,
             score: best.score,
             active_load: best.active_load,
             distance_km: best.distance_to_store_km,
@@ -92,9 +91,8 @@ serveFunction("assign-rider", async ({ req, requestId, origin }) => {
     logger.info("dispatch.assigned", {
         request_id: requestId,
         order_id: orderId,
-        delivery_partner_id: riderId,
         mode,
-        actor: caller.userId,
+        role_category: caller.primaryRole.toLowerCase(),
     });
 
     return jsonResponse(result, { status: 201, origin, requestId });

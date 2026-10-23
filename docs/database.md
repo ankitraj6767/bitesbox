@@ -1,7 +1,8 @@
 # Database
 
-87 tables, 57 enums, 158 RLS policies, 102 client-callable functions, across 54
-version-controlled migrations. Nothing is created by hand in the dashboard.
+87 tables, 57 enums, 155 RLS policies, 107 client-callable functions, across 56
+version-controlled migrations in this checkout. Nothing is created by hand in
+the dashboard.
 
 ## Schemas
 
@@ -124,6 +125,8 @@ create unique index delivery_earnings_assignment_key
 | `0050 customer_group_orders` | Group rooms, memberships, host merge RPCs and guarded cart locking |
 | `0051 add_customer_group_order_fk_indexes` | Covers new group-order foreign keys |
 | `0052 serialize_cart_line_mutations_for_group_merge` | Locks the cart before any line mutation |
+| `20261023053104 storefront_white_background` | Keeps the customer storefront canvas white |
+| `20261023065006 production_readiness_preferences_tracking_mfa` | Persisted consent, delivery-scoped location writes, signed AAL2 permission checks, webhook duplicate counts, and aggregate operations health alerts |
 
 `0028a` exists on its own because PostgreSQL refuses to *use* a new enum value in the
 same transaction that adds it, and `0029` inserts notification templates for those
