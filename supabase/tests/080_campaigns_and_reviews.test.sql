@@ -248,7 +248,71 @@ select tap.reset();
 -- ═══════════════════════════════════════════════════════════════════════════
 -- REVIEW MODERATION
 -- ═══════════════════════════════════════════════════════════════════════════
-select tap.remember('review', id::text) from public.reviews order by created_at limit 1;
+-- The old app only stored an order-level rating. Verify an app-style submission
+-- now associates that rating with the delivered product even without per-item
+-- ratings, and that the public detail RPC returns it.
+select tap.as_user(tap.seed('customer_b'));
+select tap.remember(
+  'submitted_review',
+  public.submit_review(
+    tap.seed_order(6), 4::smallint, 4::smallint, null::smallint,
+    'Tasty and well packed.', array['tasty']::text[]
+  ) ->> 'review_id'
+);
+select tap.reset();
+
+select tap.remember('submitted_product', oi.product_id::text)
+from public.order_items oi
+where oi.order_id = tap.seed_order(6) and oi.product_id is not null
+limit 1;
+
+select tap.eq(
+  (select count(*) from public.review_items ri
+    where ri.review_id = tap.recall_uuid('submitted_review')),
+  (select count(*) from public.order_items oi
+    where oi.order_id = tap.seed_order(6)
+      and oi.product_id is not null
+      and not oi.is_cancelled
+      and oi.refunded_quantity < oi.quantity),
+  'an order-level score creates a review association for each delivered product'
+);
+
+select tap.as_anon();
+select tap.ok(
+  jsonb_array_length(public.product_detail(tap.recall_uuid('submitted_product'), null, null) -> 'reviews') > 0,
+  'the public product detail includes the submitted order rating'
+);
+select tap.ok(
+  jsonb_array_length(public.localized_product_detail(
+    tap.recall_uuid('submitted_product'), null, null, 'en'
+  ) -> 'reviews') > 0,
+  'the app and website localized product detail includes the rating'
+);
+select tap.reset();
+
+-- Use the just-submitted review in the publish/hide checks below.
+select tap.remember('review', tap.recall('submitted_review'));
+select tap.remember('review_product', tap.recall('submitted_product'));
+
+-- A rating remains public when the customer leaves the optional comment blank.
+update public.review_items
+set comment = null
+where review_id = tap.recall_uuid('review')
+  and product_id = tap.recall_uuid('review_product');
+
+select tap.as_anon();
+select tap.ok(
+  exists (
+    select 1
+    from jsonb_array_elements(
+      public.product_detail(tap.recall_uuid('review_product'), null, null) -> 'reviews'
+    ) review
+    where review -> 'comment' = 'null'::jsonb
+      and (review ->> 'rating')::int = 4
+  ),
+  'a public rating is returned even when it has no comment'
+);
+select tap.reset();
 
 -- ─── Direct table writes are gone ───────────────────────────────────────────
 -- The admin dashboard used to update `reviews` through a table grant, which
@@ -299,6 +363,16 @@ select tap.eq(
 );
 
 select tap.ok(
+  (select p.rating_count = (
+      select count(*)::int from public.review_items ri
+      join public.reviews r on r.id = ri.review_id
+      where ri.product_id = p.id and r.status = 'PUBLISHED'
+    )
+    from public.products p where p.id = tap.recall_uuid('review_product')),
+  'hiding a review refreshes its product rating aggregate'
+);
+
+select tap.ok(
   (select moderated_by = tap.seed('manager') and moderated_at is not null
      from public.reviews where id = tap.recall_uuid('review')),
   'the moderator is recorded'
@@ -317,6 +391,13 @@ select tap.eq(
   (select count(*) from public.reviews where id = tap.recall_uuid('review')),
   0::bigint,
   'a guest cannot see a hidden review'
+);
+select tap.eq(
+  jsonb_array_length(
+    public.product_detail(tap.recall_uuid('review_product'), null, null) -> 'reviews'
+  ),
+  0,
+  'a hidden review is removed from the public product detail'
 );
 
 select tap.reset();
@@ -343,12 +424,34 @@ select tap.ok(
   'the reply is attributed and the review is visible again'
 );
 
+select tap.ok(
+  (select p.rating_count = (
+      select count(*)::int from public.review_items ri
+      join public.reviews r on r.id = ri.review_id
+      where ri.product_id = p.id and r.status = 'PUBLISHED'
+    )
+    from public.products p where p.id = tap.recall_uuid('review_product')),
+  'publishing a review refreshes its product rating aggregate'
+);
+
 select tap.as_anon();
 
 select tap.eq(
   (select count(*) from public.reviews where id = tap.recall_uuid('review')),
   1::bigint,
   'a guest can see the review again'
+);
+select tap.ok(
+  jsonb_array_length(
+    public.product_detail(tap.recall_uuid('review_product'), null, null) -> 'reviews'
+  ) > 0,
+  'the published review appears again on public product detail'
+);
+select tap.ok(
+  jsonb_array_length(public.localized_product_detail(
+    tap.recall_uuid('review_product'), null, null, 'en'
+  ) -> 'reviews') > 0,
+  'the published review appears through the localized app and website RPC'
 );
 
 select tap.reset();
