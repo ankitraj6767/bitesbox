@@ -21,8 +21,8 @@ values ('11111111-1111-1111-1111-111111111112', 1, '10:00', '18:00', 'ALL_DAY');
 insert into public.product_availability (product_id, branch_id, state)
 select p.id, '11111111-1111-1111-1111-111111111112', 'OUT_OF_STOCK'
 from public.products p
-where p.is_active and p.deleted_at is null
-order by p.display_order, p.id
+where p.slug = 'onion-pakoda' and p.is_active and p.deleted_at is null
+order by p.id
 limit 1
 on conflict (product_id, branch_id) do update set state = excluded.state;
 
@@ -115,8 +115,8 @@ select tap.reset();
 select tap.as_user(tap.seed('customer_a'));
 select tap.remember('favorite_product', (
   select id::text from public.products
-  where is_active and deleted_at is null
-  order by display_order, id
+  where slug = 'onion-pakoda' and is_active and deleted_at is null
+  order by id
   limit 1
 ));
 select public.set_my_favorite(tap.recall_uuid('favorite_product'), true);
