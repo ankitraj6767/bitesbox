@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../routing/app_router.dart';
 import '../routing/app_navigator.dart';
+import '../routing/routes.dart';
 import 'update_controller.dart';
 import 'update_installer.dart';
 
@@ -15,35 +18,68 @@ class UpdateGate extends ConsumerStatefulWidget {
 }
 
 class _UpdateGateState extends ConsumerState<UpdateGate> {
+  late final GoRouter _router;
   bool _dialogOpen = false;
 
   @override
   void initState() {
     super.initState();
+    _router = ref.read(goRouterProvider);
+    _router.routerDelegate.addListener(_onRouteChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(updateControllerProvider.notifier).checkOnLaunch();
     });
   }
 
   @override
+  void dispose() {
+    _router.routerDelegate.removeListener(_onRouteChanged);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     ref.listen<UpdateUiState>(updateControllerProvider, (_, next) {
-      if (next.shouldPrompt && !_dialogOpen) _showDialog();
+      if (next.shouldPrompt) _showWhenAppIsReady();
     });
     return widget.child;
   }
 
+  void _onRouteChanged() => _showWhenAppIsReady();
+
+  /// The update check can finish while GoRouter is still on the boot route.
+  /// Showing a root dialog then races the session redirect, which replaces that
+  /// route and can remove the dialog. Wait until the first real destination is
+  /// active; the route listener retries as soon as that redirect completes.
+  void _showWhenAppIsReady() {
+    if (!mounted || _dialogOpen) return;
+    if (!ref.read(updateControllerProvider).shouldPrompt) return;
+    if (_router.routerDelegate.currentConfiguration.uri.path == Routes.splash) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showDialog();
+    });
+  }
+
   Future<void> _showDialog() async {
+    if (!mounted || _dialogOpen) return;
+    final update = ref.read(updateControllerProvider);
+    if (!update.shouldPrompt) return;
+    if (_router.routerDelegate.currentConfiguration.uri.path == Routes.splash) {
+      return;
+    }
+
     final navigator = appRootNavigatorKey.currentState;
-    final dialogContext = navigator?.overlay?.context;
-    if (!mounted || dialogContext == null) return;
+    if (navigator == null || !navigator.mounted) return;
 
     _dialogOpen = true;
     ref.read(updateControllerProvider.notifier).markPrompted();
     try {
       await showDialog<void>(
-        context: dialogContext,
-        barrierDismissible: !ref.read(updateControllerProvider).mandatory,
+        context: navigator.context,
+        barrierDismissible: false,
         builder: (_) => const _UpdateDialog(),
       );
     } finally {
