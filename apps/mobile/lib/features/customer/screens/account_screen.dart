@@ -65,21 +65,34 @@ class AccountScreen extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: brand.surface,
-                  borderRadius: BorderRadius.circular(brand.radiusMd),
-                  border: Border.all(color: brand.hairline),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      brand.secondary,
+                      Color.lerp(brand.secondary, brand.ink, 0.34)!,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(brand.radiusLg),
+                  boxShadow: [
+                    BoxShadow(
+                      color: brand.secondary.withValues(alpha: 0.14),
+                      blurRadius: 22,
+                      offset: const Offset(0, 9),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 26,
-                      backgroundColor: brand.primary.withValues(alpha: 0.12),
+                      backgroundColor: Colors.white.withValues(alpha: 0.15),
                       child: Text(
                         _initials(profile?.fullName),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: brand.primary,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -94,7 +107,7 @@ class AccountScreen extends ConsumerWidget {
                               fontSize: 16.5,
                               fontWeight: FontWeight.w700,
                               letterSpacing: -0.3,
-                              color: brand.ink,
+                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 3),
@@ -102,7 +115,7 @@ class AccountScreen extends ConsumerWidget {
                             profile?.phone ?? profile?.email ?? '',
                             style: TextStyle(
                               fontSize: 13,
-                              color: brand.inkMuted,
+                              color: Colors.white.withValues(alpha: 0.76),
                             ),
                           ),
                           if ((profile?.totalOrders ?? 0) > 0) ...[
@@ -112,14 +125,26 @@ class AccountScreen extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
-                                color: brand.primary,
+                                color: brand.accent,
                               ),
                             ),
                           ],
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded, color: brand.inkMuted),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 17,
+                        color: Colors.white,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -400,8 +425,15 @@ class _Group extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: brand.surface,
-              borderRadius: BorderRadius.circular(brand.radiusMd),
-              border: Border.all(color: brand.hairline),
+              borderRadius: BorderRadius.circular(brand.radiusLg),
+              border: Border.all(color: brand.hairline.withValues(alpha: 0.8)),
+              boxShadow: [
+                BoxShadow(
+                  color: brand.ink.withValues(alpha: 0.03),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -440,7 +472,15 @@ class _Tile extends StatelessWidget {
 
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, size: 21, color: brand.inkMuted),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: brand.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 19, color: brand.primary),
+      ),
       title: Text(
         label,
         style: TextStyle(

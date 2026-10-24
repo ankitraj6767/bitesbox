@@ -16,6 +16,7 @@ class BrandTokens {
     this.secondary = const Color(0xFF3D4152),
     this.accent = const Color(0xFFF7A552),
     this.canvas = Colors.white,
+    this.customerCanvas = const Color(0xFFFAF8F5),
     this.surface = Colors.white,
     this.surfaceMuted = const Color(0xFFF7F7F8),
     this.hairline = const Color(0xFFE9E9EB),
@@ -37,6 +38,7 @@ class BrandTokens {
   final Color accent;
 
   final Color canvas;
+  final Color customerCanvas;
   final Color surface;
   final Color surfaceMuted;
   final Color hairline;
@@ -86,6 +88,7 @@ class BrandTokens {
       secondary: colour('brand.color_secondary', defaults.secondary),
       accent: colour('brand.color_accent', defaults.accent),
       canvas: colour('brand.color_background', defaults.canvas),
+      customerCanvas: colour('brand.color_background', defaults.customerCanvas),
       surface: colour('brand.color_surface', defaults.surface),
       ink: colour('brand.color_text_primary', defaults.ink),
       inkMuted: colour('brand.color_text_secondary', defaults.inkMuted),

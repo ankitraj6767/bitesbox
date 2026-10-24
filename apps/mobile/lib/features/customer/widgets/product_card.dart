@@ -67,79 +67,93 @@ class ProductListCard extends ConsumerWidget {
 
     return Opacity(
       opacity: product.isAvailable ? 1 : 0.55,
-      child: InkWell(
-        onTap: () => ProductSheet.show(context, productId: product.id),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        child: Material(
+          color: brand.surface,
+          elevation: 1,
+          shadowColor: brand.ink.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            onTap: () => ProductSheet.show(context, productId: product.id),
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        FoodTypeMark(foodType: product.foodType),
-                        if (product.isBestSeller) ...[
-                          const SizedBox(width: 8),
-                          AppPill(
-                            label: 'Bestseller',
-                            icon: Icons.local_fire_department_rounded,
-                            background: brand.accent.withValues(alpha: 0.14),
-                            foreground: brand.warning,
+                        Row(
+                          children: [
+                            FoodTypeMark(foodType: product.foodType),
+                            if (product.isBestSeller) ...[
+                              const SizedBox(width: 8),
+                              AppPill(
+                                label: 'Bestseller',
+                                icon: Icons.local_fire_department_rounded,
+                                background: brand.accent.withValues(
+                                  alpha: 0.14,
+                                ),
+                                foreground: brand.warning,
+                                dense: true,
+                              ),
+                            ] else if (product.isNew) ...[
+                              const SizedBox(width: 8),
+                              AppPill(
+                                label: 'New',
+                                background: brand.secondary.withValues(
+                                  alpha: 0.10,
+                                ),
+                                foreground: brand.secondary,
+                                dense: true,
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          product.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.25,
+                            color: brand.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        _PriceRow(product: product),
+                        if (product.ratingCount > 0) ...[
+                          const SizedBox(height: 5),
+                          RatingChip(
+                            rating: product.ratingAverage,
+                            count: product.ratingCount,
                             dense: true,
                           ),
-                        ] else if (product.isNew) ...[
-                          const SizedBox(width: 8),
-                          AppPill(
-                            label: 'New',
-                            background: brand.secondary.withValues(alpha: 0.10),
-                            foreground: brand.secondary,
-                            dense: true,
+                        ],
+                        if ((product.shortDescription ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            product.shortDescription!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.35,
+                              color: brand.inkMuted,
+                            ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.25,
-                        color: brand.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    _PriceRow(product: product),
-                    if (product.ratingCount > 0) ...[
-                      const SizedBox(height: 5),
-                      RatingChip(
-                        rating: product.ratingAverage,
-                        count: product.ratingCount,
-                        dense: true,
-                      ),
-                    ],
-                    if ((product.shortDescription ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        product.shortDescription!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.35,
-                          color: brand.inkMuted,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 14),
+                  _ImageWithAction(product: product),
+                ],
               ),
-              const SizedBox(width: 14),
-              _ImageWithAction(product: product),
-            ],
+            ),
           ),
         ),
       ),

@@ -43,6 +43,8 @@ class FavoritesScreen extends ConsumerWidget {
                   final available = item.isActive && item.isAvailable;
                   return Material(
                     color: brand.surface,
+                    elevation: 1,
+                    shadowColor: brand.ink.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(brand.radiusMd),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(brand.radiusMd),
@@ -55,9 +57,9 @@ class FavoritesScreen extends ConsumerWidget {
                           children: [
                             FoodImage(
                               path: item.imagePath,
-                              width: 74,
-                              height: 74,
-                              radius: brand.radiusSm,
+                              width: 82,
+                              height: 82,
+                              radius: 14,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -66,15 +68,22 @@ class FavoritesScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     item.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.15,
                                       color: brand.ink,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     Fmt.moneySmart(item.price),
-                                    style: TextStyle(color: brand.inkMuted),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: brand.ink,
+                                    ),
                                   ),
                                   if (!available) ...[
                                     const SizedBox(height: 4),

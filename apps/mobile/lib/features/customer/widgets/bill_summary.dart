@@ -33,8 +33,15 @@ class BillSummary extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: brand.surface,
-        borderRadius: BorderRadius.circular(brand.radiusMd),
-        border: Border.all(color: brand.hairline),
+        borderRadius: BorderRadius.circular(brand.radiusLg),
+        border: Border.all(color: brand.hairline.withValues(alpha: 0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: brand.ink.withValues(alpha: 0.03),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,8 +49,8 @@ class BillSummary extends StatelessWidget {
           Text(
             'Bill details',
             style: TextStyle(
-              fontSize: 15.5,
-              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
               color: brand.ink,
             ),
           ),
@@ -63,7 +70,9 @@ class BillSummary extends StatelessWidget {
             ),
           if (totals.couponDiscount > 0)
             _Row(
-              label: couponCode == null ? 'Coupon discount' : 'Coupon $couponCode',
+              label: couponCode == null
+                  ? 'Coupon discount'
+                  : 'Coupon $couponCode',
               amount: -totals.couponDiscount,
               positive: true,
             ),
@@ -73,8 +82,9 @@ class BillSummary extends StatelessWidget {
             _Row(
               label: 'Delivery fee',
               amount: totals.deliveryFee,
-              strikethroughAmount:
-                  totals.hasDeliveryWaiver ? totals.deliveryFeeWaived : null,
+              strikethroughAmount: totals.hasDeliveryWaiver
+                  ? totals.deliveryFeeWaived
+                  : null,
               freeLabel: totals.deliveryFee == 0 ? 'FREE' : null,
             ),
           if (totals.serviceFee > 0)
@@ -120,7 +130,11 @@ class BillSummary extends StatelessWidget {
               positive: true,
             ),
             const SizedBox(height: 6),
-            _Row(label: 'To pay now', amount: totals.payableAmount, emphasis: true),
+            _Row(
+              label: 'To pay now',
+              amount: totals.payableAmount,
+              emphasis: true,
+            ),
           ],
           if (totals.hasSavings) ...[
             const SizedBox(height: 12),
@@ -219,7 +233,9 @@ class _Row extends StatelessWidget {
                     : Fmt.moneySmart(amount)),
             style: TextStyle(
               fontSize: emphasis ? 15.5 : 14,
-              fontWeight: emphasis || positive ? FontWeight.w700 : FontWeight.w600,
+              fontWeight: emphasis || positive
+                  ? FontWeight.w700
+                  : FontWeight.w600,
               color: freeLabel != null ? brand.success : colour,
             ),
           ),

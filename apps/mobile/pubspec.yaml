@@ -1,7 +1,7 @@
 name: bitesbox
 description: Bites Box — one app for customers, delivery partners and the kitchen.
 publish_to: none
-version: 1.2.14+46
+version: 1.2.15+47
 
 environment:
   sdk: ^3.9.0

@@ -32,7 +32,10 @@ class SupportListScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Help and support')),
       body: Column(
         children: [
-          _ContactStrip(phone: config?.supportPhone, whatsapp: config?.whatsappPhone),
+          _ContactStrip(
+            phone: config?.supportPhone,
+            whatsapp: config?.whatsappPhone,
+          ),
           Expanded(
             child: AsyncValueView<List<SupportTicket>>(
               value: tickets,
@@ -41,7 +44,8 @@ class SupportListScreen extends ConsumerWidget {
                 if (list.isEmpty) {
                   return const AppEmptyState(
                     title: 'No support requests',
-                    message: 'If something goes wrong with an order, raise a request and we will sort it out.',
+                    message:
+                        'If something goes wrong with an order, raise a request and we will sort it out.',
                     icon: Icons.support_agent_rounded,
                   );
                 }
@@ -56,7 +60,8 @@ class SupportListScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     itemCount: list.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) => _TicketCard(ticket: list[index]),
+                    itemBuilder: (context, index) =>
+                        _TicketCard(ticket: list[index]),
                   ),
                 );
               },
@@ -89,15 +94,26 @@ class _ContactStrip extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: brand.surface,
-        borderRadius: BorderRadius.circular(brand.radiusMd),
-        border: Border.all(color: brand.hairline),
+        borderRadius: BorderRadius.circular(brand.radiusLg),
+        border: Border.all(color: brand.hairline.withValues(alpha: 0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: brand.ink.withValues(alpha: 0.035),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               'Need to speak to someone right away?',
-              style: TextStyle(fontSize: 13.5, height: 1.4, color: brand.inkMuted),
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.4,
+                color: brand.inkMuted,
+              ),
             ),
           ),
           if (phone != null)
@@ -132,13 +148,20 @@ class _TicketCard extends StatelessWidget {
 
     return InkWell(
       onTap: () => context.push(Routes.ticket(ticket.id)),
-      borderRadius: BorderRadius.circular(brand.radiusMd),
+      borderRadius: BorderRadius.circular(brand.radiusLg),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: brand.surface,
-          borderRadius: BorderRadius.circular(brand.radiusMd),
-          border: Border.all(color: brand.hairline),
+          borderRadius: BorderRadius.circular(brand.radiusLg),
+          border: Border.all(color: brand.hairline.withValues(alpha: 0.8)),
+          boxShadow: [
+            BoxShadow(
+              color: brand.ink.withValues(alpha: 0.035),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,7 +209,8 @@ class SupportThreadScreen extends ConsumerStatefulWidget {
   final String ticketId;
 
   @override
-  ConsumerState<SupportThreadScreen> createState() => _SupportThreadScreenState();
+  ConsumerState<SupportThreadScreen> createState() =>
+      _SupportThreadScreenState();
 }
 
 class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
@@ -239,7 +263,9 @@ class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
                 children: [
                   _TicketSummary(ticket: data.ticket, order: data.order),
                   const SizedBox(height: 18),
-                  ...data.messages.map((message) => _MessageBubble(message: message)),
+                  ...data.messages.map(
+                    (message) => _MessageBubble(message: message),
+                  ),
                   if (data.messages.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 30),
@@ -348,7 +374,11 @@ class _TicketSummary extends StatelessWidget {
               onTap: () => context.push(Routes.order(order!.id)),
               child: Row(
                 children: [
-                  Icon(Icons.receipt_long_rounded, size: 15, color: brand.primary),
+                  Icon(
+                    Icons.receipt_long_rounded,
+                    size: 15,
+                    color: brand.primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     '${order!.orderNumber} · ${Fmt.moneySmart(order!.totals.grandTotal)}',
@@ -358,7 +388,11 @@ class _TicketSummary extends StatelessWidget {
                       color: brand.primary,
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, size: 17, color: brand.primary),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 17,
+                    color: brand.primary,
+                  ),
                 ],
               ),
             ),
@@ -423,7 +457,9 @@ class _MessageBubble extends StatelessWidget {
               Fmt.smartDateTime(message.createdAt),
               style: TextStyle(
                 fontSize: 10.5,
-                color: mine ? Colors.white.withValues(alpha: 0.75) : brand.inkMuted,
+                color: mine
+                    ? Colors.white.withValues(alpha: 0.75)
+                    : brand.inkMuted,
               ),
             ),
           ],
@@ -462,7 +498,9 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
     setState(() => _busy = true);
 
     try {
-      final ticketId = await ref.read(accountRepositoryProvider).createTicket(
+      final ticketId = await ref
+          .read(accountRepositoryProvider)
+          .createTicket(
             category: _category,
             subject: _subject.text,
             description: _description.text,
@@ -471,7 +509,10 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
 
       if (!mounted) return;
       ref.invalidate(supportTicketsProvider);
-      AppFeedback.showSuccess(context, 'Request raised. We will reply shortly.');
+      AppFeedback.showSuccess(
+        context,
+        'Request raised. We will reply shortly.',
+      );
 
       if (ticketId.isNotEmpty) {
         context.pushReplacement(Routes.ticket(ticketId));
@@ -530,7 +571,9 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
                   value: null,
                   child: Text('Not about a specific order'),
                 ),
-                ...orders.orders.take(15).map(
+                ...orders.orders
+                    .take(15)
+                    .map(
                       (order) => DropdownMenuItem<String?>(
                         value: order.id,
                         child: Text(
@@ -616,13 +659,17 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
   }
 
   bool get _needsItems =>
-      _category == 'MISSING_ITEM' || _category == 'WRONG_ITEM' || _category == 'FOOD_QUALITY';
+      _category == 'MISSING_ITEM' ||
+      _category == 'WRONG_ITEM' ||
+      _category == 'FOOD_QUALITY';
 
   Future<void> _submit() async {
     setState(() => _busy = true);
 
     try {
-      final ticketId = await ref.read(orderRepositoryProvider).requestHelp(
+      final ticketId = await ref
+          .read(orderRepositoryProvider)
+          .requestHelp(
             orderId: widget.order.id,
             category: _category!,
             description: _description.text,
@@ -726,14 +773,19 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 'Our team will review this and decide on any refund or credit.',
-                style: TextStyle(fontSize: 12.5, height: 1.4, color: brand.inkMuted),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.4,
+                  color: brand.inkMuted,
+                ),
               ),
             ),
             const SizedBox(height: 14),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: FilledButton(
-                onPressed: _busy ||
+                onPressed:
+                    _busy ||
                         _category == null ||
                         _description.text.trim().length < 10
                     ? null

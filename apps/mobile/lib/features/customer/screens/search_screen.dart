@@ -119,12 +119,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 return ListView.separated(
                   padding: const EdgeInsets.only(bottom: 100),
                   itemCount: data.products.length + 1,
-                  separatorBuilder: (_, __) => Divider(
-                    height: 1,
-                    color: brand.hairline,
-                    indent: 16,
-                    endIndent: 16,
-                  ),
+                  separatorBuilder: (_, __) => const SizedBox(height: 2),
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return Padding(

@@ -25,69 +25,93 @@ class CartBar extends ConsumerWidget {
 
     final blocked = quote.hasUnavailableLines;
 
+    final colours = blocked
+        ? [brand.warning, Color.lerp(brand.warning, brand.ink, 0.14)!]
+        : [brand.primary, brand.primaryDark];
+
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: SizedBox(
-        height: 64,
+        height: 68,
         child: Material(
-          color: blocked ? brand.warning : brand.primary,
-          borderRadius: BorderRadius.circular(brand.radiusMd),
-          elevation: 6,
-          shadowColor: Colors.black.withValues(alpha: 0.22),
-          child: InkWell(
-            onTap: () => context.push(Routes.cart),
-            borderRadius: BorderRadius.circular(brand.radiusMd),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(8),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(brand.radiusLg),
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: colours,
+              ),
+              borderRadius: BorderRadius.circular(brand.radiusLg),
+              boxShadow: [
+                BoxShadow(
+                  color: (blocked ? brand.warning : brand.primary).withValues(
+                    alpha: 0.25,
+                  ),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: InkWell(
+              onTap: () => context.push(Routes.cart),
+              borderRadius: BorderRadius.circular(brand.radiusLg),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 13,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 17,
+                        color: Colors.white,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 17,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${quote.unitCount} item${quote.unitCount == 1 ? '' : 's'}'
+                            ' · ${Fmt.moneySmart(quote.totals.grandTotal)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            blocked
+                                ? 'An item is unavailable — tap to fix'
+                                : (quote.totals.hasSavings
+                                      ? 'Saving ${Fmt.moneySmart(quote.totals.totalSavings)}'
+                                      : 'View cart'),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 19,
                       color: Colors.white,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${quote.unitCount} item${quote.unitCount == 1 ? '' : 's'}'
-                          ' · ${Fmt.moneySmart(quote.totals.grandTotal)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          blocked
-                              ? 'An item is unavailable — tap to fix'
-                              : (quote.totals.hasSavings
-                                    ? 'Saving ${Fmt.moneySmart(quote.totals.totalSavings)}'
-                                    : 'View cart'),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 12.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 19,
-                    color: Colors.white,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

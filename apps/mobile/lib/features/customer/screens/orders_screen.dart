@@ -43,7 +43,10 @@ class OrdersScreen extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('Your orders'),
           bottom: const TabBar(
-            tabs: [Tab(text: 'Active'), Tab(text: 'Past')],
+            tabs: [
+              Tab(text: 'Active'),
+              Tab(text: 'Past'),
+            ],
           ),
         ),
         body: const TabBarView(
@@ -96,7 +99,8 @@ class _OrderList extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             itemCount: list.orders.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) => _OrderCard(order: list.orders[index]),
+            itemBuilder: (context, index) =>
+                _OrderCard(order: list.orders[index]),
           ),
         );
       },
@@ -121,16 +125,25 @@ class _OrderCard extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: brand.surface,
-        borderRadius: BorderRadius.circular(brand.radiusMd),
-        border: Border.all(color: brand.hairline),
+        borderRadius: BorderRadius.circular(brand.radiusLg),
+        border: Border.all(color: brand.hairline.withValues(alpha: 0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: brand.ink.withValues(alpha: 0.035),
+            blurRadius: 20,
+            offset: const Offset(0, 7),
+          ),
+        ],
       ),
       child: Column(
         children: [
           InkWell(
             onTap: () => context.push(Routes.order(order.id)),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(brand.radiusMd)),
-            child: Padding
-              (padding: const EdgeInsets.all(14),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(brand.radiusLg),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -158,9 +171,9 @@ class _OrderCard extends ConsumerWidget {
                           padding: const EdgeInsets.only(right: 12),
                           child: FoodImage(
                             path: order.itemsPreview.first.imagePath,
-                            width: 48,
-                            height: 48,
-                            radius: 10,
+                            width: 58,
+                            height: 58,
+                            radius: 14,
                           ),
                         ),
                       Expanded(
@@ -172,8 +185,8 @@ class _OrderCard extends ConsumerWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
                                 height: 1.35,
                                 color: brand.ink,
                               ),
@@ -182,7 +195,10 @@ class _OrderCard extends ConsumerWidget {
                             Text(
                               '${order.orderNumber} · ${Fmt.moneySmart(order.grandTotal)}'
                               '${order.isPickup ? ' · Pickup' : ''}',
-                              style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: brand.inkMuted,
+                              ),
                             ),
                           ],
                         ),
@@ -198,7 +214,11 @@ class _OrderCard extends ConsumerWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Icon(Icons.schedule_rounded, size: 14, color: brand.secondary),
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 14,
+                          color: brand.secondary,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           order.isPickup
@@ -316,7 +336,11 @@ class _CardAction extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: emphasis ? brand.primary : brand.inkMuted),
+            Icon(
+              icon,
+              size: 16,
+              color: emphasis ? brand.primary : brand.inkMuted,
+            ),
             const SizedBox(width: 7),
             Text(
               label,

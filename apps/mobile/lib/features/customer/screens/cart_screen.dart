@@ -78,7 +78,10 @@ class CartScreen extends ConsumerWidget {
               ...quote.blockingIssues.map(
                 (issue) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: AppNotice(tone: NoticeTone.critical, message: issue.message),
+                  child: AppNotice(
+                    tone: NoticeTone.critical,
+                    message: issue.message,
+                  ),
                 ),
               ),
               ...quote.warnings.map(
@@ -87,17 +90,64 @@ class CartScreen extends ConsumerWidget {
                   child: AppNotice(message: issue.message),
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 4, 2, 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.restaurant_rounded,
+                      size: 17,
+                      color: brand.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'YOUR PICKS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                        color: brand.inkMuted,
+                      ),
+                    ),
+                    const Spacer(),
+                    AppPill(
+                      label: l10n.cartItemCount(quote.unitCount),
+                      background: brand.surface,
+                      foreground: brand.inkMuted,
+                      dense: true,
+                    ),
+                  ],
+                ),
+              ),
               Container(
                 decoration: BoxDecoration(
                   color: brand.surface,
-                  borderRadius: BorderRadius.circular(brand.radiusMd),
-                  border: Border.all(color: brand.hairline),
+                  borderRadius: BorderRadius.circular(brand.radiusLg),
+                  border: Border.all(
+                    color: brand.hairline.withValues(alpha: 0.85),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: brand.ink.withValues(alpha: 0.035),
+                      blurRadius: 18,
+                      offset: const Offset(0, 7),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
-                    for (var index = 0; index < quote.lines.length; index++) ...[
+                    for (
+                      var index = 0;
+                      index < quote.lines.length;
+                      index++
+                    ) ...[
                       if (index > 0)
-                        Divider(height: 1, color: brand.hairline, indent: 14, endIndent: 14),
+                        Divider(
+                          height: 1,
+                          color: brand.hairline,
+                          indent: 14,
+                          endIndent: 14,
+                        ),
                       _CartLineTile(line: quote.lines[index]),
                     ],
                   ],
@@ -110,7 +160,8 @@ class CartScreen extends ConsumerWidget {
               BillSummary(
                 totals: quote.totals,
                 couponCode: quote.appliedCouponCode,
-                promotionLabel: quote.promotion?.headline ?? quote.promotion?.name,
+                promotionLabel:
+                    quote.promotion?.headline ?? quote.promotion?.name,
                 isDelivery: quote.isDelivery,
               ),
             ],
@@ -152,11 +203,11 @@ class _CartLineTile extends ConsumerWidget {
     final busy = ref.watch(cartProvider).isLoading;
 
     return Padding(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FoodImage(path: line.imagePath, width: 52, height: 52, radius: 10),
+          FoodImage(path: line.imagePath, width: 64, height: 64, radius: 13),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -182,14 +233,22 @@ class _CartLineTile extends ConsumerWidget {
                   const SizedBox(height: 3),
                   Text(
                     line.configurationLabel,
-                    style: TextStyle(fontSize: 12.5, height: 1.3, color: brand.inkMuted),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.3,
+                      color: brand.inkMuted,
+                    ),
                   ),
                 ],
                 if ((line.specialInstructions ?? '').isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.edit_note_rounded, size: 13, color: brand.inkMuted),
+                      Icon(
+                        Icons.edit_note_rounded,
+                        size: 13,
+                        color: brand.inkMuted,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -208,7 +267,11 @@ class _CartLineTile extends ConsumerWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.error_outline_rounded, size: 14, color: brand.error),
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: brand.error,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         l10n.unavailableRemoveToContinue,
@@ -260,7 +323,11 @@ class _CartLineTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _setQuantity(BuildContext context, WidgetRef ref, int quantity) async {
+  Future<void> _setQuantity(
+    BuildContext context,
+    WidgetRef ref,
+    int quantity,
+  ) async {
     try {
       await ref
           .read(cartProvider.notifier)
@@ -291,7 +358,9 @@ class _CouponRow extends ConsumerWidget {
           color: brand.surface,
           borderRadius: BorderRadius.circular(brand.radiusMd),
           border: Border.all(
-            color: applied == null ? brand.hairline : brand.success.withValues(alpha: 0.5),
+            color: applied == null
+                ? brand.hairline
+                : brand.success.withValues(alpha: 0.5),
           ),
         ),
         child: Row(
@@ -325,7 +394,10 @@ class _CouponRow extends ConsumerWidget {
                         ),
                         Text(
                           'Saving ${Fmt.moneySmart(quote.totals.couponDiscount)}',
-                          style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: brand.inkMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -336,7 +408,11 @@ class _CouponRow extends ConsumerWidget {
                 child: Text(l10n.remove),
               )
             else
-              Icon(Icons.chevron_right_rounded, size: 20, color: brand.inkMuted),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: brand.inkMuted,
+              ),
           ],
         ),
       ),
@@ -364,8 +440,9 @@ class _FreeDeliveryNudge extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final shortfall =
-        quote.delivery.shortfallToFreeDelivery(quote.totals.itemsSubtotal);
+    final shortfall = quote.delivery.shortfallToFreeDelivery(
+      quote.totals.itemsSubtotal,
+    );
     if (shortfall == null) return const SizedBox.shrink();
 
     return Padding(
