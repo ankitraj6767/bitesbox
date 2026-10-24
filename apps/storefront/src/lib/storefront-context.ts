@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { localeFrom, type Locale } from '@/lib/site';
+import { getCachedPublicOutlets } from '@/lib/public-storefront-cache';
 
 export interface Outlet {
     id: string;
@@ -22,13 +23,18 @@ interface CustomerSessionPayload {
 
 export const storefrontContext = cache(async function storefrontContext() {
     const supabase = await createSupabaseServerClient();
-    const [outletResult, userResult, jar] = await Promise.all([
-        supabase.rpc('public_outlets'),
-        supabase.auth.getUser(),
+    const [outletsResult, claimsResult, jar] = await Promise.all([
+        getCachedPublicOutlets().catch(() => []),
+        supabase.auth.getClaims(),
         cookies(),
     ]);
-    const outlets = (outletResult.data ?? []) as unknown as Outlet[];
-    const user = userResult.data.user;
+    const outlets = (outletsResult ?? []) as unknown as Outlet[];
+    // `getClaims` verifies the signed access token and avoids a redundant
+    // `/auth/v1/user` request after middleware has refreshed the cookie.
+    const userId = typeof claimsResult.data?.claims.sub === 'string'
+        ? claimsResult.data.claims.sub
+        : null;
+    const user = userId ? { id: userId } : null;
     let session: CustomerSessionPayload | null = null;
     if (user) {
         const { data } = await supabase.rpc('my_session');

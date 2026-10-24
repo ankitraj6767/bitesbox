@@ -4,17 +4,21 @@ import { ProductTile, type Product } from '@/components/product-tile';
 import { storefrontContext } from '@/lib/storefront-context';
 import { messages } from '@/lib/site';
 import { StorefrontEvent } from '@/components/storefront-event';
+import { getCachedPublicMenuCatalog } from '@/lib/public-storefront-cache';
 
 export async function CatalogScreen({ query = '', categoryId }: { query?: string; categoryId?: string }) {
     const context = await storefrontContext();
     const { supabase, outlets, outlet, locale, user } = context;
     const t = messages[locale];
+    const catalogRequest = outlet
+        ? query.trim()
+            ? supabase.rpc('localized_search_menu', { p_query: query.trim(), p_branch_id: outlet.id, p_locale: locale, p_limit: 50 })
+            : getCachedPublicMenuCatalog(outlet.id, locale)
+                .then((data) => ({ data, error: null }))
+                .catch(() => ({ data: null, error: new Error('Menu is temporarily unavailable.') }))
+        : Promise.resolve({ data: null, error: null });
     const [catalogResult, favoriteResult] = await Promise.all([
-        outlet
-            ? query.trim()
-                ? supabase.rpc('localized_search_menu', { p_query: query.trim(), p_branch_id: outlet.id, p_locale: locale, p_limit: 50 })
-                : supabase.rpc('localized_menu_catalog', { p_branch_id: outlet.id, p_locale: locale })
-            : Promise.resolve({ data: null, error: null }),
+        catalogRequest,
         user
             ? supabase.rpc('my_favorites', { p_branch_id: outlet?.id, p_locale: locale })
             : Promise.resolve({ data: null, error: null }),

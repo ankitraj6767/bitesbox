@@ -9,6 +9,7 @@ import { StorefrontHeader } from '@/components/storefront-header';
 import { storefrontContext } from '@/lib/storefront-context';
 import { messages, storageUrl } from '@/lib/site';
 import { StorefrontEvent } from '@/components/storefront-event';
+import { getCachedPublicProduct } from '@/lib/public-storefront-cache';
 
 interface ProductDetail {
     id: string; name: string; slug: string; description?: string | null; short_description?: string | null;
@@ -20,14 +21,12 @@ const loadProduct = cache(async (slug: string) => {
     const context = await storefrontContext();
     if (!context.outlet) return { context, product: null, favorite: false };
     const [productResult, favoritesResult] = await Promise.all([
-        context.supabase.rpc('localized_product_detail', {
-            p_slug: slug, p_branch_id: context.outlet.id, p_locale: context.locale,
-        }),
+        getCachedPublicProduct(slug, context.outlet.id, context.locale).catch(() => null),
         context.user
             ? context.supabase.rpc('my_favorites', { p_branch_id: context.outlet.id, p_locale: context.locale })
             : Promise.resolve({ data: null, error: null }),
     ]);
-    const product = productResult.data as unknown as ProductDetail | null;
+    const product = productResult as unknown as ProductDetail | null;
     const favorite = product
         ? ((favoritesResult.data ?? []) as Array<{ id?: string }>).some((row) => row.id === product.id)
         : false;

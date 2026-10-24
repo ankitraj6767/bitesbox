@@ -7,7 +7,7 @@ import { hasBackOfficeRole, safeAdminNextPath, staffNeedsMfa } from '@/lib/mfa-p
 const PUBLIC_PATHS = ['/login', '/auth/callback', '/auth/signout', '/no-access'];
 
 /**
- * Refreshes the Supabase session on every request and gates the dashboard.
+ * Revalidates the Supabase session and gates the dashboard.
  *
  * Middleware refreshes/revalidates the cookie session and handles login,
  * MFA-entry and root redirects. Dashboard routes resolve live roles, permissions
@@ -42,22 +42,29 @@ export async function updateSession(request: NextRequest) {
         },
     );
 
-    // getUser() (not getSession()) revalidates the JWT against the auth server.
+    // Keep Auth's server-side user check on admin requests so revoked or
+    // deleted sessions are not allowed through based on a still-valid JWT.
     const {
         data: { user },
     } = await supabase.auth.getUser();
+    const userId = user?.id ?? null;
 
+    /*
+     * Authenticated route access is only a navigation gate. The dashboard
+     * layout and each page still re-read live roles/permissions and assurance,
+     * and all data mutations remain protected by RPC/RLS boundaries.
+     */
     const { pathname } = request.nextUrl;
     const isPublic = PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
-    if (!user && !isPublic) {
+    if (!userId && !isPublic) {
         const loginUrl = request.nextUrl.clone();
         loginUrl.pathname = '/login';
         loginUrl.searchParams.set('next', pathname);
         return NextResponse.redirect(loginUrl);
     }
 
-    if (user && (pathname === '/login' || pathname === '/' || pathname === '/mfa')) {
+    if (userId && (pathname === '/login' || pathname === '/' || pathname === '/mfa')) {
         const { data: session } = await supabase.rpc('my_session');
         const roles = (session as { roles?: Array<{ role?: string }> } | null)?.roles ?? [];
         const backOffice = hasBackOfficeRole(roles.map((grant) => grant.role ?? ''));

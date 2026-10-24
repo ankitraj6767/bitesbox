@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { StorefrontHeader } from '@/components/storefront-header';
 import { storefrontContext } from '@/lib/storefront-context';
 import { messages } from '@/lib/site';
+import { getCachedPublicOffers } from '@/lib/public-storefront-cache';
 
 export const metadata: Metadata = { title: 'Offers', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export default async function OffersPage() {
     const t = messages[context.locale];
     const [publicResult, applicableResult] = await Promise.all([
         context.outlet
-            ? context.supabase.rpc('public_storefront_offers', { p_branch_id: context.outlet.id, p_locale: context.locale })
+            ? getCachedPublicOffers(context.outlet.id, context.locale).then((data) => ({ data })).catch(() => ({ data: null }))
             : Promise.resolve({ data: null }),
         context.user && context.outlet
             ? context.supabase.rpc('localized_available_coupons', { p_branch_id: context.outlet.id, p_locale: context.locale })

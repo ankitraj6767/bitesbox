@@ -10,22 +10,25 @@ import type { Permission, Session } from '@bitesbox/shared-types';
  * Loads identity, live permissions and branch scope for a protected request.
  *
  * `cache()` dedupes this across a single render pass, so a page and its nested
- * server components share one query. Permissions come from the database (not the
- * JWT), so revoking access takes effect on the next request.
+ * server components share one query. Signed claims validate identity while the
+ * RPC resolves roles and permissions live from the database, so permission
+ * changes take effect on the next request.
  */
 export const getSession = cache(async (): Promise<Session> => {
     const supabase = await createSupabaseServerClient();
 
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-    const claims = claimsData?.claims;
+    // Claims verification and the live RBAC lookup are independent. Run them
+    // together so every protected page avoids an avoidable Auth → PostgREST
+    // waterfall. `my_session` remains authoritative for current roles and
+    // permissions; signed claims are used only to validate the identity/AAL.
+    const [claimsResult, sessionResult] = await Promise.all([
+        supabase.auth.getClaims(),
+        supabase.rpc('my_session'),
+    ]);
+    const claims = claimsResult.data?.claims;
+    const data = sessionResult.data;
 
-    // Middleware has just revalidated/rotated this cookie with getUser().
-    // Verify the signed claims here without repeating its Auth-server lookup.
-    if (claimsError || typeof claims?.sub !== 'string') return { authenticated: false };
-
-    const { data, error } = await supabase.rpc('my_session');
-
-    if (error || !data) {
+    if (claimsResult.error || typeof claims?.sub !== 'string' || sessionResult.error || !data) {
         return { authenticated: false };
     }
 
