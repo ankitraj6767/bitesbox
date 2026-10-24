@@ -1519,6 +1519,7 @@ export type Database = {
           segment: Database["public"]["Enums"]["audience_segment"] | null;
           starts_at: string;
           terms: string | null;
+          terms_hi: string | null;
           title: string;
           title_hi: string | null;
           total_used: number;
@@ -1562,6 +1563,7 @@ export type Database = {
           segment?: Database["public"]["Enums"]["audience_segment"] | null;
           starts_at?: string;
           terms?: string | null;
+          terms_hi?: string | null;
           title: string;
           title_hi?: string | null;
           total_used?: number;
@@ -1605,6 +1607,7 @@ export type Database = {
           segment?: Database["public"]["Enums"]["audience_segment"] | null;
           starts_at?: string;
           terms?: string | null;
+          terms_hi?: string | null;
           title?: string;
           title_hi?: string | null;
           total_used?: number;
@@ -7000,6 +7003,10 @@ export type Database = {
         Args: { p_branch_id?: string; p_locale?: string };
         Returns: Json;
       };
+      localized_customer_notifications: {
+        Args: { p_limit?: number; p_locale?: string };
+        Returns: Json;
+      };
       localized_home_feed: {
         Args: { p_branch_id?: string; p_locale?: string };
         Returns: Json;
@@ -7028,6 +7035,10 @@ export type Database = {
           p_locale?: string;
           p_query: string;
         };
+        Returns: Json;
+      };
+      localized_search_suggestions: {
+        Args: { p_branch_id?: string; p_locale?: string };
         Returns: Json;
       };
       manage_user_role: {
