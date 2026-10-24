@@ -350,6 +350,7 @@ export async function CatalogScreen({
                       product={product}
                       favorite={favoriteIds.has(product.id)}
                       locale={locale}
+                      linkContext={t.freshEyebrow}
                     />
                   ))}
                 </div>

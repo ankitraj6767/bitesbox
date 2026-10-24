@@ -29,11 +29,13 @@ export function ProductTile({
   favorite,
   locale,
   reason,
+  linkContext,
 }: {
   product: Product;
   favorite: boolean;
   locale: Locale;
   reason?: string;
+  linkContext?: string;
 }) {
   const image = storageUrl(product.thumbnail_path ?? product.hero_image_path);
   const t = messages[locale];
@@ -113,7 +115,12 @@ export function ProductTile({
             }
           />
           <h3>
-            <Link href={`/menu/${encodeURIComponent(product.slug)}`}>
+            <Link
+              href={`/menu/${encodeURIComponent(product.slug)}`}
+              aria-label={
+                linkContext ? `${linkContext}: ${product.name}` : undefined
+              }
+            >
               {product.name}
             </Link>
           </h3>
