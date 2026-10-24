@@ -12,6 +12,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@bitesbox/shared-types": "*",
     "@supabase/ssr": "0.7.0",
     "@supabase/supabase-js": "2.58.0",
     "lucide-react": "0.544.0",
