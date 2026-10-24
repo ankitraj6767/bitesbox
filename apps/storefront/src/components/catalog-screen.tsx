@@ -192,6 +192,7 @@ export async function CatalogScreen({
                   <Link
                     className="hero-dish-caption"
                     href={`/menu/${encodeURIComponent(heroProduct.slug)}`}
+                    aria-label={`${t.featuredDish}: ${heroProduct.name}`}
                   >
                     <span className="hero-caption-kicker">
                       {t.featuredDish}
