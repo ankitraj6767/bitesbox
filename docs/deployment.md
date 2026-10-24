@@ -13,6 +13,12 @@ Staging and production are separate Supabase projects, not schemas in one.
 Sharing a project means a migration under test can lock a table a real restaurant
 is taking orders through.
 
+The web app Vercel Functions are pinned to `bom1` (Mumbai) in the root, admin,
+and storefront Vercel configs. This keeps request compute near the primary
+customer and staff audience while reducing the round trip to the Tokyo Supabase
+project. Static assets remain served through Vercel's global CDN. Update the
+matching app config if the data region or primary audience changes.
+
 ## Prerequisites
 
 ```
