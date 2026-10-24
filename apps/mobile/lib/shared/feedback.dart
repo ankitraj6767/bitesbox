@@ -59,7 +59,10 @@ abstract final class AppFeedback {
               Icon(icon, size: 18, color: Colors.white),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(message, style: const TextStyle(color: Colors.white)),
+                child: Text(
+                  message,
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -113,9 +116,11 @@ abstract final class AppFeedback {
     required WidgetBuilder builder,
     bool isDismissible = true,
     bool expand = false,
+    bool useRootNavigator = false,
   }) {
     return showModalBottomSheet<T>(
       context: context,
+      useRootNavigator: useRootNavigator,
       isScrollControlled: true,
       isDismissible: isDismissible,
       enableDrag: isDismissible,
@@ -125,7 +130,10 @@ abstract final class AppFeedback {
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
         ),
         child: expand
-            ? FractionallySizedBox(heightFactor: 0.92, child: builder(sheetContext))
+            ? FractionallySizedBox(
+                heightFactor: 0.98,
+                child: builder(sheetContext),
+              )
             : builder(sheetContext),
       ),
     );
@@ -134,7 +142,12 @@ abstract final class AppFeedback {
 
 /// A section title used inside bottom sheets.
 class SheetHeader extends StatelessWidget {
-  const SheetHeader({required this.title, this.subtitle, this.trailing, super.key});
+  const SheetHeader({
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    super.key,
+  });
 
   final String title;
   final String? subtitle;
@@ -165,7 +178,11 @@ class SheetHeader extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     subtitle!,
-                    style: TextStyle(fontSize: 13.5, color: brand.inkMuted, height: 1.35),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: brand.inkMuted,
+                      height: 1.35,
+                    ),
                   ),
                 ],
               ],

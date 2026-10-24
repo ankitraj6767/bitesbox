@@ -25,6 +25,7 @@ class ProductSheet extends ConsumerStatefulWidget {
     return AppFeedback.sheet<void>(
       context,
       expand: true,
+      useRootNavigator: true,
       builder: (_) => ProductSheet(productId: productId),
     );
   }
