@@ -75,6 +75,7 @@ sql_paths = [
   "./seeds/21_customer_hindi_menu.sql",
   "./seeds/22_menu_expansion.sql",
   "./seeds/23_menu_expansion_hindi.sql",
+  "./seeds/24_menu_expansion_configuration.sql",
   "./seeds/30_content_promotions.sql",
   "./seeds/31_customer_hindi_cms.sql",
   "./seeds/32_customer_hindi_notifications.sql",

@@ -674,8 +674,9 @@ export function ProductForm({
 
                     {productId ? (
                         <InlineNotice tone="info">
-                            Variants and add-ons are managed from the dish page once saved. Availability is
-                            controlled from the Availability screen so the kitchen can change it mid-service.
+                            Use the Options and Add-on groups sections below to manage portions, sizes, and
+                            customer customizations. Live availability remains in the Availability screen so
+                            the kitchen can change it mid-service.
                         </InlineNotice>
                     ) : null}
                 </div>

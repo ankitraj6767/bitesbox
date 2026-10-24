@@ -3,12 +3,10 @@ import { notFound } from 'next/navigation';
 import { hasPermission, requirePermission } from '@/lib/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
-import { Card, CardContent, CardToolbar } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ProductForm } from '@/features/menu/product-form';
+import { ProductConfigurationEditor } from '@/features/menu/product-configuration-editor';
 import { CatalogTranslationEditor } from '@/features/menu/catalog-translation-editor';
 import { PERMISSIONS } from '@bitesbox/shared-types';
-import { money, humanise } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +32,7 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
     const isNew = id === 'new';
     const supabase = await createSupabaseServerClient();
 
-    const [productResult, categoriesResult, taxResult] = await Promise.all([
+    const [productResult, categoriesResult, taxResult, modifierGroupsResult] = await Promise.all([
         isNew
             ? Promise.resolve({ data: null, error: null })
             : supabase
@@ -45,8 +43,8 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
              calories, tax_category_id, max_quantity_per_order, is_active, is_featured,
              is_best_seller, is_new, is_recommended, is_combo, allows_special_instructions,
              search_keywords, meta_title, meta_description,
-             product_variants(id, name, name_hi, option_group, option_group_hi, price, availability, is_default, is_active),
-             product_modifier_groups(id, modifier_group_id, display_order, modifier_groups(name, name_hi, description_hi, selection, is_required, modifiers(id, name, name_hi, description_hi)))`,
+             product_variants(id, name, name_hi, option_group, option_group_hi, sku, price, compare_price, calories, serves_count, preparation_minutes, availability, is_default, is_active, display_order, deleted_at),
+             product_modifier_groups(id, modifier_group_id, is_required, min_select, max_select, display_order, modifier_groups(id, name, name_hi, description, description_hi, selection, is_required, min_select, max_select, modifiers(id, name, name_hi, description_hi, price, food_type, is_active, deleted_at)))`,
                 )
                 .eq('id', id)
                 .is('deleted_at', null)
@@ -61,9 +59,17 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
             .select('id, code, name, rate')
             .is('deleted_at', null)
             .order('code'),
+        isNew
+            ? Promise.resolve({ data: [], error: null })
+            : supabase
+                .from('modifier_groups')
+                .select('id, name, name_hi, description, selection, is_required, min_select, max_select, display_order, is_active, modifiers(id, name, name_hi, price, food_type, is_active, deleted_at)')
+                .is('deleted_at', null)
+                .order('display_order'),
     ]);
 
     if (!isNew && (productResult.error || !productResult.data)) notFound();
+    if (!isNew && modifierGroupsResult.error) throw modifierGroupsResult.error;
 
     const product = productResult.data;
     const categories = (categoriesResult.data ?? []).map((category) => ({
@@ -135,80 +141,57 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
             />
 
             {product ? (
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <Card>
-                        <CardToolbar
-                            title="Options"
-                            description="Sizes and portions the customer chooses between"
-                        />
-                        <CardContent className="p-0">
-                            {(product.product_variants ?? []).length === 0 ? (
-                                <p className="px-5 py-6 text-[13px] text-ink-muted">
-                                    No options — this dish is sold at a single size.
-                                </p>
-                            ) : (
-                                <ul className="divide-y divide-hairline">
-                                    {(product.product_variants ?? []).map((variant) => (
-                                        <li key={variant.id} className="flex items-center gap-3 px-5 py-2.5">
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-[13px] font-medium text-ink">
-                                                    {variant.name}
-                                                    <span className="ml-1.5 text-[11.5px] font-normal text-ink-muted">
-                                                        {variant.option_group}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                            {variant.is_default ? (
-                                                <Badge tone="brand" className="px-1.5 py-0">
-                                                    Default
-                                                </Badge>
-                                            ) : null}
-                                            <Badge tone={variant.availability === 'AVAILABLE' ? 'positive' : 'critical'}>
-                                                {humanise(variant.availability)}
-                                            </Badge>
-                                            <span className="tnum shrink-0 text-[13px] font-semibold text-ink">
-                                                {money(variant.price)}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardToolbar
-                            title="Add-on groups"
-                            description="Modifier groups attached to this dish"
-                        />
-                        <CardContent className="p-0">
-                            {(product.product_modifier_groups ?? []).length === 0 ? (
-                                <p className="px-5 py-6 text-[13px] text-ink-muted">No add-on groups attached.</p>
-                            ) : (
-                                <ul className="divide-y divide-hairline">
-                                    {(product.product_modifier_groups ?? [])
-                                        .slice()
-                                        .sort((a, b) => a.display_order - b.display_order)
-                                        .map((link) => (
-                                            <li key={link.id} className="flex items-center gap-3 px-5 py-2.5">
-                                                <span className="min-w-0 flex-1 text-[13px] font-medium text-ink">
-                                                    {link.modifier_groups?.name ?? 'Group'}
-                                                </span>
-                                                <Badge tone="neutral" className="px-1.5 py-0">
-                                                    {link.modifier_groups?.selection === 'SINGLE' ? 'Pick one' : 'Pick many'}
-                                                </Badge>
-                                                {link.modifier_groups?.is_required ? (
-                                                    <Badge tone="caution" className="px-1.5 py-0">
-                                                        Required
-                                                    </Badge>
-                                                ) : null}
-                                            </li>
-                                        ))}
-                                </ul>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                <ProductConfigurationEditor
+                    productId={product.id}
+                    basePrice={Number(product.base_price)}
+                    variants={(product.product_variants ?? []).filter((variant) => variant.deleted_at === null).map((variant) => ({
+                        id: variant.id,
+                        name: variant.name,
+                        name_hi: variant.name_hi,
+                        option_group: variant.option_group,
+                        option_group_hi: variant.option_group_hi,
+                        sku: variant.sku,
+                        price: Number(variant.price),
+                        compare_price: variant.compare_price === null ? null : Number(variant.compare_price),
+                        calories: variant.calories,
+                        serves_count: variant.serves_count,
+                        preparation_minutes: variant.preparation_minutes,
+                        is_default: variant.is_default,
+                        is_active: variant.is_active,
+                        display_order: variant.display_order,
+                        availability: variant.availability,
+                    }))}
+                    modifierGroups={(modifierGroupsResult.data ?? []).map((group) => ({
+                        id: group.id,
+                        name: group.name,
+                        name_hi: group.name_hi,
+                        description: group.description,
+                        is_active: group.is_active,
+                        selection: group.selection,
+                        is_required: group.is_required,
+                        min_select: group.min_select,
+                        max_select: group.max_select,
+                        display_order: group.display_order,
+                        modifiers: (group.modifiers ?? []).filter((modifier) => modifier.deleted_at === null).map((modifier) => ({
+                            id: modifier.id,
+                            name: modifier.name,
+                            name_hi: modifier.name_hi,
+                            price: Number(modifier.price),
+                            food_type: modifier.food_type,
+                            is_active: modifier.is_active,
+                        })),
+                    }))}
+                    productGroupLinks={(product.product_modifier_groups ?? []).map((link) => ({
+                        id: link.id,
+                        modifier_group_id: link.modifier_group_id,
+                        is_required: link.is_required,
+                        min_select: link.min_select,
+                        max_select: link.max_select,
+                        display_order: link.display_order,
+                    }))}
+                    canManage={hasPermission(session, PERMISSIONS.MENU_UPDATE)}
+                    canChangePrice={hasPermission(session, PERMISSIONS.MENU_PRICE_UPDATE)}
+                />
             ) : null}
 
             {product && hasPermission(session, PERMISSIONS.MENU_UPDATE) ? (
@@ -226,7 +209,7 @@ export default async function ProductEditorPage({ params }: { params: Promise<{ 
                                 id: link.modifier_group_id,
                                 name_hi: group.name_hi ?? '',
                                 description_hi: group.description_hi ?? '',
-                                modifiers: (group.modifiers ?? []).map((modifier) => ({
+                                modifiers: (group.modifiers ?? []).filter((modifier) => modifier.deleted_at === null).map((modifier) => ({
                                     id: modifier.id,
                                     name_hi: modifier.name_hi ?? '',
                                     description_hi: modifier.description_hi ?? '',
