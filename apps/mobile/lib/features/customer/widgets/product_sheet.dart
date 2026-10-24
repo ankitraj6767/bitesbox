@@ -244,6 +244,9 @@ class _Content extends StatelessWidget {
     final product = detail.product;
     final unitPrice = state._previewUnitPrice(detail);
     final unavailable = !product.isAvailable;
+    final photoHeight = MediaQuery.sizeOf(
+      context,
+    ).width.clamp(280.0, 440.0).toDouble();
 
     return Column(
       children: [
@@ -253,7 +256,8 @@ class _Content extends StatelessWidget {
             children: [
               FoodImage(
                 path: product.heroImagePath ?? product.thumbnailPath,
-                height: 200,
+                height: photoHeight,
+                fit: BoxFit.contain,
                 radius: 0,
                 placeholderAsset:
                     FoodImage.assetForPath(product.slug) ??
