@@ -23,10 +23,15 @@ tests passed. The new SQL suite has 33 assertions and was not executed locally.
 No APK was built locally, and no physical-device or hosted verification was
 performed.
 
-Pushing mobile source to `main` starts
-`.github/workflows/android-auto-release.yml`, which builds and publishes a signed
-Android APK. No push has been made while reconciling that automatic release with
-the attached instruction not to deploy.
+Commit `8b7506c` was pushed to `main` after approval for the GitHub Actions
+Android release. The workflow builds and publishes the signed APK; no APK was
+built locally. The push-triggered Supabase workflow verifies against an
+ephemeral database only; hosted migration deployment remains manually gated.
+
+The Git integration also started two Vercel production deployments. The admin
+deployment was canceled, and storefront production traffic was rolled back to
+the pre-push deployment at `642ea2a` because the hosted database migration was
+not applied. No hosted database migration was applied.
 
 ## Previous source and release record: 23 October 2026
 

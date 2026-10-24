@@ -111,7 +111,11 @@ select tap.throws(
 select tap.reset();
 
 select tap.as_anon();
-select tap.throws('select public.my_taste_profile()', 'UNAUTHENTICATED', 'guests cannot read taste preferences');
+select tap.throws(
+  'select public.my_taste_profile()',
+  'PERMISSION_DENIED',
+  'guests cannot execute the private taste profile RPC'
+);
 select tap.ok(
   not public.feature_enabled('taste_match')
   and not exists (
