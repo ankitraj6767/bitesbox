@@ -42,11 +42,19 @@ export async function updateSession(request: NextRequest) {
         },
     );
 
-    // Keep Auth's server-side user check on admin requests so revoked or
-    // deleted sessions are not allowed through based on a still-valid JWT.
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    // An absent project auth cookie cannot represent a signed-in admin. Avoid
+    // contacting Auth on the common unauthenticated request (login and redirects);
+    // cookie presence is only a hint, never proof of identity. For any session
+    // cookie, retain Auth's server-side check so revoked/deleted sessions do not
+    // pass based only on a still-valid JWT.
+    const projectRef = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split('.')[0];
+    const authCookie = `sb-${projectRef}-auth-token`;
+    const hasAuthCookie = request.cookies.getAll().some(({ name }) =>
+        name === authCookie || name.startsWith(`${authCookie}.`),
+    );
+    const user = hasAuthCookie
+        ? (await supabase.auth.getUser()).data.user
+        : null;
     const userId = user?.id ?? null;
 
     /*
