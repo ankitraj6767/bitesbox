@@ -10,28 +10,35 @@ storefront, and shared-types versions are **1.2.18**; Flutter source is
 **1.2.21+53**. Taste Match is seeded behind a disabled feature flag until the
 English and Hindi customer copy receives human review.
 
-The two forward-only migrations add the CMS enum value, private preference
-tables, owner-scoped RPCs, and branch-aware ranking. The checkout contains 71
-migration files. The new database schema was not applied locally or to a hosted
-project: the local Supabase stack could not start because Docker was unavailable,
-and no hosted migration write was performed. Shared database types were kept in
-sync by hand; `db:types` could not be regenerated without the local database.
+Three forward-only migrations add the CMS enum value, private preference
+tables, owner-scoped RPCs, branch-aware ranking, and staff access guards. The
+checkout contains 72 migration files. The new database schema was not applied
+locally or to a hosted project: the local Supabase stack could not start because
+Docker was unavailable, and no hosted migration write was performed. Shared
+database types were synced by hand because `db:types` could not be regenerated
+locally; CI confirmed that the committed types match the generated schema.
 
 Flutter analysis and all 158 Flutter tests passed. Storefront lint, typecheck,
 unit tests, and production build passed. Admin lint, typecheck, and all 86 unit
-tests passed. The new SQL suite has 33 assertions and was not executed locally.
-No APK was built locally, and no physical-device or hosted verification was
-performed.
+tests passed. The Taste Passport SQL suite has 35 assertions; all 14 SQL suites
+passed in GitHub Actions run [40091025422](https://github.com/ankitraj6767/bitesbox/actions/runs/40091025422).
+Full CI passed on commit `734df66` in that run, and push-triggered database
+verification passed against an ephemeral database in run
+[40090736019](https://github.com/ankitraj6767/bitesbox/actions/runs/40090736019).
+No APK was built locally, and no physical-device or hosted migration
+verification was performed.
 
-Commit `8b7506c` was pushed to `main` after approval for the GitHub Actions
-Android release. The workflow builds and publishes the signed APK; no APK was
-built locally. The push-triggered Supabase workflow verifies against an
-ephemeral database only; hosted migration deployment remains manually gated.
+Commits `8b7506c`, `deb4e43`, `05a4a49`, and `734df66` are on `main`. The
+GitHub Actions Android release was approved and published as **1.2.21+90** in
+run [40090112697](https://github.com/ankitraj6767/bitesbox/actions/runs/40090112697).
+The hosted migration deployment remains manually gated.
 
-The Git integration also started two Vercel production deployments. The admin
-deployment was canceled, and storefront production traffic was rolled back to
-the pre-push deployment at `642ea2a` because the hosted database migration was
-not applied. No hosted database migration was applied.
+The Git integration started two Vercel production deployments for the feature
+push. The admin deployment was canceled, and storefront production traffic was
+rolled back to the pre-push deployment at `642ea2a` because the hosted database
+migration was not applied. Two deployment records for the latest source-only
+commit were canceled and have no aliases. No hosted database migration was
+applied.
 
 ## Previous source and release record: 23 October 2026
 
