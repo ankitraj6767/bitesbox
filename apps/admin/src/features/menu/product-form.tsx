@@ -68,6 +68,14 @@ const schema = z.object({
     search_keywords: z.string().optional().or(z.literal('')),
     meta_title: z.string().max(160).optional().or(z.literal('')),
     meta_description: z.string().max(320).optional().or(z.literal('')),
+}).superRefine((values, context) => {
+    if (values.compare_price !== undefined && values.compare_price < values.base_price) {
+        context.addIssue({
+            code: 'custom',
+            path: ['compare_price'],
+            message: 'Compare-at price must be at least the dish price.',
+        });
+    }
 });
 
 /**
