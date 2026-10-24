@@ -30,10 +30,16 @@ export const storefrontContext = cache(async function storefrontContext() {
     ]);
     const outlets = (outletsResult ?? []) as unknown as Outlet[];
     // `getClaims` verifies the signed access token and avoids a redundant
-    // `/auth/v1/user` request after middleware has refreshed the cookie.
-    const userId = typeof claimsResult.data?.claims.sub === 'string'
+    // `/auth/v1/user` request after middleware has refreshed the cookie. Fall
+    // back to Auth's server-side user endpoint when claims cannot be verified
+    // (including older sessions and deterministic auth providers without JWKS).
+    let userId = typeof claimsResult.data?.claims.sub === 'string'
         ? claimsResult.data.claims.sub
         : null;
+    if (!userId) {
+        const { data: userResult } = await supabase.auth.getUser();
+        userId = userResult.user?.id ?? null;
+    }
     const user = userId ? { id: userId } : null;
     let session: CustomerSessionPayload | null = null;
     if (user) {
