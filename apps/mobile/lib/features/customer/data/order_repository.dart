@@ -150,7 +150,14 @@ class OrderRepository {
         callback: (_) => controller.add(null),
       );
 
-    channel.subscribe();
+    // Re-read once the stream is established so a location recorded while the
+    // customer screen was opening is not missed. Provider polling remains the
+    // bounded fallback if Realtime cannot subscribe or later disconnects.
+    channel.subscribe((status, _) {
+      if (status.name == 'subscribed' && !controller.isClosed) {
+        controller.add(null);
+      }
+    });
 
     controller.onCancel = () async {
       await _api.raw.removeChannel(channel);

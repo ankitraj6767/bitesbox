@@ -264,6 +264,7 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
     with WidgetsBindingObserver {
   StreamSubscription<Position>? _subscription;
   Timer? _staleTimer;
+  Timer? _fixRecoveryTimer;
   DateTime? _lastSent;
   bool _starting = false;
   bool _reconciling = false;
@@ -274,9 +275,12 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
   String? _streamAssignmentId;
   DateTime? _streamStartedAt;
   DateTime? _lastImmediateFixAttempt;
+  bool _requestingCurrentFix = false;
 
   static const _minInterval = Duration(seconds: 8);
   static const _staleAfter = Duration(minutes: 2);
+  static const _fixRecoveryInterval = Duration(seconds: 20);
+  static const _fixRecoveryAfter = Duration(seconds: 30);
 
   @override
   LocationSharingState build() {
@@ -291,6 +295,7 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
     ref.onDispose(() {
       WidgetsBinding.instance.removeObserver(this);
       _staleTimer?.cancel();
+      _fixRecoveryTimer?.cancel();
       unawaited(_subscription?.cancel());
     });
     Future.microtask(_reconcile);
@@ -482,44 +487,51 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
   Future<(LocationSharingStatus, String)?> _checkPermissions({
     required bool request,
   }) async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      return (
-        LocationSharingStatus.locationServicesOff,
-        'Turn on Location Services to share this delivery with the customer.',
-      );
-    }
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        return (
+          LocationSharingStatus.locationServicesOff,
+          'Turn on Location Services to share this delivery with the customer.',
+        );
+      }
 
-    final status = await Permission.locationWhenInUse.status;
-    if (status.isRestricted) {
-      return (
-        LocationSharingStatus.permissionRestricted,
-        'Location access is restricted on this device. Ask the device administrator for help.',
-      );
-    }
+      final status = await Permission.locationWhenInUse.status;
+      if (status.isRestricted) {
+        return (
+          LocationSharingStatus.permissionRestricted,
+          'Location access is restricted on this device. Ask the device administrator for help.',
+        );
+      }
 
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied && request) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.deniedForever) {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied && request) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever) {
+        return (
+          LocationSharingStatus.permissionDenied,
+          'Location access is blocked. Open app settings to allow it while using Bites Box.',
+        );
+      }
+      if (permission == LocationPermission.denied) {
+        return (
+          LocationSharingStatus.permissionDenied,
+          'Location access is off. Allow it while using Bites Box to share this delivery.',
+        );
+      }
+      if (permission == LocationPermission.unableToDetermine) {
+        return (
+          LocationSharingStatus.permissionRestricted,
+          'This device cannot currently confirm location access. Check its privacy settings.',
+        );
+      }
+      return null;
+    } catch (_) {
       return (
-        LocationSharingStatus.permissionDenied,
-        'Location access is blocked. Open app settings to allow it while using Bites Box.',
+        LocationSharingStatus.unavailable,
+        'Bites Box could not check this device’s location settings. Reopen the app and try again.',
       );
     }
-    if (permission == LocationPermission.denied) {
-      return (
-        LocationSharingStatus.permissionDenied,
-        'Location access is off. Allow it while using Bites Box to share this delivery.',
-      );
-    }
-    if (permission == LocationPermission.unableToDetermine) {
-      return (
-        LocationSharingStatus.permissionRestricted,
-        'This device cannot currently confirm location access. Check its privacy settings.',
-      );
-    }
-    return null;
   }
 
   Future<void> _startLocalStream(String assignmentId) async {
@@ -540,35 +552,7 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
       }
     }
 
-    final LocationSettings settings;
-    if (Platform.isAndroid) {
-      settings = AndroidSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 40,
-        intervalDuration: const Duration(seconds: 30),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: 'Bites Box delivery location',
-          notificationText:
-              'Sharing only for an active delivery. Open the app to stop or finish.',
-          notificationChannelName: 'Active delivery tracking',
-          setOngoing: true,
-        ),
-      );
-    } else if (Platform.isIOS) {
-      settings = AppleSettings(
-        accuracy: LocationAccuracy.high,
-        activityType: ActivityType.automotiveNavigation,
-        distanceFilter: 40,
-        pauseLocationUpdatesAutomatically: true,
-        allowBackgroundLocationUpdates: true,
-        showBackgroundLocationIndicator: true,
-      );
-    } else {
-      settings = const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 40,
-      );
-    }
+    final settings = _locationSettings(forCurrentFix: false);
 
     _streamAssignmentId = assignmentId;
     _subscription = Geolocator.getPositionStream(locationSettings: settings)
@@ -595,6 +579,10 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
         );
       }
     });
+    _fixRecoveryTimer?.cancel();
+    _fixRecoveryTimer = Timer.periodic(_fixRecoveryInterval, (_) {
+      unawaited(_recoverCurrentFixIfNeeded(assignmentId));
+    });
     _set(
       LocationSharingStatus.waitingForFix,
       'Waiting for a fresh GPS fix. The customer will see your location after the server receives it.',
@@ -603,6 +591,7 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
   }
 
   Future<void> _requestCurrentFix(String assignmentId) async {
+    if (_requestingCurrentFix || _streamAssignmentId != assignmentId) return;
     final now = DateTime.now().toUtc();
     final lastAttempt = _lastImmediateFixAttempt;
     if (lastAttempt != null &&
@@ -610,13 +599,11 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
       return;
     }
     _lastImmediateFixAttempt = now;
+    _requestingCurrentFix = true;
 
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 15),
-        ),
+        locationSettings: _locationSettings(forCurrentFix: true),
       );
       if (_streamAssignmentId != assignmentId) return;
       await _publish(position, expectedAssignmentId: assignmentId);
@@ -629,8 +616,102 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
         );
       }
     } catch (_) {
-      // Keep the position stream active. A later OS fix can still publish.
+      if (_streamAssignmentId != assignmentId) return;
+      final problem = await _checkPermissions(request: false);
+      if (_streamAssignmentId != assignmentId) return;
+      if (problem != null) {
+        await _stopLocal();
+        _set(problem.$1, problem.$2);
+      } else {
+        _set(
+          LocationSharingStatus.waitingForFix,
+          'GPS has not produced a fresh fix yet. Keep Location Services on; Bites Box will try again shortly.',
+        );
+      }
+    } finally {
+      _requestingCurrentFix = false;
     }
+  }
+
+  Future<void> _recoverCurrentFixIfNeeded(String assignmentId) async {
+    if (_streamAssignmentId != assignmentId) return;
+
+    final dashboard = ref.read(riderDashboardProvider).valueOrNull;
+    if (dashboard?.current?.assignmentId != assignmentId ||
+        dashboard?.isSharingLocationFor(assignmentId) != true) {
+      await _stopLocal();
+      _set(LocationSharingStatus.idle);
+      unawaited(ref.read(riderDashboardProvider.notifier).refresh());
+      return;
+    }
+
+    final lastFixAt = ref.read(riderLastFixProvider)?.recordedAt;
+    if (!shouldRequestLocationRecoveryFix(
+      lastSuccessfulFixAt: lastFixAt,
+      streamStartedAt: _streamStartedAt,
+      lastAttemptAt: _lastImmediateFixAttempt,
+      now: DateTime.now().toUtc(),
+      recoveryAfter: _fixRecoveryAfter,
+      retryInterval: _fixRecoveryInterval,
+      requestInProgress: _requestingCurrentFix,
+    )) {
+      return;
+    }
+
+    final problem = await _checkPermissions(request: false);
+    if (_streamAssignmentId != assignmentId) return;
+    if (problem != null) {
+      await _stopLocal();
+      _set(problem.$1, problem.$2);
+      return;
+    }
+
+    _set(
+      LocationSharingStatus.waitingForFix,
+      'Location updates paused. Checking for a fresh GPS fix.',
+    );
+    await _requestCurrentFix(assignmentId);
+  }
+
+  LocationSettings _locationSettings({required bool forCurrentFix}) {
+    final distanceFilter = forCurrentFix ? 0 : 25;
+    final timeLimit = forCurrentFix ? const Duration(seconds: 15) : null;
+
+    if (Platform.isAndroid) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: distanceFilter,
+        intervalDuration: const Duration(seconds: 15),
+        timeLimit: timeLimit,
+        foregroundNotificationConfig: forCurrentFix
+            ? null
+            : const ForegroundNotificationConfig(
+                notificationTitle: 'Bites Box delivery location',
+                notificationText:
+                    'Sharing only for an active delivery. Open the app to stop or finish.',
+                notificationChannelName: 'Active delivery tracking',
+                enableWakeLock: true,
+                setOngoing: true,
+              ),
+      );
+    }
+    if (Platform.isIOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.high,
+        activityType: ActivityType.automotiveNavigation,
+        distanceFilter: distanceFilter,
+        timeLimit: timeLimit,
+        pauseLocationUpdatesAutomatically: false,
+        allowBackgroundLocationUpdates: true,
+        showBackgroundLocationIndicator: true,
+      );
+    }
+
+    return LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: distanceFilter,
+      timeLimit: timeLimit,
+    );
   }
 
   Future<void> _stopLocal() async {
@@ -638,6 +719,8 @@ class RiderLocationPublisher extends Notifier<LocationSharingState>
     _subscription = null;
     _staleTimer?.cancel();
     _staleTimer = null;
+    _fixRecoveryTimer?.cancel();
+    _fixRecoveryTimer = null;
     _lastSent = null;
     _streamStartedAt = null;
     _streamAssignmentId = null;

@@ -433,7 +433,10 @@ choice, and whether the customer saw an accurately stale state.
 **Android (supported target devices):** accept an assignment; start sharing while
 the app is visible; confirm the persistent notification and a recent customer
 point; switch to navigation, background the app, and lock the screen; verify fresh
-capture times continue. Then disable location services, revoke permission in
+capture times continue. Verify that locking the screen does not batch GPS fixes;
+if the stream pauses, the rider watchdog should ask Android for a fresh fix, while
+the customer marker remains hidden until that fix is accepted by the server. Then
+disable location services, revoke permission in
 Settings, deny notifications on Android 13+ and verify the foreground service is
 still listed in Task Manager (its notice may be absent from the notification
 drawer), enable battery saver/Doze, lose and

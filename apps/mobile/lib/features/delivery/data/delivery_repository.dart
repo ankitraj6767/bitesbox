@@ -185,6 +185,10 @@ class DeliveryRepository {
   }) async {
     final result = await _api.rpc<dynamic>(
       'publish_rider_location_v2',
+      // A timed-out location write must not replay the same capture timestamp;
+      // the next OS fix/watchdog request supplies a fresh point instead.
+      timeout: const Duration(seconds: 12),
+      retries: 0,
       params: {
         'p_latitude': latitude,
         'p_longitude': longitude,

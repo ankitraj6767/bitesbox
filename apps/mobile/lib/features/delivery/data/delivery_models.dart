@@ -27,6 +27,35 @@ RiderFixDecision evaluateRiderFix({
   return RiderFixDecision.accept;
 }
 
+/// Tells the active-delivery watchdog when it is safe to ask the OS for a new
+/// capture. It never authorizes replaying a previous position: each request
+/// must produce a fresh timestamped fix before the publisher can send it.
+bool shouldRequestLocationRecoveryFix({
+  required DateTime? lastSuccessfulFixAt,
+  required DateTime? streamStartedAt,
+  required DateTime? lastAttemptAt,
+  required DateTime now,
+  required Duration recoveryAfter,
+  required Duration retryInterval,
+  required bool requestInProgress,
+}) {
+  if (requestInProgress) return false;
+
+  final lastFixAt = (lastSuccessfulFixAt ?? streamStartedAt)?.toUtc();
+  if (lastFixAt == null) return false;
+
+  final nowUtc = now.toUtc();
+  if (nowUtc.difference(lastFixAt) < recoveryAfter) return false;
+
+  final lastAttemptUtc = lastAttemptAt?.toUtc();
+  if (lastAttemptUtc != null &&
+      nowUtc.difference(lastAttemptUtc) < retryInterval) {
+    return false;
+  }
+
+  return true;
+}
+
 /// Rider models, mirroring `public.my_deliveries()` and `public.my_earnings()`.
 
 /// Duty state, as the database enum `rider_duty_state`.

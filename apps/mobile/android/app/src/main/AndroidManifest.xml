@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Geolocator holds a partial wake lock only during explicit active-delivery
+         sharing so Android does not batch GPS fixes until the rider wakes the phone. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Geolocator runs the active rider delivery as a location foreground
          service. It is started while the rider app is visible; no background
          location permission is requested. -->

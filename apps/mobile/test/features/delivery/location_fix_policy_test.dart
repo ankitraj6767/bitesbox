@@ -57,4 +57,72 @@ void main() {
       expect(evaluate(age: const Duration(minutes: 4)), RiderFixDecision.stale);
     },
   );
+
+  test(
+    'location watchdog requests a fresh fix after the stream goes quiet',
+    () {
+      expect(
+        shouldRequestLocationRecoveryFix(
+          lastSuccessfulFixAt: null,
+          streamStartedAt: now.subtract(const Duration(seconds: 31)),
+          lastAttemptAt: now.subtract(const Duration(seconds: 25)),
+          now: now,
+          recoveryAfter: const Duration(seconds: 30),
+          retryInterval: const Duration(seconds: 20),
+          requestInProgress: false,
+        ),
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'location watchdog respects recent fixes and bounds duplicate requests',
+    () {
+      bool shouldRecover({
+        DateTime? lastSuccessfulFixAt,
+        DateTime? lastAttemptAt,
+        bool requestInProgress = false,
+      }) => shouldRequestLocationRecoveryFix(
+        lastSuccessfulFixAt: lastSuccessfulFixAt,
+        streamStartedAt: now.subtract(const Duration(seconds: 60)),
+        lastAttemptAt: lastAttemptAt,
+        now: now,
+        recoveryAfter: const Duration(seconds: 30),
+        retryInterval: const Duration(seconds: 20),
+        requestInProgress: requestInProgress,
+      );
+
+      expect(
+        shouldRecover(
+          lastSuccessfulFixAt: now.subtract(const Duration(seconds: 10)),
+          lastAttemptAt: now.subtract(const Duration(seconds: 25)),
+        ),
+        isFalse,
+      );
+      expect(
+        shouldRecover(lastAttemptAt: now.subtract(const Duration(seconds: 5))),
+        isFalse,
+      );
+      expect(
+        shouldRecover(
+          lastAttemptAt: now.subtract(const Duration(seconds: 25)),
+          requestInProgress: true,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldRequestLocationRecoveryFix(
+          lastSuccessfulFixAt: null,
+          streamStartedAt: null,
+          lastAttemptAt: null,
+          now: now,
+          recoveryAfter: const Duration(seconds: 30),
+          retryInterval: const Duration(seconds: 20),
+          requestInProgress: false,
+        ),
+        isFalse,
+      );
+    },
+  );
 }
