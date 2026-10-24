@@ -14,6 +14,7 @@ export type CmsSectionKind =
   | "BUY_AGAIN"
   | "RECENTLY_ORDERED"
   | "CUSTOMER_FAVOURITES"
+  | "TASTE_MATCH"
   | "CAMPAIGN_BANNER"
   | "COUPON_STRIP"
   | "RICH_TEXT";
@@ -137,6 +138,7 @@ export const SECTION_KINDS: Array<{ value: CmsSectionKind; label: string }> = [
   ["BUY_AGAIN", "Buy again"],
   ["RECENTLY_ORDERED", "Recently ordered"],
   ["CUSTOMER_FAVOURITES", "Customer favourites"],
+  ["TASTE_MATCH", "Taste match"],
   ["CAMPAIGN_BANNER", "Campaign banner"],
   ["COUPON_STRIP", "Coupon strip"],
   ["RICH_TEXT", "Rich text"],

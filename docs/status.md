@@ -1,6 +1,36 @@
 # Release status
 
-Last updated: 23 October 2026. This source release includes the delivery-zone,
+Last updated: 24 October 2026.
+
+## Current source update: Taste Passport and Taste Match
+
+The customer Taste Passport editor and the personalized Taste Match feed are
+implemented in the Flutter app and Next.js storefront. Workspace, admin,
+storefront, and shared-types versions are **1.2.18**; Flutter source is
+**1.2.21+53**. Taste Match is seeded behind a disabled feature flag until the
+English and Hindi customer copy receives human review.
+
+The two forward-only migrations add the CMS enum value, private preference
+tables, owner-scoped RPCs, and branch-aware ranking. The checkout contains 71
+migration files. The new database schema was not applied locally or to a hosted
+project: the local Supabase stack could not start because Docker was unavailable,
+and no hosted migration write was performed. Shared database types were kept in
+sync by hand; `db:types` could not be regenerated without the local database.
+
+Flutter analysis and all 158 Flutter tests passed. Storefront lint, typecheck,
+unit tests, and production build passed. Admin lint, typecheck, and all 86 unit
+tests passed. The new SQL suite has 33 assertions and was not executed locally.
+No APK was built locally, and no physical-device or hosted verification was
+performed.
+
+Pushing mobile source to `main` starts
+`.github/workflows/android-auto-release.yml`, which builds and publishes a signed
+Android APK. No push has been made while reconciling that automatic release with
+the attached instruction not to deploy.
+
+## Previous source and release record: 23 October 2026
+
+This source release includes the delivery-zone,
 kitchen handoff, and settings fixes, plus rider-bound pickup-code sharing. It
 bumps workspace/mobile source to **1.2.5 / 1.2.5+37**. Signed Android update
 **1.2.5+57** was built and published by [GitHub Actions run
@@ -9,7 +39,7 @@ The pickup-code migration is present in hosted migration history through
 `20261023151817`; the admin deployment workflow was not dispatched and any
 separate Vercel Git integration deployment is unverified.
 
-## Settings and outlet controls
+## Previously shipped settings and outlet controls
 
 Branch details, trading hours, dated holiday exceptions, tax categories, delivery
 zones, and feature-flag rollout can now be managed from Settings according to
@@ -24,7 +54,7 @@ app listens for public settings changes and refreshes configuration, menu,
 product, cart, coupons, and outlet data. It also refreshes these values when
 resuming after backgrounding.
 
-## Delivery-zone owner error
+## Previously fixed delivery-zone owner error
 
 The earlier owner-access fix addressed `42501 permission denied for schema app`
 when an RLS policy resolved `app.has_permission(...)`. It grants `USAGE` on the
@@ -33,7 +63,7 @@ function grants, signed AAL2 checks, and RLS remain authoritative. That earlier
 change was verified locally. The linked hosted project's state was not checked
 again for this settings release.
 
-## Migration and hosted state
+## Historical migration and hosted state, 23 October 2026
 
 This checkout contains **65 migration files**. Migration
 `20261023135427_settings_crud_audit_and_public_sync.sql` was applied to the
@@ -49,13 +79,13 @@ workflow automatically; manual dispatch from `main` remains available. Supabase
 migration pushes and admin deployments remain separately gated. No local APK
 was built.
 
-## Version
+## Historical version
 
 Workspace, admin, storefront, and shared-types packages: **1.2.5**. Flutter
 source version: **1.2.5+37**. Latest signed Android update published:
 **1.2.5+57**. No signed iOS release was run.
 
-## Verification record
+## Historical verification record
 
 Previously recorded local results on 23 October 2026 (before pickup-code sharing):
 

@@ -1,9 +1,10 @@
 # Database
 
-93 tables, 57 enums, 144 RLS policies, and 133 client-callable functions across
-63 version-controlled migrations in this checkout. These counts were checked
-against the local schema and migration directory; nothing is created by hand in
-the dashboard.
+95 tables, 57 enums, 146 RLS policies, and 135 client-callable functions across
+71 version-controlled migrations in this checkout. These counts include the
+Taste Passport migrations in source. The local Supabase stack was unavailable
+during this change, so the new schema was not applied locally or to a hosted
+project; nothing is created by hand in the dashboard.
 
 ## Schemas
 
@@ -134,11 +135,12 @@ create unique index delivery_earnings_assignment_key
 | `20261023114000 add_referral_reward_notification_event` | Adds a dedicated transactional referral-reward event |
 | `20261023114100 notify_referral_rewards` | Sends idempotent, profile-language push/in-app reward notifications through existing preference checks |
 | `20261023135427_settings_crud_audit_and_public_sync` | Audits trading-hour and holiday edits, adds guarded outlet/tax-category archival RPCs, and publishes customer settings change signals |
+| `20261024111326_add_taste_match_home_section` | Adds the `TASTE_MATCH` CMS enum value in its own migration before any later migration uses it |
+| `20261024111330_taste_passport_and_taste_match` | Adds owner-private taste preferences, validated customer RPCs, a disabled rollout flag, CMS rail, branch-aware ranked products, and refresh signals |
 
-The notification event enums are isolated from their use in later migrations
-because PostgreSQL refuses to *use* a new enum value in the same transaction
-that adds it. The reward notification migration also uses the existing durable
-queue and preference checks; it does not create a second delivery mechanism.
+Enum labels that are used by later SQL are isolated from their use because
+PostgreSQL refuses to *use* a new enum value in the same transaction that adds
+it. This applies to both the notification event labels and `TASTE_MATCH`.
 
 ## The order snapshot
 
@@ -187,6 +189,14 @@ See [order-flow.md](order-flow.md).
 delivery_partner_locations   one row per rider, updated in place
 delivery_location_events     throttled breadcrumbs, append-only
 ```
+
+## Taste Passport and Taste Match
+
+See [taste-match.md](taste-match.md) for the private preference model, server-side
+ranking rules, localized reason codes, the feature-flag gate, and the remaining
+Hindi review step. Taste data is readable only through owner-scoped customer
+surfaces; it is not included in the staff customer-detail RPC or storefront
+analytics.
 
 A rider publishing every few seconds for an hour would write hundreds of rows per
 trip. The mutable row is what the customer subscribes to, so tracking reads one row

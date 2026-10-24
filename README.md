@@ -37,10 +37,10 @@ bitesbox/
 │   ├── mobile/          Flutter — unified app (customer/delivery/kitchen/manager)
 │   └── admin/           Next.js 15 App Router — admin dashboard
 ├── supabase/
-│   ├── migrations/      Version-controlled SQL migrations (56)
+│   ├── migrations/      Version-controlled SQL migrations (71)
 │   ├── functions/       Deno Edge Functions (16, secure business logic)
 │   ├── seeds/           Ordered development seed data (7 files)
-│   ├── tests/           SQL test harness + 11 suites
+│   ├── tests/           SQL test harness + 14 suites
 │   └── config.toml
 ├── scripts/             psql wrapper, schema lint gate, secret scan
 ├── packages/
@@ -78,7 +78,7 @@ npm install
 # 2. Backend — local Supabase stack (requires Docker)
 npm run db:start
 npm run db:reset          # all migrations, then supabase/seeds/*.sql in order
-npm run db:test           # 11 suites, expect "11 passed, 0 failed"
+npm run db:test           # 14 suites, expect "14 passed, 0 failed"
 
 # 3. Admin dashboard
 cd apps/admin && npm run dev                     # http://localhost:3000
@@ -109,6 +109,8 @@ Environment variables: [`.env.example`](.env.example).
 | [payment-flow.md](docs/payment-flow.md) | Razorpay lifecycle, idempotency, reconciliation |
 | [delivery-flow.md](docs/delivery-flow.md) | Rider assignment, pickup/drop verification, live tracking |
 | [security.md](docs/security.md) | RLS, secrets, abuse controls, audit |
+| [database.md](docs/database.md) | Schema conventions, migration history, RLS and RPC surface |
+| [taste-match.md](docs/taste-match.md) | Taste Passport data, recommendation logic, privacy and rollout |
 | [testing.md](docs/testing.md) | Test strategy, harness, what is and is not covered |
 | [deployment.md](docs/deployment.md) | Environments, CI/CD, release process, rollback |
 | [android-auto-updates.md](docs/android-auto-updates.md) | Android release manifests and in-app update flow |
@@ -124,7 +126,7 @@ local Docker stack. The Swiggy comparison and product boundaries are documented
 there as well.
 
 ```
-Backend   56 migrations · 87 tables · 155 RLS policies · 107 client RPCs
+Backend   71 migrations · 95 tables · 146 RLS policies · 135 client RPCs
 Edge      16 functions
 Admin     44 page modules
 Mobile    98 Dart files · 37 screens · 3 role shells

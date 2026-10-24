@@ -20,6 +20,8 @@ import '../data/menu_repository.dart';
 import '../data/order_models.dart';
 import '../data/order_repository.dart';
 import '../data/payment_repository.dart';
+import '../data/taste_passport_models.dart';
+import '../data/taste_passport_repository.dart';
 
 // ── Repositories ───────────────────────────────────────────────────────────
 final menuRepositoryProvider = Provider<MenuRepository>(
@@ -57,6 +59,19 @@ final groupOrderRepositoryProvider = Provider<GroupOrderRepository>(
 final growthRepositoryProvider = Provider<GrowthRepository>(
   (ref) => GrowthRepository(ref.watch(apiClientProvider)),
 );
+
+final tastePassportRepositoryProvider = Provider<TastePassportRepository>(
+  (ref) => TastePassportRepository(ref.watch(apiClientProvider)),
+);
+
+final tastePassportProvider = FutureProvider.autoDispose<TastePassportProfile>((
+  ref,
+) async {
+  if (!ref.watch(currentSessionProvider).isCustomer) {
+    return const TastePassportProfile();
+  }
+  return ref.watch(tastePassportRepositoryProvider).profile();
+});
 
 final outletsProvider = FutureProvider<List<OutletSummary>>((ref) {
   return ref.watch(growthRepositoryProvider).outlets();

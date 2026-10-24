@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/customer_copy.dart';
 import '../../../shared/format.dart';
 import '../../../shared/widgets/common.dart';
 import '../data/menu_models.dart';
@@ -32,6 +33,7 @@ class HomeSectionView extends ConsumerWidget {
       'CAMPAIGN_BANNER' => _BannerCarousel(section: section),
       'CATEGORY_GRID' => _CategoryGrid(section: section),
       'CATEGORY_CAROUSEL' => _CategoryCarousel(section: section),
+      'TASTE_MATCH' => _TasteMatchSection(section: section),
       // These are all product-backed CMS rules. The database resolves the
       // products; the app only chooses the presentation layout.
       'PRODUCT_CAROUSEL' ||
@@ -401,6 +403,91 @@ class _ProductCarousel extends StatelessWidget {
           itemBuilder: (context, index) =>
               ProductRailCard(product: section.products[index]),
         ),
+      ),
+    );
+  }
+}
+
+class _TasteMatchSection extends StatelessWidget {
+  const _TasteMatchSection({required this.section});
+
+  final HomeSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = context.brand;
+    return _SectionFrame(
+      section: section,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (section.tasteState == 'SETUP')
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: brand.primary.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(brand.radiusMd),
+                  border: Border.all(
+                    color: brand.primary.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.tune_rounded, color: brand.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.customerText('Set up your Taste Passport'),
+                            style: TextStyle(
+                              color: brand.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            context.customerText(
+                              'Choose a few preferences to get more relevant picks.',
+                            ),
+                            style: TextStyle(
+                              color: brand.inkMuted,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: context.customerText(
+                        'Set up your Taste Passport',
+                      ),
+                      onPressed: () => context.push(Routes.profile),
+                      icon: Icon(
+                        Icons.chevron_right_rounded,
+                        color: brand.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (section.products.isNotEmpty)
+            SizedBox(
+              height: 210,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: section.products.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) =>
+                    ProductRailCard(product: section.products[index]),
+              ),
+            ),
+        ],
       ),
     );
   }

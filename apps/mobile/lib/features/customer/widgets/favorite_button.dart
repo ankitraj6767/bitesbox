@@ -33,7 +33,9 @@ class _FavoriteButtonState extends ConsumerState<FavoriteButton> {
         .contains(widget.productId);
     final brand = context.brand;
     return IconButton(
-      tooltip: isFavorite ? context.customerText("Remove from favorites") : context.customerText("Save to favorites"),
+      tooltip: isFavorite
+          ? context.customerText("Remove from favorites")
+          : context.customerText("Save to favorites"),
       onPressed: _busy ? null : () => _toggle(isFavorite),
       style: IconButton.styleFrom(
         backgroundColor: widget.filledBackground
@@ -69,6 +71,7 @@ class _FavoriteButtonState extends ConsumerState<FavoriteButton> {
           .read(growthRepositoryProvider)
           .setFavorite(widget.productId, !isFavorite);
       ref.invalidate(favoritesProvider);
+      ref.invalidate(homeFeedProvider);
     } catch (error) {
       if (mounted) AppFeedback.showError(context, error);
     } finally {

@@ -109,6 +109,7 @@ class MenuProduct {
     this.availabilityState = 'AVAILABLE',
     this.hasVariants = false,
     this.minPrice,
+    this.reasonCode,
   });
 
   final String id;
@@ -143,6 +144,7 @@ class MenuProduct {
   final String availabilityState;
   final bool hasVariants;
   final double? minPrice;
+  final String? reasonCode;
 
   /// Cheapest orderable price — what "from ₹X" shows on a card.
   double get displayPrice => minPrice ?? basePrice;
@@ -198,6 +200,7 @@ class MenuProduct {
     availabilityState: (json['availability_state'] as String?) ?? 'AVAILABLE',
     hasVariants: json['has_variants'] as bool? ?? false,
     minPrice: _toDoubleOrNull(json['min_price']),
+    reasonCode: json['reason_code'] as String?,
   );
 }
 
@@ -606,6 +609,7 @@ class HomeSection {
     this.backgroundColor,
     this.richText,
     this.displayOrder = 0,
+    this.tasteState,
     this.banners = const [],
     this.categories = const [],
     this.products = const [],
@@ -623,6 +627,7 @@ class HomeSection {
   final String? backgroundColor;
   final String? richText;
   final int displayOrder;
+  final String? tasteState;
   final List<HomeBanner> banners;
   final List<MenuCategory> categories;
   final List<MenuProduct> products;
@@ -640,6 +645,7 @@ class HomeSection {
     backgroundColor: json['background_color'] as String?,
     richText: json['rich_text'] as String?,
     displayOrder: _toInt(json['display_order']),
+    tasteState: json['taste_state'] as String?,
     banners: json['banners'] is List
         ? (json['banners'] as List)
               .whereType<Map>()

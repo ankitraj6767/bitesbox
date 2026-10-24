@@ -65,9 +65,10 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
 
   /// The overall score is the average of what the customer actually rated.
   int get _overall {
-    final scores = [_food, if (widget.isDelivery && _delivery > 0) _delivery]
-        .where((score) => score > 0)
-        .toList();
+    final scores = [
+      _food,
+      if (widget.isDelivery && _delivery > 0) _delivery,
+    ].where((score) => score > 0).toList();
     if (scores.isEmpty) return 0;
     return (scores.reduce((a, b) => a + b) / scores.length).round();
   }
@@ -76,18 +77,25 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
 
   Future<void> _submit() async {
     if (_food == 0) {
-      AppFeedback.showInfo(context, context.customerText("Please rate the food first."));
+      AppFeedback.showInfo(
+        context,
+        context.customerText("Please rate the food first."),
+      );
       return;
     }
 
     setState(() => _busy = true);
 
     try {
-      await ref.read(orderRepositoryProvider).submitReview(
+      await ref
+          .read(orderRepositoryProvider)
+          .submitReview(
             orderId: widget.orderId,
             foodRating: _food,
             overallRating: _overall,
-            deliveryRating: widget.isDelivery && _delivery > 0 ? _delivery : null,
+            deliveryRating: widget.isDelivery && _delivery > 0
+                ? _delivery
+                : null,
             comment: _comment.text,
             tags: _tags.toList(),
           );
@@ -95,9 +103,13 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
       if (!mounted) return;
       ref.invalidate(orderDetailProvider(widget.orderId));
       ref.invalidate(myOrdersProvider);
+      ref.invalidate(homeFeedProvider);
 
       Navigator.of(context).pop();
-      AppFeedback.showSuccess(context, context.customerText("Thank you. Your feedback helps us improve."));
+      AppFeedback.showSuccess(
+        context,
+        context.customerText("Thank you. Your feedback helps us improve."),
+      );
     } catch (error) {
       if (!mounted) return;
       AppFeedback.showError(context, error);
@@ -119,7 +131,9 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
           children: [
             SheetHeader(
               title: context.customerText("How was your meal?"),
-              subtitle: context.customerText("Your rating goes straight to our kitchen team."),
+              subtitle: context.customerText(
+                "Your rating goes straight to our kitchen team.",
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -190,7 +204,11 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: _busy || _food == 0 ? null : _submit,
-                    child: Text(_busy ? context.customerText("Sending…") : context.customerText("Submit rating")),
+                    child: Text(
+                      _busy
+                          ? context.customerText("Sending…")
+                          : context.customerText("Submit rating"),
+                    ),
                   ),
                 ],
               ),
@@ -270,7 +288,9 @@ class _StarRow extends StatelessWidget {
                 icon: Icon(
                   filled ? Icons.star_rounded : Icons.star_outline_rounded,
                   size: 32,
-                  color: filled ? brand.accent : brand.inkMuted.withValues(alpha: 0.45),
+                  color: filled
+                      ? brand.accent
+                      : brand.inkMuted.withValues(alpha: 0.45),
                 ),
               ),
             );

@@ -13,6 +13,7 @@ import 'customer_providers.dart';
 /// source of truth for all values shown in the app.
 final customerSettingsRealtimeProvider = Provider<void>((ref) {
   final client = ref.watch(supabaseClientProvider);
+  final session = ref.watch(currentSessionProvider);
   Timer? pendingRefresh;
 
   void refresh() {
@@ -22,6 +23,7 @@ final customerSettingsRealtimeProvider = Provider<void>((ref) {
     ref.invalidate(outletsProvider);
     ref.invalidate(activeBranchIdProvider);
     ref.invalidate(homeFeedProvider);
+    ref.invalidate(tastePassportProvider);
     ref.invalidate(menuCatalogProvider);
     ref.invalidate(productDetailProvider);
     ref.invalidate(searchSuggestionsProvider);
@@ -79,6 +81,42 @@ final customerSettingsRealtimeProvider = Provider<void>((ref) {
       table: 'tax_categories',
       callback: onDatabaseChange,
     );
+  if (session.isCustomer && session.userId != null) {
+    channel
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'customer_favorites',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'user_id',
+          value: session.userId!,
+        ),
+        callback: onDatabaseChange,
+      )
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'customer_taste_profiles',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'user_id',
+          value: session.userId!,
+        ),
+        callback: onDatabaseChange,
+      )
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'orders',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'user_id',
+          value: session.userId!,
+        ),
+        callback: onDatabaseChange,
+      );
+  }
   channel.subscribe();
 
   final lifecycle = AppLifecycleListener(onResume: refresh);

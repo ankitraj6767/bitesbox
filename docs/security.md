@@ -17,8 +17,8 @@ official one.
 │ 1  Auth            Supabase phone OTP / email. auth.uid() is   │
 │                    the only identity the database trusts.      │
 ├────────────────────────────────────────────────────────────────┤
-│ 2  RLS             87 tables, RLS enabled on all 87.           │
-│                    143 policies in public, 15 in storage.      │
+│ 2  RLS             95 tables, RLS enabled on all 95.           │
+│                    145 policies in public, 15 in storage.      │
 ├────────────────────────────────────────────────────────────────┤
 │ 3  Permissions     app.has_permission(code, branch) inside     │
 │                    every privileged function body.             │

@@ -13,10 +13,10 @@ Unit-testing a Dart function that formats a duration is cheap and worth having;
 it is not where the risk lives.
 
 ```
-supabase/tests/      13 suites · 472 assertion calls in source   ← the security boundary
-apps/admin/          10 unit files · 82 tests; 11 deterministic Playwright tests
-apps/storefront/      1 unit file · 4 tests; deterministic customer journeys
-apps/mobile/test/     16 files · see final run record below
+supabase/tests/      14 suites · 518 assertion calls in source   ← the security boundary
+apps/admin/          11 unit files · 86 tests; 11 deterministic Playwright tests
+apps/storefront/      3 unit files · 10 tests; deterministic customer journeys
+apps/mobile/test/     18 files · see final run record below
 supabase/functions/   Deno checks · lint · fmt · logger/provider contracts
 schema                db-lint.sh — fails on error-level findings
 ```
@@ -29,26 +29,29 @@ schema                db-lint.sh — fails on error-level findings
 npm run db:test                  # same thing
 ```
 
-The 472 SQL assertion calls are counted from the checked-in SQL test files. The
-full suite passed against the local Supabase/Postgres stack on 23 October 2026;
-this is local verification only and says nothing about a hosted project's schema.
-No hosted migration was pushed. See [status.md](status.md) for release state.
+The 518 SQL assertion calls are counted from the checked-in SQL test files. The
+previous 13-suite, 485-assertion suite passed against local Supabase/Postgres on
+23 October 2026. The new Taste Passport suite adds 33 assertions, but was not run:
+the local Supabase stack could not start because Docker was unavailable. This is
+local verification only and says nothing about a hosted project's schema. No
+hosted migration was applied. See [status.md](status.md) for release state.
 
 | Suite | Assertions | Covers |
 | --- | --- | --- |
-| `010_rbac_rls` | 56 | Role/permission boundaries, cross-customer isolation, branch scoping, live delivery-zone write controls, the role-assignment rank guard |
+| `010_rbac_rls` | 46 | Role/permission boundaries, cross-customer isolation, branch scoping, live delivery-zone write controls, the role-assignment rank guard |
 | `020_order_state_machine` | 20 | Legal edges, guards, direct-write refusal, terminal states |
 | `030_pricing_and_coupons` | 40 | Server pricing, coupon eligibility, quantity limits, serviceability |
-| `040_delivery_flow` | 48 | Dispatch → pickup → OTP → delivered, timestamped assignment-scoped location, rider scoping, payout |
+| `040_delivery_flow` | 61 | Dispatch → pickup → OTP → delivered, timestamped assignment-scoped location, rider scoping, payout |
 | `050_payments_and_idempotency` | 15 | Placement idempotency, webhook dedupe counters, unpaid-order isolation |
 | `060_refunds` | 27 | Refundable balance, approval separation, ledger settlement |
 | `070_rider_lifecycle` | 64 | Onboarding chain, document review, self-promotion refusal, the staff read surface |
-| `080_campaigns_and_reviews` | 34 | Audience resolution, opt-out honouring, review moderation |
-| `090_read_surfaces` | 65 | Every client-callable read RPC actually executes, as a role allowed to call it |
+| `080_campaigns_and_reviews` | 42 | Audience resolution, opt-out honouring, review moderation |
+| `090_read_surfaces` | 72 | Every client-callable read RPC actually executes, as a role allowed to call it |
 | `100_group_orders` | 10 | Invite privacy, membership checks, host authority, server-validated merge and participant-cart clearing |
-| `110_staff_mfa_and_location` | 29 | Private-schema helper access, owner zone updates, signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
-| `120_customer_growth_localization_outlets` | 44 | Two active outlets, hidden-branch exclusion, Hindi search, favorites ownership/availability, referral rollout and reward idempotency, localized notification/channel preferences, partial-refund wallet preservation, guest-cart import retries, analytics permissions |
+| `110_staff_mfa_and_location` | 28 | Private-schema helper access, owner zone updates, signed AAL2 checks, customer exclusion, RBAC after MFA, safe defaults, and alert access |
+| `120_customer_growth_localization_outlets` | 40 | Two active outlets, hidden-branch exclusion, Hindi search, favorites ownership/availability, referral rollout and reward idempotency, localized notification/channel preferences, partial-refund wallet preservation, guest-cart import retries, analytics permissions |
 | `130_settings_crud` | 20 | Branch-scoped schedule/holiday CRUD, tax default and archive guards, audit capture, settings Realtime publication, active-order and last-outlet archive protection, unauthorized outlet-archive refusal |
+| `140_taste_passport` | 33 | Owner privacy, private ranking helpers, staff/guest/flag-off exclusion, validated preferences, archived categories, hard constraints including current variant prices, branch availability, ranking and empty-profile fallback |
 
 ### Why 090 exists
 
@@ -177,8 +180,8 @@ proves that pickup is what issues it.
 npm run test --workspace=@bitesbox/admin
 ```
 
-Vitest with jsdom. The suite contains **10 files and 82 tests**;
-`npm run test --workspace=@bitesbox/admin` passed all 82 on 23 October 2026.
+Vitest with jsdom. The suite contains **11 files and 86 tests**;
+`npm run test --workspace=@bitesbox/admin` passed all 86 on 24 October 2026.
 
 | File | Tests | Covers |
 | --- | --- | --- |
@@ -230,8 +233,8 @@ pages, all now removed.
 cd apps/mobile && flutter test
 ```
 
-The release branch has 16 test files. `flutter test --reporter compact` passed
-**144 tests** on 23 October 2026.
+The release branch has 18 test files. `flutter test --reporter compact` passed
+**158 tests** on 24 October 2026.
 
 | File | Covers |
 | --- | --- |
@@ -246,6 +249,8 @@ The release branch has 16 test files. `flutter test --reporter compact` passed
 | `test/features/group_order_models_test.dart` | Group snapshots, member contributions, configured dishes and malformed optional fields |
 | `test/features/account_profile_repository_test.dart` | Profile updates send only explicitly changed notification channels |
 | `test/features/profile_screen_test.dart` | Preference hydration, isolated marketing consent, channel save, reload, loading, and recovery after errors |
+| `test/features/taste_passport_models_test.dart` | Owner-returned profile parsing, Taste Match setup state, and stable reason codes |
+| `test/features/taste_passport_editor_test.dart` | Preference editing, save payload, and home-feed invalidation |
 | `test/features/delivery/location_fix_policy_test.dart` | OS capture timestamp freshness, ordering, throttling, and no stale replay |
 | `test/core/telemetry_scrub_test.dart` | Mobile Sentry event redaction and safe route context |
 | `test/integration/order_and_rider_flow_test.dart` | Deterministic Supabase-client contract for order placement/status and rider pickup/completion without GPS |
@@ -311,8 +316,10 @@ npm run test --workspace=@bitesbox/storefront
 npm run e2e --workspace=@bitesbox/storefront
 ```
 
-The unit suite covers outlet-isolated guest cart storage, safe malformed-cart
-handling, retry-key rotation, and English/Hindi fallback selection. Five Playwright
+The three-file, ten-test unit suite covers outlet-isolated guest cart storage,
+safe malformed-cart handling, retry-key rotation, Taste Passport RPC arguments,
+Taste Match setup state and reason labels, refresh subscriptions, and English/Hindi
+fallback selection. Five Playwright
 journeys run against a deterministic local Auth/REST/Edge fake: guest language and
 outlet switching with separate carts, referral attribution through OTP, an OTP
 guest-cart import into server-priced COD checkout and order tracking, signed-in
@@ -375,7 +382,8 @@ The 23 October 2026 release verification record is tracked in
 [status.md](status.md). A separate `deno test --allow-env _shared/logger_test.ts
 _shared/razorpay_test.ts` passed 4 tests across 5 steps. The local DB reset, SQL
 suites, generated type check, mobile checks, storefront and admin browser suites
-were also run; hosted migration state remains unverified.
+were run for the previous snapshot. The Taste Passport SQL suite has not been
+run because Docker was unavailable; hosted migration state remains unverified.
 
 ## CI
 

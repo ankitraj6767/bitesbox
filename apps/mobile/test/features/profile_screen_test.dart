@@ -4,6 +4,8 @@ import 'package:bitesbox/core/auth/session.dart';
 import 'package:bitesbox/core/providers/core_providers.dart';
 import 'package:bitesbox/core/theme/brand_tokens.dart';
 import 'package:bitesbox/features/customer/data/account_repository.dart';
+import 'package:bitesbox/features/customer/data/menu_models.dart';
+import 'package:bitesbox/features/customer/data/taste_passport_models.dart';
 import 'package:bitesbox/features/customer/providers/customer_providers.dart';
 import 'package:bitesbox/features/customer/screens/profile_screen.dart';
 import 'package:bitesbox/l10n/generated/app_localizations.dart';
@@ -26,8 +28,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await _scrollTo(tester, 'Push notifications');
       expect(_switch(tester, 'Push notifications').value, isFalse);
+      await _scrollTo(tester, 'SMS');
       expect(_switch(tester, 'SMS').value, isTrue);
+      await _scrollTo(tester, 'WhatsApp');
       expect(_switch(tester, 'WhatsApp').value, isTrue);
       await _scrollTo(tester, 'Offers and new dish alerts');
       expect(_switch(tester, 'Offers and new dish alerts').value, isFalse);
@@ -110,11 +115,11 @@ void main() {
         'smsEnabled': null,
         'whatsappEnabled': null,
       });
-    expect(_switch(tester, 'Push notifications').value, isFalse);
-    expect(_switch(tester, 'SMS').value, isTrue);
-    expect(_switch(tester, 'WhatsApp').value, isTrue);
-    await _scrollTo(tester, 'Offers and new dish alerts');
-    expect(_switch(tester, 'Offers and new dish alerts').value, isFalse);
+      expect(_switch(tester, 'Push notifications').value, isFalse);
+      expect(_switch(tester, 'SMS').value, isTrue);
+      expect(_switch(tester, 'WhatsApp').value, isTrue);
+      await _scrollTo(tester, 'Offers and new dish alerts');
+      expect(_switch(tester, 'Offers and new dish alerts').value, isFalse);
     },
   );
 
@@ -178,16 +183,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await _scrollTo(tester, 'Push notifications');
     await tester.tap(_switchFinder('Push notifications'));
     await tester.pump();
     await _scrollTo(tester, 'Save changes');
     await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
 
-    expect(
-      _switch(tester, 'Push notifications').value,
-      isTrue,
-    );
+    expect(_switch(tester, 'Push notifications').value, isTrue);
     expect(find.text('Save changes'), findsOneWidget);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton).last).onPressed,
@@ -196,10 +199,8 @@ void main() {
   });
 }
 
-Finder _switchFinder(String title) => find.ancestor(
-  of: find.text(title),
-  matching: find.byType(SwitchListTile),
-);
+Finder _switchFinder(String title) =>
+    find.ancestor(of: find.text(title), matching: find.byType(SwitchListTile));
 
 SwitchListTile _switch(WidgetTester tester, String title) =>
     tester.widget<SwitchListTile>(_switchFinder(title));
@@ -208,7 +209,10 @@ Future<void> _scrollTo(WidgetTester tester, String text) async {
   final target = find.text(text);
   final switchTile = _switchFinder(text);
   final scrollTarget = switchTile.evaluate().isNotEmpty ? switchTile : target;
-  if (scrollTarget.evaluate().isEmpty || !tester.getRect(scrollTarget).overlaps(tester.getRect(find.byType(ListView)))) {
+  if (scrollTarget.evaluate().isEmpty ||
+      !tester
+          .getRect(scrollTarget)
+          .overlaps(tester.getRect(find.byType(ListView)))) {
     await tester.scrollUntilVisible(
       scrollTarget,
       250,
@@ -227,6 +231,16 @@ Widget _app(
   overrides: [
     sessionProvider.overrideWith(() => controller),
     accountRepositoryProvider.overrideWithValue(account),
+    tastePassportProvider.overrideWith(
+      (ref) async => const TastePassportProfile(),
+    ),
+    menuCatalogProvider.overrideWith(
+      (ref) async => MenuCatalog(
+        categories: const [],
+        products: const [],
+        generatedAt: DateTime.utc(2026),
+      ),
+    ),
   ],
   child: BrandTheme(
     tokens: const BrandTokens(),

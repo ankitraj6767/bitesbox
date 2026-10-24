@@ -299,6 +299,7 @@ class CheckoutController extends Notifier<CheckoutState> {
     ref.invalidate(cartProvider);
     ref.invalidate(activeOrdersProvider);
     ref.invalidate(myOrdersProvider);
+    ref.invalidate(homeFeedProvider);
     ref.invalidate(walletProvider);
   }
 

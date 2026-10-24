@@ -41,6 +41,20 @@ h1 { margin: 8px 0; font-size: clamp(30px, 5vw, 48px); line-height: 1.08; letter
 .product-info h3 { margin: 0 0 6px; font-size: 16px; }
 .product-info p { margin: 0; min-height: 34px; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
 .product-price { margin-top: 10px; font-weight: 800; }
+.taste-reason { margin-top: 4px !important; color: #6d5a50 !important; font-size: 11px !important; font-weight: 700; }
+.taste-match { margin: 28px 0; }
+.taste-product-rail { display: flex; gap: 16px; overflow-x: auto; padding: 0 2px 12px; scroll-snap-type: x mandatory; }
+.taste-product-rail > .product-card { flex: 0 0 min(270px, 76vw); scroll-snap-align: start; }
+.taste-setup-prompt { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.taste-setup-prompt p { margin: 5px 0 0; }
+.taste-passport { margin: 24px 0; }
+.taste-passport .section-heading { margin-top: 0; }
+.taste-passport form { display: grid; gap: 14px; }
+.taste-choice-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+.taste-choice-group legend { margin-bottom: 7px; font-size: 13px; font-weight: 800; }
+.taste-choice-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 14px; }
+.taste-passport .choice-row { cursor: pointer; }
+.taste-passport .primary-button { width: fit-content; }
 .favorite-toggle { position: absolute; z-index: 2; top: 10px; right: 10px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; color: var(--ink); background: rgba(255,255,255,.96); }
 .favorite-toggle[aria-pressed="true"] { color: #dd4b37; }
 .primary-button, .secondary-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px; border: 0; border-radius: 11px; font-weight: 800; }
@@ -120,3 +134,5 @@ h1 { margin: 8px 0; font-size: clamp(30px, 5vw, 48px); line-height: 1.08; letter
 @media (prefers-reduced-motion: reduce) { .loading-shimmer { animation: none; } }
 @media (max-width: 980px) { .header-top { flex-wrap: wrap; gap: 10px 14px; } .search-form { order: 5; flex-basis: 100%; max-width: none; } .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .header-top { padding: 11px 14px; } .header-notice { padding: 0 14px 9px; } .main-nav { margin-left: auto; gap: 11px; } .main-nav a:not(:nth-child(3)):not(:nth-child(4)) { display: none; } .nav-label { display: none; } .outlet-select { order: 3; max-width: calc(100% - 58px); } .outlet-select select { max-width: 185px; } .language-select { order: 4; margin-left: auto; } .search-form { order: 5; } .page { padding: 17px 14px 44px; } .product-grid, .loading-products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .loading-brand { width: 110px; } .loading-outlet { display: none; } .loading-nav { width: 110px; } .loading-hero { height: 190px; } .loading-product { min-height: 170px; } .product-info { padding: 10px; } .product-info h3 { font-size: 14px; } .two-column, .product-detail { grid-template-columns: 1fr; } .detail-image, .detail-placeholder { min-height: 250px; } .bill-summary { position: static; } .offers-grid { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; gap: 0; } .coupon-row { align-items: end; } }
+
+@media (max-width: 640px) { .taste-setup-prompt { align-items: flex-start; flex-direction: column; } .taste-passport .primary-button { width: 100%; } }

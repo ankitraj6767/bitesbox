@@ -39,7 +39,8 @@ export const messages = {
         locate: 'Use my current location', terms: 'Order updates are transactional. Optional offers follow your saved preferences.',
         help: 'Help and contact', closedReason: 'This outlet is not taking orders at the moment.',
         tagline: 'Bihar favourites', heroTitle: 'Food made for your cravings.', heroDescription: 'Browse the menu, select an outlet and see current availability before checkout.',
-        dishes: 'dishes', all: 'All', vegetarian: 'Vegetarian', favouriteDish: 'Bites Box favourite',
+        dishes: 'dishes', all: 'All', vegetarian: 'Vegetarian', nonVeg: 'Non-veg', egg: 'Contains egg', vegan: 'Vegan',
+        mild: 'Mild', medium: 'Medium', hot: 'Hot', extraHot: 'Extra hot', favouriteDish: 'Bites Box favourite',
         browseMenu: 'Browse the menu', selectedOutlet: 'Selected outlet', noOutlets: 'No active Bites Box outlet is available right now.',
         outletChanged: 'Outlet changed. Carts and availability are kept separate for each outlet.',
         guestCart: 'Your cart is saved on this device. Sign in to check current price and delivery availability.',
@@ -73,6 +74,16 @@ export const messages = {
         privacyMessage: 'We use your location only after you choose to share it to check delivery coverage.',
         locationError: 'Location could not be checked. Enter coordinates or choose pickup.',
         currentOutletCart: 'Each outlet has its own cart. Switching outlets returns to that outlet’s saved cart.',
+        tastePassport: 'Taste Passport',
+        tastePassportDescription: 'Optional choices for menu recommendations. You can change them any time.',
+        tastePassportDisclaimer: 'These choices are not allergy or medical advice. Check item details if you have a dietary concern.',
+        foodTypes: 'Food types', maximumSpice: 'Maximum spice level', anyLevel: 'Any level', noSpice: 'No spice',
+        favoriteCategories: 'Favorite categories', optionalPriceCeiling: 'Optional item price ceiling',
+        tasteCategoriesUnavailable: 'Menu categories are not available right now.',
+        leaveBlankPrice: 'Leave blank for any price.', saveTastePassport: 'Save Taste Passport',
+        tasteSaved: 'Taste Passport saved.', tasteSaveError: 'Your taste preferences could not be saved. Please try again.',
+        tasteSetupTitle: 'Set up your Taste Passport', tasteSetupDescription: 'Choose a few preferences to get more relevant picks.',
+        priceCeilingInvalid: 'Enter an item price from ₹1 to ₹100,000.', chooseUpTo20Categories: 'Choose up to 20 categories.',
     },
     hi: {
         home: 'होम', menu: 'मेन्यू', favorites: 'पसंदीदा', account: 'खाता', cart: 'कार्ट', offers: 'ऑफ़र',
@@ -88,7 +99,8 @@ export const messages = {
         locate: 'मेरी वर्तमान लोकेशन लें', terms: 'ऑर्डर अपडेट ज़रूरी संदेश हैं। ऑफ़र आपके चुने गए विकल्पों के अनुसार आते हैं।',
         help: 'सहायता और संपर्क', closedReason: 'यह आउटलेट अभी ऑर्डर नहीं ले रहा है।',
         tagline: 'बिहार के पसंदीदा स्वाद', heroTitle: 'आपकी पसंद का स्वाद।', heroDescription: 'मेन्यू देखें, आउटलेट चुनें और चेकआउट से पहले उपलब्धता जानें।',
-        dishes: 'व्यंजन', all: 'सभी', vegetarian: 'शाकाहारी', favouriteDish: 'बाइट्स बॉक्स का पसंदीदा',
+        dishes: 'व्यंजन', all: 'सभी', vegetarian: 'शाकाहारी', nonVeg: 'मांसाहारी', egg: 'अंडे वाला', vegan: 'वीगन',
+        mild: 'कम तीखा', medium: 'मध्यम तीखा', hot: 'तीखा', extraHot: 'बहुत तीखा', favouriteDish: 'बाइट्स बॉक्स का पसंदीदा',
         browseMenu: 'मेन्यू देखें', selectedOutlet: 'चुना हुआ आउटलेट', noOutlets: 'अभी कोई सक्रिय Bites Box आउटलेट उपलब्ध नहीं है।',
         outletChanged: 'आउटलेट बदल गया। हर आउटलेट का कार्ट और उपलब्धता अलग रहती है।',
         guestCart: 'आपका कार्ट इस डिवाइस पर सहेजा है। कीमत और डिलीवरी उपलब्धता जाँचने के लिए फ़ोन से साइन इन करें।',
@@ -122,9 +134,37 @@ export const messages = {
         privacyMessage: 'डिलीवरी कवरेज जाँचने के लिए लोकेशन केवल आपकी अनुमति के बाद उपयोग होती है।',
         locationError: 'लोकेशन जाँची नहीं जा सकी। निर्देशांक दर्ज करें या पिकअप चुनें।',
         currentOutletCart: 'हर आउटलेट का अलग कार्ट है। बदलने पर उस आउटलेट का सहेजा कार्ट खुलेगा।',
+        tastePassport: 'टेस्ट पासपोर्ट',
+        tastePassportDescription: 'मेन्यू के सुझावों के लिए वैकल्पिक पसंद। आप इन्हें कभी भी बदल सकते हैं।',
+        tastePassportDisclaimer: 'ये विकल्प एलर्जी या चिकित्सा सलाह नहीं हैं। आहार संबंधी चिंता हो तो आइटम की जानकारी जाँचें।',
+        foodTypes: 'खाने के प्रकार', maximumSpice: 'तीखेपन की अधिकतम मात्रा', anyLevel: 'कोई भी स्तर', noSpice: 'बिना तीखा',
+        favoriteCategories: 'पसंदीदा श्रेणियाँ', optionalPriceCeiling: 'आइटम की अधिकतम कीमत (वैकल्पिक)',
+        tasteCategoriesUnavailable: 'मेन्यू की श्रेणियाँ अभी उपलब्ध नहीं हैं।',
+        leaveBlankPrice: 'किसी भी कीमत के लिए खाली छोड़ें।', saveTastePassport: 'टेस्ट पासपोर्ट सहेजें',
+        tasteSaved: 'टेस्ट पासपोर्ट सहेज लिया गया।', tasteSaveError: 'स्वाद की पसंद सहेजी नहीं जा सकी। फिर कोशिश करें।',
+        tasteSetupTitle: 'अपना टेस्ट पासपोर्ट बनाएँ', tasteSetupDescription: 'बेहतर सुझावों के लिए अपनी कुछ पसंद चुनें।',
+        priceCeilingInvalid: 'आइटम की कीमत ₹1 से ₹100,000 के बीच दर्ज करें।', chooseUpTo20Categories: 'अधिकतम 20 श्रेणियाँ चुनें।',
     },
 } as const;
 
 export function localeFrom(value?: string | null): Locale {
     return value === 'hi' ? 'hi' : 'en';
+}
+
+export function tasteReasonLabel(code: string | undefined, locale: Locale): string {
+    const copy = {
+        FAVORITE_CATEGORY: { en: 'From a category you like', hi: 'आपकी पसंद की श्रेणी से' },
+        ORDERED_BEFORE: { en: 'You ordered this before', hi: 'आपने इसे पहले ऑर्डर किया था' },
+        SAVED_FAVORITE: { en: 'You saved this', hi: 'आपने इसे पसंदीदा में रखा' },
+        POSITIVE_REVIEW: { en: 'You rated this highly', hi: 'आपने इसे अच्छी रेटिंग दी' },
+        MILD_SPICE: { en: 'Mild spice', hi: 'हल्का तीखापन' },
+        FOOD_TYPE_MATCH: { en: 'Matches a food type you chose', hi: 'आपकी चुनी हुई खाने की श्रेणी से मेल खाता है' },
+        POPULAR_AT_OUTLET: { en: 'Popular at this outlet', hi: 'इस आउटलेट पर लोकप्रिय' },
+        POPULAR_MENU_PICK: { en: 'Popular on our menu', hi: 'हमारे मेन्यू में लोकप्रिय' },
+        CURATED_MENU_PICK: { en: 'Picked for our menu', hi: 'हमारे मेन्यू से चुना गया' },
+        CUSTOMER_RATED_MENU_PICK: { en: 'Customer-rated dish', hi: 'ग्राहकों द्वारा रेट किया गया व्यंजन' },
+        TASTE_PROFILE_MATCH: { en: 'Matches your taste profile', hi: 'आपकी पसंद से मेल खाता है' },
+    } as const;
+    const reason = copy[code as keyof typeof copy] ?? copy.TASTE_PROFILE_MATCH;
+    return reason[locale];
 }

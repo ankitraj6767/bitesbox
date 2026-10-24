@@ -1660,6 +1660,66 @@ export type Database = {
           },
         ];
       };
+      customer_taste_categories: {
+        Row: {
+          category_id: string;
+          created_at: string;
+          user_id: string;
+        };
+        Insert: {
+          category_id: string;
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          category_id?: string;
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_taste_categories_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "customer_taste_categories_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "customer_taste_profiles";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
+      customer_taste_profiles: {
+        Row: {
+          created_at: string;
+          food_types: Database["public"]["Enums"]["food_type"][];
+          max_spice: Database["public"]["Enums"]["spice_level"] | null;
+          price_ceiling: number | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          food_types?: Database["public"]["Enums"]["food_type"][];
+          max_spice?: Database["public"]["Enums"]["spice_level"] | null;
+          price_ceiling?: number | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          food_types?: Database["public"]["Enums"]["food_type"][];
+          max_spice?: Database["public"]["Enums"]["spice_level"] | null;
+          price_ceiling?: number | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       delivery_assignments: {
         Row: {
           accepted_at: string | null;
@@ -7082,6 +7142,7 @@ export type Database = {
       my_rider_onboarding: { Args: never; Returns: Json };
       my_session: { Args: never; Returns: Json };
       my_support_tickets: { Args: { p_limit?: number }; Returns: Json };
+      my_taste_profile: { Args: never; Returns: Json };
       my_wallet: { Args: never; Returns: Json };
       operational_health_alerts: {
         Args: { p_branch_id?: string };
@@ -7303,6 +7364,15 @@ export type Database = {
         Returns: Json;
       };
       run_scheduled_jobs: { Args: { p_cadence?: string }; Returns: Json };
+      save_my_taste_profile: {
+        Args: {
+          p_category_ids?: string[];
+          p_food_types?: string[];
+          p_max_spice?: string;
+          p_price_ceiling?: number;
+        };
+        Returns: Json;
+      };
       save_menu_translations: {
         Args: { p_product_id: string; p_translations: Json };
         Returns: Json;
@@ -7813,6 +7883,7 @@ export type Database = {
         | "BUY_AGAIN"
         | "RECENTLY_ORDERED"
         | "CUSTOMER_FAVOURITES"
+        | "TASTE_MATCH"
         | "CAMPAIGN_BANNER"
         | "COUPON_STRIP"
         | "RICH_TEXT";
@@ -8317,6 +8388,7 @@ export const Constants = {
         "BUY_AGAIN",
         "RECENTLY_ORDERED",
         "CUSTOMER_FAVOURITES",
+        "TASTE_MATCH",
         "CAMPAIGN_BANNER",
         "COUPON_STRIP",
         "RICH_TEXT",

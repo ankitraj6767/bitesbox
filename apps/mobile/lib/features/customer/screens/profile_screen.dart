@@ -10,6 +10,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/widgets/states.dart';
 import '../providers/customer_providers.dart';
+import '../widgets/taste_passport_editor.dart';
 
 /// Edit profile and notification preferences.
 ///
@@ -224,6 +225,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   }),
           ),
           const SizedBox(height: 24),
+          const TastePassportEditor(),
+          const SizedBox(height: 20),
           Text(
             context.customerText('How should we reach you?'),
             style: TextStyle(

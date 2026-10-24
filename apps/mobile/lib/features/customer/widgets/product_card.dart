@@ -468,7 +468,10 @@ class _PriceRow extends StatelessWidget {
     return Row(
       children: [
         if (product.hasVariants)
-          Text(context.customerText("from "), style: TextStyle(fontSize: 13, color: brand.inkMuted)),
+          Text(
+            context.customerText("from "),
+            style: TextStyle(fontSize: 13, color: brand.inkMuted),
+          ),
         Text(
           Fmt.moneySmart(product.displayPrice),
           style: TextStyle(
@@ -665,7 +668,9 @@ class ProductRailCard extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          context.customerText('${product.discountPercent}% OFF'),
+                          context.customerText(
+                            '${product.discountPercent}% OFF',
+                          ),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,
@@ -726,6 +731,19 @@ class ProductRailCard extends ConsumerWidget {
                   ),
                 ],
               ),
+              if (product.reasonCode != null) ...[
+                const SizedBox(height: 3),
+                Text(
+                  context.customerText(_tasteReason(product.reasonCode!)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: brand.inkMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
               const SizedBox(height: 3),
               Row(
                 children: [
@@ -760,4 +778,18 @@ class ProductRailCard extends ConsumerWidget {
       ),
     );
   }
+
+  static String _tasteReason(String code) => switch (code) {
+    'FAVORITE_CATEGORY' => 'From a category you like',
+    'ORDERED_BEFORE' => 'You ordered this before',
+    'SAVED_FAVORITE' => 'You saved this',
+    'POSITIVE_REVIEW' => 'You rated this highly',
+    'MILD_SPICE' => 'Mild spice',
+    'FOOD_TYPE_MATCH' => 'Matches a food type you chose',
+    'POPULAR_AT_OUTLET' => 'Popular at this outlet',
+    'POPULAR_MENU_PICK' => 'Popular on our menu',
+    'CURATED_MENU_PICK' => 'Picked for our menu',
+    'CUSTOMER_RATED_MENU_PICK' => 'Customer-rated dish',
+    _ => 'Matches your taste profile',
+  };
 }
