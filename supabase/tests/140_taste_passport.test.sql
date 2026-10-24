@@ -155,6 +155,16 @@ select tap.ok(
   ),
   'staff accounts never receive the customer Taste Match rail'
 );
+select tap.throws(
+  'select public.my_taste_profile()',
+  'PERMISSION_DENIED',
+  'staff accounts cannot read customer taste preferences'
+);
+select tap.throws(
+  'select public.save_my_taste_profile(array[''VEG''], null, ''{}'', null)',
+  'PERMISSION_DENIED',
+  'staff accounts cannot save customer taste preferences'
+);
 select tap.reset();
 
 insert into public.customer_taste_profiles (user_id)
