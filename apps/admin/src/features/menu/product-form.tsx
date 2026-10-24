@@ -30,6 +30,10 @@ import { errorMessage } from '@/lib/errors';
 import { storageUrl } from '@/lib/utils';
 import type { FoodType, SpiceLevel } from '@bitesbox/shared-types';
 
+// PostgreSQL accepts the canonical UUID shape without enforcing RFC version
+// bits. Seeded catalog IDs intentionally use zeroed version/variant bits.
+const databaseUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const schema = z.object({
     name: z.string().min(2, 'Give the dish a name').max(120),
     name_hi: z.string().max(120).optional().or(z.literal('')),
@@ -37,7 +41,7 @@ const schema = z.object({
         .string()
         .min(2, 'A URL slug is required')
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Lowercase letters, numbers and hyphens only'),
-    category_id: z.string().uuid('Choose a category'),
+    category_id: z.string().regex(databaseUuidPattern, 'Choose a category'),
     thumbnail_path: z.string().optional().or(z.literal('')),
     hero_image_path: z.string().optional().or(z.literal('')),
     short_description: z.string().max(180).optional().or(z.literal('')),
@@ -52,7 +56,7 @@ const schema = z.object({
     preparation_minutes: z.coerce.number().int().min(1).max(240),
     serves_count: z.number().int().min(1).max(20).optional(),
     calories: z.number().int().min(0).max(10000).optional(),
-    tax_category_id: z.string().uuid().optional().or(z.literal('')),
+    tax_category_id: z.string().regex(databaseUuidPattern, 'Choose a tax category').optional().or(z.literal('')),
     max_quantity_per_order: z.number().int().min(1).max(100).optional(),
     is_active: z.boolean(),
     is_featured: z.boolean(),
@@ -369,7 +373,13 @@ export function ProductForm({
                                 <Field label="Category" required error={errors.category_id?.message}>
                                     <Select
                                         value={watch('category_id')}
-                                        onValueChange={(value) => setValue('category_id', value, { shouldDirty: true })}
+                                        onValueChange={(value) =>
+                                            setValue('category_id', value, {
+                                                shouldDirty: true,
+                                                shouldTouch: true,
+                                                shouldValidate: true,
+                                            })
+                                        }
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Choose a category" />
@@ -464,7 +474,11 @@ export function ProductForm({
                                 <Select
                                     value={watch('tax_category_id') ?? ''}
                                     onValueChange={(value) =>
-                                        setValue('tax_category_id', value, { shouldDirty: true })
+                                        setValue('tax_category_id', value, {
+                                            shouldDirty: true,
+                                            shouldTouch: true,
+                                            shouldValidate: true,
+                                        })
                                     }
                                 >
                                     <SelectTrigger>
