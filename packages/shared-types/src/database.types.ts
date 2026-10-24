@@ -7364,6 +7364,10 @@ export type Database = {
         Returns: Json;
       };
       run_scheduled_jobs: { Args: { p_cadence?: string }; Returns: Json };
+      save_menu_translations: {
+        Args: { p_product_id: string; p_translations: Json };
+        Returns: Json;
+      };
       save_my_taste_profile: {
         Args: {
           p_category_ids?: string[];
@@ -7371,10 +7375,6 @@ export type Database = {
           p_max_spice?: string;
           p_price_ceiling?: number;
         };
-        Returns: Json;
-      };
-      save_menu_translations: {
-        Args: { p_product_id: string; p_translations: Json };
         Returns: Json;
       };
       search_menu: {
@@ -7883,10 +7883,10 @@ export type Database = {
         | "BUY_AGAIN"
         | "RECENTLY_ORDERED"
         | "CUSTOMER_FAVOURITES"
-        | "TASTE_MATCH"
         | "CAMPAIGN_BANNER"
         | "COUPON_STRIP"
-        | "RICH_TEXT";
+        | "RICH_TEXT"
+        | "TASTE_MATCH";
       legal_document_kind:
         | "TERMS"
         | "PRIVACY"
@@ -8388,10 +8388,10 @@ export const Constants = {
         "BUY_AGAIN",
         "RECENTLY_ORDERED",
         "CUSTOMER_FAVOURITES",
-        "TASTE_MATCH",
         "CAMPAIGN_BANNER",
         "COUPON_STRIP",
         "RICH_TEXT",
+        "TASTE_MATCH",
       ],
       legal_document_kind: [
         "TERMS",
