@@ -4,8 +4,8 @@ import { siteUrl } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
-    title: 'Bites Box menu',
-    description: 'Browse dishes and outlet availability from Bites Box.',
+    title: 'Bites Box | Bihar favourites, made for your table',
+    description: 'Explore slow-dum biryani, tandoor favourites and comforting Bihari dishes from Bites Box.',
     alternates: { canonical: siteUrl },
 };
 

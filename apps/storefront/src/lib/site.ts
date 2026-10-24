@@ -13,6 +13,10 @@ export function hasSameSiteOrigin(request: Request) {
 
 export function storageUrl(path?: string | null) {
     if (!path) return null;
+    const expansionPrefix = 'menu-images/products/expansion/';
+    if (path.startsWith(expansionPrefix)) {
+        return `/bundled/menu/products/${path.slice(expansionPrefix.length)}`;
+    }
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
     if (!base) return null;
     const known = ['menu-images', 'banners', 'brand-assets'];
@@ -38,7 +42,13 @@ export const messages = {
         addAddress: 'Add delivery address', street: 'Street and house number', city: 'City', state: 'State',
         locate: 'Use my current location', terms: 'Order updates are transactional. Optional offers follow your saved preferences.',
         help: 'Help and contact', closedReason: 'This outlet is not taking orders at the moment.',
-        tagline: 'Bihar favourites', heroTitle: 'Food made for your cravings.', heroDescription: 'Browse the menu, select an outlet and see current availability before checkout.',
+        tagline: 'Bihar favourites, served with a little magic', heroTitle: 'A little more joy in every bite.', heroDescription: 'Slow-dum biryani, smoky tandoor favourites and comforting Bihari plates, prepared fresh for your table.',
+        freshPicks: 'Fresh from the kitchen', freshPicksDescription: 'Meet the latest additions to the Bites Box menu.',
+        chooseYourMood: 'What are you craving?', chooseYourMoodDescription: 'Find a favourite for every mood, from slow-dum classics to something sweet.',
+        featuredDish: 'A Bites Box signature', exploreFullMenu: 'Explore the full menu', seeOffers: 'See today’s offers',
+        curatedCount: 'curated dishes', freshlyPrepared: 'Prepared with care', regionalFlavours: 'Rooted in Bihar',
+        moodEyebrow: 'A little inspiration', freshEyebrow: 'Just landed', heroCareLabel: 'Made with care', heroCareSub: 'From our kitchen to your table',
+        prepTime: 'Ready in', servesLabel: 'Portion', spiceLevel: 'Spice', calorieEstimate: 'Approx. calories', containsAllergens: 'Allergen info', dietaryInfo: 'Dietary',
         dishes: 'dishes', all: 'All', vegetarian: 'Vegetarian', nonVeg: 'Non-veg', egg: 'Contains egg', vegan: 'Vegan',
         mild: 'Mild', medium: 'Medium', hot: 'Hot', extraHot: 'Extra hot', favouriteDish: 'Bites Box favourite',
         browseMenu: 'Browse the menu', selectedOutlet: 'Selected outlet', noOutlets: 'No active Bites Box outlet is available right now.',
@@ -98,7 +108,13 @@ export const messages = {
         addAddress: 'डिलीवरी पता जोड़ें', street: 'गली और मकान नंबर', city: 'शहर', state: 'राज्य',
         locate: 'मेरी वर्तमान लोकेशन लें', terms: 'ऑर्डर अपडेट ज़रूरी संदेश हैं। ऑफ़र आपके चुने गए विकल्पों के अनुसार आते हैं।',
         help: 'सहायता और संपर्क', closedReason: 'यह आउटलेट अभी ऑर्डर नहीं ले रहा है।',
-        tagline: 'बिहार के पसंदीदा स्वाद', heroTitle: 'आपकी पसंद का स्वाद।', heroDescription: 'मेन्यू देखें, आउटलेट चुनें और चेकआउट से पहले उपलब्धता जानें।',
+        tagline: 'बिहार के पसंदीदा स्वाद, खास अंदाज़ में', heroTitle: 'हर निवाले में थोड़ी और खुशी।', heroDescription: 'धीमी आँच की दम बिरयानी, तंदूर के पसंदीदा व्यंजन और बिहारी स्वाद—आपके लिए ताज़ा तैयार।',
+        freshPicks: 'रसोई से ताज़ा', freshPicksDescription: 'Bites Box मेन्यू के नए स्वादों से मिलें।',
+        chooseYourMood: 'आज क्या खाने का मन है?', chooseYourMoodDescription: 'दम बिरयानी से लेकर कुछ मीठा तक, हर पसंद के लिए एक स्वाद।',
+        featuredDish: 'Bites Box की खास पेशकश', exploreFullMenu: 'पूरा मेन्यू देखें', seeOffers: 'आज के ऑफ़र देखें',
+        curatedCount: 'चुने हुए व्यंजन', freshlyPrepared: 'ध्यान से तैयार', regionalFlavours: 'बिहार के स्वाद',
+        moodEyebrow: 'आपकी पसंद के लिए', freshEyebrow: 'नया स्वाद', heroCareLabel: 'प्यार से तैयार', heroCareSub: 'हमारी रसोई से आपकी मेज़ तक',
+        prepTime: 'तैयारी का समय', servesLabel: 'परोसने की मात्रा', spiceLevel: 'तीखापन', calorieEstimate: 'लगभग कैलोरी', containsAllergens: 'एलर्जी की जानकारी', dietaryInfo: 'आहार',
         dishes: 'व्यंजन', all: 'सभी', vegetarian: 'शाकाहारी', nonVeg: 'मांसाहारी', egg: 'अंडे वाला', vegan: 'वीगन',
         mild: 'कम तीखा', medium: 'मध्यम तीखा', hot: 'तीखा', extraHot: 'बहुत तीखा', favouriteDish: 'बाइट्स बॉक्स का पसंदीदा',
         browseMenu: 'मेन्यू देखें', selectedOutlet: 'चुना हुआ आउटलेट', noOutlets: 'अभी कोई सक्रिय Bites Box आउटलेट उपलब्ध नहीं है।',

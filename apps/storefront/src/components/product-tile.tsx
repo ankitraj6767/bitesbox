@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FavoriteToggle } from "@/components/favorite-toggle";
-import { storageUrl, type Locale } from "@/lib/site";
+import { messages, storageUrl, type Locale } from "@/lib/site";
 
 export interface Product {
   id: string;
@@ -16,6 +16,10 @@ export interface Product {
   food_type?: string;
   is_available: boolean;
   is_best_seller?: boolean;
+  is_new?: boolean;
+  preparation_minutes?: number | null;
+  serves_count?: number | null;
+  spice_level?: string | null;
   has_variants?: boolean;
   reason_code?: string;
 }
@@ -32,6 +36,17 @@ export function ProductTile({
   reason?: string;
 }) {
   const image = storageUrl(product.thumbnail_path ?? product.hero_image_path);
+  const t = messages[locale];
+  const spiceCopy = {
+    NONE: t.noSpice,
+    MILD: t.mild,
+    MEDIUM: t.medium,
+    HOT: t.hot,
+    EXTRA_HOT: t.extraHot,
+  };
+  const spiceLabel = product.spice_level
+    ? spiceCopy[product.spice_level as keyof typeof spiceCopy]
+    : null;
   const money = new Intl.NumberFormat(locale === "hi" ? "hi-IN" : "en-IN", {
     style: "currency",
     currency: "INR",
@@ -53,6 +68,17 @@ export function ProductTile({
             />
           ) : null}
         </Link>
+        <div className="product-badges">
+          {product.is_best_seller ? (
+            <span className="product-badge product-badge-featured">
+              {locale === "hi" ? "लोकप्रिय" : "Fan favourite"}
+            </span>
+          ) : product.is_new ? (
+            <span className="product-badge">
+              {locale === "hi" ? "नया" : "Just added"}
+            </span>
+          ) : null}
+        </div>
         <FavoriteToggle
           productId={product.id}
           initial={favorite}
@@ -68,11 +94,31 @@ export function ProductTile({
         />
       </div>
       <div className="product-info">
-        <h3>
-          <Link href={`/menu/${encodeURIComponent(product.slug)}`}>
-            {product.name}
-          </Link>
-        </h3>
+        <div className="product-title-line">
+          <span
+            className={`food-mark food-mark-${(product.food_type ?? "VEG").toLowerCase()}`}
+            role="img"
+            role="img"
+            aria-label={
+              product.food_type === "NON_VEG"
+                ? locale === "hi"
+                  ? "मांसाहारी"
+                  : "Non-vegetarian"
+                : product.food_type === "EGG"
+                  ? locale === "hi"
+                    ? "अंडा"
+                    : "Contains egg"
+                  : locale === "hi"
+                    ? "शाकाहारी"
+                    : "Vegetarian"
+            }
+          />
+          <h3>
+            <Link href={`/menu/${encodeURIComponent(product.slug)}`}>
+              {product.name}
+            </Link>
+          </h3>
+        </div>
         <p>
           {product.short_description ??
             (product.food_type === "VEG"
@@ -84,6 +130,21 @@ export function ProductTile({
                 : "Bites Box favourite")}
         </p>
         {reason ? <p className="taste-reason">{reason}</p> : null}
+        <div className="product-detail-meta">
+          {product.preparation_minutes ? (
+            <span>{product.preparation_minutes} min</span>
+          ) : null}
+          {product.serves_count ? (
+            <span>
+              {locale === "hi"
+                ? `${product.serves_count} लोगों के लिए`
+                : `Serves ${product.serves_count}`}
+            </span>
+          ) : null}
+          {spiceLabel && product.spice_level !== "NONE" ? (
+            <span>{spiceLabel}</span>
+          ) : null}
+        </div>
         <div className="product-price">
           {product.has_variants
             ? locale === "hi"

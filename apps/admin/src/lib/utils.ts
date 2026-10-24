@@ -78,10 +78,12 @@ export function initials(name: string | null | undefined): string {
         .join('');
 }
 
-/** Public storage object → CDN URL. */
+/** Public storage object → CDN URL, or a bundled expansion image → local asset URL. */
 export function storageUrl(path: string | null | undefined, bucket = 'menu-images'): string | null {
     if (!path) return null;
     if (path.startsWith('http')) return path;
+    const expansionPrefix = 'menu-images/products/expansion/';
+    if (path.startsWith(expansionPrefix)) return `/bundled/menu/products/${path.slice(expansionPrefix.length)}`;
 
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
     if (!base) return null;

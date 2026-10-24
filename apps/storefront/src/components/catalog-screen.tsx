@@ -1,11 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { ProductTile, type Product } from "@/components/product-tile";
 import { storefrontContext } from "@/lib/storefront-context";
-import { messages } from "@/lib/site";
+import { messages, storageUrl, tasteReasonLabel } from "@/lib/site";
 import { StorefrontEvent } from "@/components/storefront-event";
 import { getCachedPublicMenuCatalog } from "@/lib/public-storefront-cache";
-import { tasteReasonLabel } from "@/lib/site";
 import { isTasteSetup } from "@/lib/taste-passport";
 import { TasteMatchRefreshSignal } from "@/components/taste-match-refresh-signal";
 
@@ -59,6 +59,7 @@ export async function CatalogScreen({
     products?: Product[];
   } | null;
   const categories = catalog?.categories ?? [];
+  const isHome = !query.trim() && !categoryId;
   const products = (catalog?.products ?? []).filter(
     (product) => !categoryId || String(product.category_id) === categoryId,
   );
@@ -82,6 +83,24 @@ export async function CatalogScreen({
     unknown
   >;
   const open = ordering.accepting_orders === true;
+  const heroProduct =
+    products.find(
+      (product) => product.slug === "lucknowi-chicken-dum-biryani",
+    ) ??
+    products.find((product) => product.slug === "chicken-dum-biryani") ??
+    products[0];
+  const heroImage = storageUrl(
+    heroProduct?.hero_image_path ?? heroProduct?.thumbnail_path,
+  );
+  const freshProducts = categories
+    .map((category) =>
+      products.find(
+        (product) =>
+          product.is_new && product.category_id === String(category["id"]),
+      ),
+    )
+    .filter((product): product is Product => Boolean(product))
+    .slice(0, 12);
 
   return (
     <>
@@ -100,25 +119,246 @@ export async function CatalogScreen({
         userId={user?.id ?? null}
       />
       <main className="page">
-        <section className="hero" aria-labelledby="hero-title">
-          <div className="eyebrow">Bites Box · {t.tagline}</div>
-          <h1 id="hero-title">{t.heroTitle}</h1>
-          <p className="muted">{t.heroDescription}</p>
-          {outlet ? (
-            <div className="status">
-              <span className={`dot ${open ? "" : "closed"}`} />
-              {outlet.name} · {open ? t.outletOpen : t.outletClosed}
-            </div>
-          ) : null}
-          {outlet && !open ? (
-            <p className="status-message">
-              {String(ordering.status_note ?? t.closedReason)}
-            </p>
-          ) : null}
-          {!outlet ? <p className="status-message">{t.noOutlets}</p> : null}
-        </section>
+        {isHome ? (
+          <>
+            <section className="hero hero-premium" aria-labelledby="hero-title">
+              <div className="hero-copy">
+                <div className="hero-kicker">
+                  <span aria-hidden="true">✦</span> Bites Box · {t.tagline}
+                </div>
+                <h1 id="hero-title">{t.heroTitle}</h1>
+                <p className="hero-description">{t.heroDescription}</p>
+                <div className="hero-actions">
+                  <Link
+                    className="primary-button hero-primary"
+                    href="#menu-categories"
+                  >
+                    {t.exploreFullMenu}
+                    <span aria-hidden="true">↗</span>
+                  </Link>
+                  <Link className="hero-secondary" href="/offers">
+                    {t.seeOffers}
+                  </Link>
+                </div>
+                {outlet ? (
+                  <div className="status hero-status">
+                    <span className={`dot ${open ? "" : "closed"}`} />
+                    {outlet.name} · {open ? t.outletOpen : t.outletClosed}
+                  </div>
+                ) : null}
+                {outlet && !open ? (
+                  <p className="hero-status-note">
+                    {String(ordering.status_note ?? t.closedReason)}
+                  </p>
+                ) : null}
+                {!outlet ? (
+                  <p className="hero-status-note">{t.noOutlets}</p>
+                ) : null}
+                <div
+                  className="hero-proof"
+                  aria-label="Bites Box menu highlights"
+                >
+                  <span>
+                    <strong>{products.length}</strong> {t.curatedCount}
+                  </span>
+                  <span>
+                    <i aria-hidden="true">✦</i> {t.freshlyPrepared}
+                  </span>
+                  <span>
+                    <i aria-hidden="true">⌂</i> {t.regionalFlavours}
+                  </span>
+                </div>
+              </div>
+              <div className="hero-visual">
+                <div className="hero-orbit hero-orbit-one" />
+                <div className="hero-orbit hero-orbit-two" />
+                {heroProduct && heroImage ? (
+                  <Link
+                    className="hero-food-photo"
+                    href={`/menu/${encodeURIComponent(heroProduct.slug)}`}
+                    aria-label={`${locale === "hi" ? "देखें" : "View"} ${heroProduct.name}`}
+                  >
+                    <Image
+                      src={heroImage}
+                      alt={heroProduct.name}
+                      fill
+                      priority
+                      sizes="(max-width: 760px) 82vw, 46vw"
+                    />
+                    <span className="hero-photo-stamp">{t.featuredDish}</span>
+                  </Link>
+                ) : null}
+                {heroProduct ? (
+                  <Link
+                    className="hero-dish-caption"
+                    href={`/menu/${encodeURIComponent(heroProduct.slug)}`}
+                  >
+                    <span className="hero-caption-kicker">
+                      {t.featuredDish}
+                    </span>
+                    <strong>{heroProduct.name}</strong>
+                    <span className="hero-caption-arrow" aria-hidden="true">
+                      ↗
+                    </span>
+                  </Link>
+                ) : null}
+                <div className="hero-floating-note">
+                  <span className="hero-note-mark" aria-hidden="true">
+                    ✺
+                  </span>
+                  <span>
+                    <strong>{t.heroCareLabel}</strong>
+                    <small>{t.heroCareSub}</small>
+                  </span>
+                </div>
+              </div>
+            </section>
 
-        <section aria-labelledby="browse-heading">
+            {tasteSection ? (
+              <section
+                className="taste-match"
+                aria-labelledby="taste-match-heading"
+              >
+                <div className="section-heading">
+                  <div>
+                    <h2 id="taste-match-heading">
+                      {String(tasteSection.title ?? t.tastePassport)}
+                    </h2>
+                    {tasteSection.subtitle ? (
+                      <p className="muted">{String(tasteSection.subtitle)}</p>
+                    ) : null}
+                  </div>
+                </div>
+                {isTasteSetup(tasteSection) ? (
+                  <div className="panel taste-setup-prompt">
+                    <div>
+                      <strong>{t.tasteSetupTitle}</strong>
+                      <p className="muted">{t.tasteSetupDescription}</p>
+                    </div>
+                    <Link
+                      className="secondary-button"
+                      href="/account#taste-passport"
+                    >
+                      {t.saveTastePassport}
+                    </Link>
+                  </div>
+                ) : null}
+                {tasteProducts.length ? (
+                  <div className="taste-product-rail">
+                    {tasteProducts.map((product) => (
+                      <ProductTile
+                        key={product.id}
+                        product={product}
+                        favorite={favoriteIds.has(product.id)}
+                        locale={locale}
+                        reason={tasteReasonLabel(product.reason_code, locale)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+
+            {categories.length ? (
+              <section
+                className="category-discovery"
+                aria-labelledby="mood-heading"
+              >
+                <div className="discovery-heading">
+                  <div>
+                    <span className="section-eyebrow">{t.moodEyebrow}</span>
+                    <h2 id="mood-heading">{t.chooseYourMood}</h2>
+                    <p className="muted">{t.chooseYourMoodDescription}</p>
+                  </div>
+                  <Link className="discovery-link" href="#menu-categories">
+                    {t.exploreFullMenu} <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+                <div className="category-showcase">
+                  {categories.slice(0, 6).map((category, index) => {
+                    const image = storageUrl(
+                      String(
+                        category["thumbnail_path"] ??
+                          category["image_path"] ??
+                          "",
+                      ),
+                    );
+                    const categoryCount = Number(
+                      category["product_count"] ?? 0,
+                    );
+                    return (
+                      <Link
+                        key={String(category["id"])}
+                        className={`category-showcase-card category-tone-${index % 6}`}
+                        href={`/menu?category=${category["id"]}`}
+                      >
+                        <span className="category-showcase-image">
+                          {image ? (
+                            <Image
+                              src={image}
+                              alt=""
+                              fill
+                              sizes="(max-width:640px) 42vw, 20vw"
+                            />
+                          ) : null}
+                        </span>
+                        <span className="category-showcase-copy">
+                          <strong>{String(category["name"])}</strong>
+                          <span>
+                            {String(
+                              category["short_description"] ?? t.viewMenu,
+                            )}
+                          </span>
+                          {categoryCount > 0 ? (
+                            <span className="category-showcase-count">
+                              {categoryCount} {t.dishes}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span
+                          className="category-showcase-arrow"
+                          aria-hidden="true"
+                        >
+                          ↗
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {freshProducts.length ? (
+              <section
+                className="fresh-picks"
+                aria-labelledby="fresh-picks-heading"
+              >
+                <div className="section-heading fresh-heading">
+                  <div>
+                    <span className="section-eyebrow">{t.freshEyebrow}</span>
+                    <h2 id="fresh-picks-heading">{t.freshPicks}</h2>
+                    <p className="muted">{t.freshPicksDescription}</p>
+                  </div>
+                  <Link className="discovery-link" href="#menu-categories">
+                    {t.exploreFullMenu} <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+                <div className="fresh-product-rail">
+                  {freshProducts.map((product) => (
+                    <ProductTile
+                      key={product.id}
+                      product={product}
+                      favorite={favoriteIds.has(product.id)}
+                      locale={locale}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </>
+        ) : null}
+
+        <section id="menu-categories" aria-labelledby="browse-heading">
           <div className="section-heading">
             <h2 id="browse-heading">
               {query ? `${t.resultsFor}: ${query}` : t.browseMenu}
@@ -166,50 +406,6 @@ export async function CatalogScreen({
             <p className="status-message">{t.noProducts}</p>
           ) : null}
         </section>
-        {tasteSection ? (
-          <section
-            className="taste-match"
-            aria-labelledby="taste-match-heading"
-          >
-            <div className="section-heading">
-              <div>
-                <h2 id="taste-match-heading">
-                  {String(tasteSection.title ?? t.tastePassport)}
-                </h2>
-                {tasteSection.subtitle ? (
-                  <p className="muted">{String(tasteSection.subtitle)}</p>
-                ) : null}
-              </div>
-            </div>
-            {isTasteSetup(tasteSection) ? (
-              <div className="panel taste-setup-prompt">
-                <div>
-                  <strong>{t.tasteSetupTitle}</strong>
-                  <p className="muted">{t.tasteSetupDescription}</p>
-                </div>
-                <Link
-                  className="secondary-button"
-                  href="/account#taste-passport"
-                >
-                  {t.saveTastePassport}
-                </Link>
-              </div>
-            ) : null}
-            {tasteProducts.length ? (
-            <div className="taste-product-rail">
-                {tasteProducts.map((product) => (
-                  <ProductTile
-                    key={product.id}
-                    product={product}
-                    favorite={favoriteIds.has(product.id)}
-                    locale={locale}
-                    reason={tasteReasonLabel(product.reason_code, locale)}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </section>
-        ) : null}
         <p className="status-message">{t.priceChecked}</p>
       </main>
       <footer className="site-footer">

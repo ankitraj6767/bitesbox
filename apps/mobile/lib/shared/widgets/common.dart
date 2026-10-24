@@ -49,8 +49,8 @@ class FoodTypeMark extends StatelessWidget {
 
 /// Food photography with caching, a graceful placeholder and a fallback.
 ///
-/// Images come from Supabase Storage public buckets. Paths in the database
-/// already include the bucket prefix, so this resolves them to a CDN URL.
+/// Images usually come from Supabase Storage. Expansion menu items resolve to
+/// bundled copies for consistent, offline-ready customer photos.
 class FoodImage extends StatelessWidget {
   const FoodImage({
     required this.path,
@@ -80,6 +80,7 @@ class FoodImage extends StatelessWidget {
   static String? resolve(String? path) {
     if (path == null || path.isEmpty) return null;
     if (path.startsWith('http')) return path;
+    if (path.startsWith('menu-images/products/expansion/')) return null;
 
     final segments = path.split('/');
     final bucket = segments.first;
@@ -236,8 +237,19 @@ class FoodImage extends StatelessWidget {
   /// Bundled product photography used while a hosted item image downloads.
   static String? assetForPath(String? path) {
     final key = (path ?? '').trim().toLowerCase();
+    const expansionPrefix = 'menu-images/products/expansion/';
+    if (key.startsWith(expansionPrefix)) {
+      return 'assets/images/menu/products/${key.substring(expansionPrefix.length)}';
+    }
     if (!_productAssetSlugs.contains(key)) return assetForCategory(key);
     return 'assets/images/menu/products/$key.jpg';
+  }
+
+  /// Expansion menu photos use the bundled asset copy for immediate availability.
+  static String? _bundledAsset(String? path) {
+    const prefix = 'menu-images/products/expansion/';
+    if (path == null || !path.startsWith(prefix)) return null;
+    return 'assets/images/menu/products/${path.substring(prefix.length)}';
   }
 
   /// Bundled first-paint artwork for CMS banners. The network image remains the
@@ -263,6 +275,7 @@ class FoodImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final brand = context.brand;
     final url = resolve(path);
+    final bundledAsset = _bundledAsset(path);
 
     final iconPlaceholder = Container(
       width: width,
@@ -285,6 +298,19 @@ class FoodImage extends StatelessWidget {
             fit: fit,
             errorBuilder: (_, __, ___) => iconPlaceholder,
           );
+
+    if (bundledAsset != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Image.asset(
+          bundledAsset,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (_, __, ___) => placeholder,
+        ),
+      );
+    }
 
     if (url == null) {
       return ClipRRect(

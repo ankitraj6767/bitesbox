@@ -15,6 +15,8 @@ interface ProductDetail {
     id: string; name: string; slug: string; description?: string | null; short_description?: string | null;
     meta_title?: string | null; meta_description?: string | null; base_price: number; thumbnail_path?: string | null;
     hero_image_path?: string | null; is_available: boolean; variants?: unknown[]; images?: Array<{ storage_path?: string | null; alt_text?: string | null }>;
+    food_type?: string; spice_level?: string; allergens?: string[]; dietary_tags?: string[];
+    preparation_minutes?: number | null; serves_count?: number | null; calories?: number | null;
 }
 
 const loadProduct = cache(async (slug: string) => {
@@ -55,6 +57,26 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     const t = messages[locale];
     const image = storageUrl(product.hero_image_path ?? product.thumbnail_path ?? product.images?.[0]?.storage_path);
     const currency = new Intl.NumberFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+    const foodTypeLabel = product.food_type === 'NON_VEG' ? t.nonVeg : product.food_type === 'EGG' ? t.egg : product.food_type === 'VEGAN' ? t.vegan : t.vegetarian;
+    const spiceLabels = { NONE: t.noSpice, MILD: t.mild, MEDIUM: t.medium, HOT: t.hot, EXTRA_HOT: t.extraHot };
+    const spiceLabel = product.spice_level ? spiceLabels[product.spice_level as keyof typeof spiceLabels] : null;
+    const prepTimeLabel = product.preparation_minutes == null ? null : locale === 'hi' ? `${product.preparation_minutes} मिनट` : `${product.preparation_minutes} min`;
+    const portionLabel = product.serves_count == null ? null : locale === 'hi'
+        ? product.serves_count === 1 ? '1 व्यक्ति के लिए' : `${product.serves_count} लोगों के लिए`
+        : `Serves ${product.serves_count}`;
+    const calorieLabel = product.calories == null ? null : locale === 'hi' ? `${product.calories} किलोकैलोरी` : `${product.calories} kcal`;
+    const dietaryLabels = (product.dietary_tags ?? []).map((tag) => {
+        if (tag === 'vegetarian') return t.vegetarian;
+        if (tag === 'vegan') return t.vegan;
+        if (tag === 'high-protein') return locale === 'hi' ? 'प्रोटीन से भरपूर' : 'High protein';
+        return tag.replaceAll('-', ' ');
+    });
+    const allergenNames: Record<string, { en: string; hi: string }> = {
+        dairy: { en: 'Dairy', hi: 'दूध से बने पदार्थ' }, egg: { en: 'Egg', hi: 'अंडा' },
+        gluten: { en: 'Gluten', hi: 'ग्लूटेन' }, nuts: { en: 'Tree nuts', hi: 'मेवे' },
+        sesame: { en: 'Sesame', hi: 'तिल' }, soy: { en: 'Soy', hi: 'सोया' }, fish: { en: 'Fish', hi: 'मछली' },
+    };
+    const allergenLabels = (product.allergens ?? []).map((item) => allergenNames[item]?.[locale] ?? item);
     const structuredData = {
         '@context': 'https://schema.org', '@type': 'Product', name: product.name,
         description: product.meta_description ?? product.short_description ?? undefined,
@@ -76,6 +98,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         <FavoriteToggle productId={product.id} initial={favorite} label={favorite ? (locale === 'hi' ? 'पसंदीदा से हटाएँ' : 'Remove from favorites') : (locale === 'hi' ? 'पसंदीदा में सहेजें' : 'Save to favorites')} />
                     </div>
                     <p className="muted">{product.short_description ?? product.description}</p>
+                    <div className="dish-facts" aria-label={locale === 'hi' ? 'व्यंजन की जानकारी' : 'Dish details'}>
+                        <span className="dish-fact-type">{foodTypeLabel}</span>
+                        {prepTimeLabel ? <span className="dish-fact"><small>{t.prepTime}</small><strong>{prepTimeLabel}</strong></span> : null}
+                        {portionLabel ? <span className="dish-fact"><small>{t.servesLabel}</small><strong>{portionLabel}</strong></span> : null}
+                        {calorieLabel ? <span className="dish-fact"><small>{t.calorieEstimate}</small><strong>{calorieLabel}</strong></span> : null}
+                        {spiceLabel ? <span className="dish-fact"><small>{t.spiceLevel}</small><strong>{spiceLabel}</strong></span> : null}
+                    </div>
+                    {dietaryLabels.length ? <div className="dish-tags" aria-label={t.dietaryInfo}>{dietaryLabels.map((tag) => <span className="dish-tag" key={tag}>{tag}</span>)}</div> : null}
+                    {allergenLabels.length ? <p className="allergen-note"><strong>{t.containsAllergens}:</strong> {allergenLabels.join(', ')}</p> : null}
                     {product.base_price ? <p className="product-price">{currency.format(Number(product.base_price))}</p> : null}
                     <ProductDetailActions product={product as never} branchId={outlet.id} locale={locale} signedIn={Boolean(user)} />
                 </div>
