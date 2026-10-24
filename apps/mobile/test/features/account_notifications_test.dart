@@ -45,15 +45,17 @@ void main() {
       expect(server.row('push')['read_at'], isNull);
       expect(server.row('sms')['read_at'], isNull);
 
-      for (final request in server.requests.where((r) => r.method == 'GET')) {
-        expect(request.url.queryParameters['user_id'], 'eq.$_userId');
-        expect(request.url.queryParameters['channel'], 'eq.IN_APP');
-        expect(
-          request.url.queryParameters['order'],
-          'created_at.desc.nullslast',
-        );
+      final notificationRequests = server.requests.where(
+        (request) =>
+            request.url.path == '/rest/v1/rpc/localized_customer_notifications',
+      );
+      expect(notificationRequests, hasLength(2));
+      for (final request in notificationRequests) {
+        expect(request.method, 'POST');
+        final params = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(params['p_limit'], 20);
+        expect(params['p_locale'], 'en');
       }
-      expect(server.requests.first.url.queryParameters['limit'], '20');
     },
   );
 
@@ -133,27 +135,22 @@ class _NotificationServer {
 
   Future<http.Response> handle(http.Request request) async {
     requests.add(request);
-    if (request.method == 'GET' &&
-        request.url.path == '/rest/v1/notifications') {
-      final parameters = request.url.queryParameters;
-      // Like production RLS, the server restricts ownership. The channel filter
-      // must come from the app or delivery queue entries will enter the inbox.
-      var visible = _rows.where((row) => row['user_id'] == _userId);
-      for (final column in ['user_id', 'channel']) {
-        final filter = parameters[column];
-        if (filter != null) {
-          visible = visible.where((row) => 'eq.${row[column]}' == filter);
-        }
-      }
-      final ordered = visible.toList();
-      if (parameters['order'] == 'created_at.desc.nullslast') {
-        ordered.sort(
-          (a, b) =>
-              (b['created_at'] as String).compareTo(a['created_at'] as String),
-        );
-      }
-      final limit = int.tryParse(parameters['limit'] ?? '') ?? ordered.length;
-      return _response(request, ordered.take(limit).toList());
+    if (request.method == 'POST' &&
+        request.url.path == '/rest/v1/rpc/localized_customer_notifications') {
+      final params = jsonDecode(request.body) as Map<String, dynamic>;
+      final limit = params['p_limit'] as int? ?? 50;
+      // The production RPC returns the signed-in customer's in-app rows only;
+      // delivery channel rows stay queued for their own providers.
+      final visible = _rows
+          .where(
+            (row) => row['user_id'] == _userId && row['channel'] == 'IN_APP',
+          )
+          .toList();
+      visible.sort(
+        (a, b) =>
+            (b['created_at'] as String).compareTo(a['created_at'] as String),
+      );
+      return _response(request, visible.take(limit).toList());
     }
     if (request.method == 'POST' &&
         request.url.path == '/rest/v1/rpc/mark_notifications_read') {

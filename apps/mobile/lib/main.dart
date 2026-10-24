@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -16,6 +17,11 @@ import 'core/telemetry/scrub.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Env.assertValid();
+
+  // DateFormat needs locale symbols loaded separately from Flutter's widget
+  // localization delegates. These locales are selected by customer profiles.
+  await initializeDateFormatting('en_IN');
+  await initializeDateFormatting('hi_IN');
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

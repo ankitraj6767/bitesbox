@@ -1,10 +1,16 @@
 import 'package:bitesbox/shared/format.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 /// Formatting is where a correct number becomes a wrong-looking one. These are the
 /// cases a customer or an operator would notice: Indian digit grouping, paise that
 /// should not appear, and a timer that must never run backwards.
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('en_IN');
+    await initializeDateFormatting('hi_IN');
+  });
+
   group('money', () {
     test('groups digits the Indian way', () {
       expect(Fmt.money(123456), '₹1,23,456');

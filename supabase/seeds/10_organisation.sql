@@ -416,18 +416,3 @@ insert into public.notification_templates (event, channel, locale, title, body, 
   ('OTP', 'SMS', 'en', null,
    '{{code}} is your Bites Box verification code. Valid for 10 minutes. Do not share it.',
    null, array['code']);
-
--- Hindi variants for the most customer-visible events.
-insert into public.notification_templates (event, channel, locale, title, body, action_route, variables) values
-  ('ORDER_PLACED', 'PUSH', 'hi', 'ऑर्डर {{order_number}} मिल गया 🎉',
-   'धन्यवाद {{customer_name}}! ₹{{grand_total}} का आपका ऑर्डर मिल गया है।',
-   'bitesbox://orders/{{order_id}}', array['order_number','customer_name','grand_total','order_id']),
-  ('ORDER_ACCEPTED', 'PUSH', 'hi', 'रसोई ने ऑर्डर स्वीकार किया 👨‍🍳',
-   '{{order_number}} लगभग {{eta_minutes}} मिनट में तैयार होगा।',
-   'bitesbox://orders/{{order_id}}', array['order_number','eta_minutes','order_id']),
-  ('ORDER_DELIVERED', 'PUSH', 'hi', 'डिलीवर हो गया — भोजन का आनंद लें! 😋',
-   '{{order_number}} डिलीवर कर दिया गया है।',
-   'bitesbox://orders/{{order_id}}', array['order_number','order_id']),
-  ('DELIVERY_OTP', 'SMS', 'hi', null,
-   'Bites Box: ऑर्डर {{order_number}} के लिए OTP {{delivery_otp}} डिलीवरी पार्टनर को बताएं।',
-   null, array['delivery_otp','order_number']);

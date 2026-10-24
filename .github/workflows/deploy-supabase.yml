@@ -11,6 +11,7 @@ on:
     branches: [main]
     paths:
       - 'supabase/migrations/**'
+      - 'supabase/seeds/**'
       - 'supabase/functions/**'
       - 'supabase/config.toml'
       - '.github/workflows/deploy-supabase.yml'
