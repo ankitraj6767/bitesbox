@@ -9,20 +9,21 @@ export async function CatalogScreen({ query = '', categoryId }: { query?: string
     const context = await storefrontContext();
     const { supabase, outlets, outlet, locale, user } = context;
     const t = messages[locale];
-    const catalogResult = outlet
-        ? query.trim()
-            ? await supabase.rpc('localized_search_menu', { p_query: query.trim(), p_branch_id: outlet.id, p_locale: locale, p_limit: 50 })
-            : await supabase.rpc('localized_menu_catalog', { p_branch_id: outlet.id, p_locale: locale })
-        : { data: null, error: null };
+    const [catalogResult, favoriteResult] = await Promise.all([
+        outlet
+            ? query.trim()
+                ? supabase.rpc('localized_search_menu', { p_query: query.trim(), p_branch_id: outlet.id, p_locale: locale, p_limit: 50 })
+                : supabase.rpc('localized_menu_catalog', { p_branch_id: outlet.id, p_locale: locale })
+            : Promise.resolve({ data: null, error: null }),
+        user
+            ? supabase.rpc('my_favorites', { p_branch_id: outlet?.id, p_locale: locale })
+            : Promise.resolve({ data: null, error: null }),
+    ]);
     const catalog = catalogResult.data as { branch?: Record<string, unknown>; categories?: Array<Record<string, unknown>>; products?: Product[] } | null;
     const categories = catalog?.categories ?? [];
     const products = (catalog?.products ?? []).filter((product) => !categoryId || String(product.category_id) === categoryId);
-    let favoriteIds = new Set<string>();
-    if (user) {
-        const favorites = await supabase.rpc('my_favorites', { p_branch_id: outlet?.id, p_locale: locale });
-        const rows = favorites.data as Array<{ id?: string }> | null;
-        favoriteIds = new Set((rows ?? []).map((row) => row.id).filter((id): id is string => Boolean(id)));
-    }
+    const favoriteRows = favoriteResult.data as Array<{ id?: string }> | null;
+    const favoriteIds = new Set((favoriteRows ?? []).map((row) => row.id).filter((id): id is string => Boolean(id)));
     const ordering = (catalog?.branch ?? outlet?.ordering ?? {}) as Record<string, unknown>;
     const open = ordering.accepting_orders === true;
 

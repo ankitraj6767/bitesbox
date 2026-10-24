@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import './globals.css';
-import { siteUrl } from '@/lib/site';
-import { storefrontContext } from '@/lib/storefront-context';
+import { localeFrom, siteUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
     metadataBase: new URL(siteUrl),
@@ -11,6 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-    const { locale } = await storefrontContext();
+    // Keep the document shell independent of Supabase so the route loading
+    // boundary can render immediately while page data is fetched.
+    const locale = localeFrom((await cookies()).get('bb_customer_locale')?.value);
     return <html lang={locale}><body>{children}</body></html>;
 }

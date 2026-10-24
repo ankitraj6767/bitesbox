@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { localeFrom, type Locale } from '@/lib/site';
@@ -19,7 +20,7 @@ interface CustomerSessionPayload {
     } | null;
 }
 
-export async function storefrontContext() {
+export const storefrontContext = cache(async function storefrontContext() {
     const supabase = await createSupabaseServerClient();
     const [outletResult, userResult, jar] = await Promise.all([
         supabase.rpc('public_outlets'),
@@ -41,4 +42,4 @@ export async function storefrontContext() {
     const localeCookie = jar.get('bb_customer_locale')?.value;
     const locale = localeFrom(profile?.preferred_language ?? localeCookie) as Locale;
     return { supabase, outlets, outlet, locale, user, profile };
-}
+});

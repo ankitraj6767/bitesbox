@@ -21,11 +21,15 @@ import type { BranchOrderingState, Session } from '@bitesbox/shared-types';
 export function Topbar({
     session,
     branch,
+    branchLoading,
+    branchUnavailable,
     activeBranchId,
     onOpenNav,
 }: {
     session: Session;
     branch: BranchOrderingState | null;
+    branchLoading: boolean;
+    branchUnavailable: boolean;
     activeBranchId: string | null;
     onOpenNav: () => void;
 }) {
@@ -77,7 +81,18 @@ export function Topbar({
                 </label>
             ) : null}
 
-            {branch && canManageBranch ? <BranchStatusControl branch={branch} /> : null}
+            {branch && canManageBranch ? (
+                <BranchStatusControl branch={branch} />
+            ) : branchLoading || branchUnavailable ? (
+                <span
+                    className="hidden max-w-40 truncate rounded-full border border-hairline bg-surface px-3 py-1.5 text-xs text-ink-muted sm:inline-flex"
+                    role={branchUnavailable ? 'status' : undefined}
+                    aria-label={branchUnavailable ? 'Store status unavailable' : 'Loading store status'}
+                    title={branchUnavailable ? 'Store status could not be loaded. Refresh to retry.' : 'Loading store status'}
+                >
+                    {branchUnavailable ? 'Status unavailable' : 'Checking store status…'}
+                </span>
+            ) : null}
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -9,14 +9,18 @@ const PUBLIC_PATHS = ['/login', '/auth/callback', '/auth/signout', '/no-access']
 /**
  * Refreshes the Supabase session on every request and gates the dashboard.
  *
- * Authentication, back-office role and Supabase Auth assurance are checked
- * before rendering any admin route. Database permission checks remain the
- * authoritative write boundary.
+ * Middleware refreshes/revalidates the cookie session and handles login,
+ * MFA-entry and root redirects. Dashboard routes resolve live roles, permissions
+ * and AAL in their server pages, so duplicating those calls here would block
+ * every client navigation twice.
  *
  * Neither is the security boundary — RLS is. This only avoids rendering a
  * dashboard the user cannot use.
  */
 export async function updateSession(request: NextRequest) {
+    // Server-side permission redirects use this as a return path only. Replace
+    // caller-supplied values so it cannot become an open redirect.
+    request.headers.set('x-bb-request-path', `${request.nextUrl.pathname}${request.nextUrl.search}`);
     let response = NextResponse.next({ request });
 
     const supabase = createServerClient<Database>(
@@ -53,7 +57,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    if (user && (pathname === '/login' || pathname === '/' || pathname === '/mfa' || !isPublic)) {
+    if (user && (pathname === '/login' || pathname === '/' || pathname === '/mfa')) {
         const { data: session } = await supabase.rpc('my_session');
         const roles = (session as { roles?: Array<{ role?: string }> } | null)?.roles ?? [];
         const backOffice = hasBackOfficeRole(roles.map((grant) => grant.role ?? ''));

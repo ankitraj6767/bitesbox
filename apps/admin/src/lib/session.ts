@@ -2,12 +2,12 @@ import 'server-only';
 
 import { cache } from 'react';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Permission, Session } from '@bitesbox/shared-types';
 
 /**
- * Loads identity, live permissions and branch scope in one round trip.
+ * Loads identity, live permissions and branch scope for a protected request.
  *
  * `cache()` dedupes this across a single render pass, so a page and its nested
  * server components share one query. Permissions come from the database (not the
@@ -16,11 +16,12 @@ import type { Permission, Session } from '@bitesbox/shared-types';
 export const getSession = cache(async (): Promise<Session> => {
     const supabase = await createSupabaseServerClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+    const claims = claimsData?.claims;
 
-    if (!user) return { authenticated: false };
+    // Middleware has just revalidated/rotated this cookie with getUser().
+    // Verify the signed claims here without repeating its Auth-server lookup.
+    if (claimsError || typeof claims?.sub !== 'string') return { authenticated: false };
 
     const { data, error } = await supabase.rpc('my_session');
 
@@ -46,14 +47,25 @@ export async function requireSession(): Promise<Session> {
     const isBackOffice = (session.roles ?? []).some(({ role }) =>
         ['OWNER', 'ADMIN', 'MANAGER', 'OPERATIONS', 'FINANCE', 'SUPPORT', 'MARKETING'].includes(role),
     );
-    if (isBackOffice) {
-        const supabase = await createSupabaseServerClient();
-        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (assurance?.currentLevel !== 'aal2') redirect('/mfa');
+    if (!isBackOffice) redirect('/no-access');
+
+    const assuranceLevel = await getAssuranceLevel();
+    if (assuranceLevel !== 'aal2') {
+        const requestPath = (await headers()).get('x-bb-request-path');
+        const nextPath = requestPath?.startsWith('/') && !requestPath.startsWith('//')
+            ? requestPath
+            : '/overview';
+        redirect(`/mfa?next=${encodeURIComponent(nextPath)}`);
     }
 
     return session;
 }
+
+const getAssuranceLevel = cache(async (): Promise<string | null> => {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    return error ? null : data.currentLevel;
+});
 
 /**
  * Session plus a permission check. Redirects rather than throwing, so an

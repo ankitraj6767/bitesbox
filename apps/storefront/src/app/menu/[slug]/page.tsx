@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { ProductDetailActions } from '@/components/product-detail-actions';
 import { FavoriteToggle } from '@/components/favorite-toggle';
 import { StorefrontHeader } from '@/components/storefront-header';
@@ -15,14 +16,23 @@ interface ProductDetail {
     hero_image_path?: string | null; is_available: boolean; variants?: unknown[]; images?: Array<{ storage_path?: string | null; alt_text?: string | null }>;
 }
 
-async function loadProduct(slug: string) {
+const loadProduct = cache(async (slug: string) => {
     const context = await storefrontContext();
-    if (!context.outlet) return { context, product: null };
-    const { data } = await context.supabase.rpc('localized_product_detail', {
-        p_slug: slug, p_branch_id: context.outlet.id, p_locale: context.locale,
-    });
-    return { context, product: data as unknown as ProductDetail | null };
-}
+    if (!context.outlet) return { context, product: null, favorite: false };
+    const [productResult, favoritesResult] = await Promise.all([
+        context.supabase.rpc('localized_product_detail', {
+            p_slug: slug, p_branch_id: context.outlet.id, p_locale: context.locale,
+        }),
+        context.user
+            ? context.supabase.rpc('my_favorites', { p_branch_id: context.outlet.id, p_locale: context.locale })
+            : Promise.resolve({ data: null, error: null }),
+    ]);
+    const product = productResult.data as unknown as ProductDetail | null;
+    const favorite = product
+        ? ((favoritesResult.data ?? []) as Array<{ id?: string }>).some((row) => row.id === product.id)
+        : false;
+    return { context, product, favorite };
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
@@ -40,15 +50,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const { context, product } = await loadProduct(slug);
+    const { context, product, favorite } = await loadProduct(slug);
     if (!product || !context.outlet) notFound();
-    const { supabase, outlets, outlet, locale, user } = context;
+    const { outlets, outlet, locale, user } = context;
     const t = messages[locale];
-    let favorite = false;
-    if (user) {
-        const result = await supabase.rpc('my_favorites', { p_branch_id: outlet.id, p_locale: locale });
-        favorite = ((result.data ?? []) as Array<{ id?: string }>).some((row) => row.id === product.id);
-    }
     const image = storageUrl(product.hero_image_path ?? product.thumbnail_path ?? product.images?.[0]?.storage_path);
     const currency = new Intl.NumberFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
     const structuredData = {

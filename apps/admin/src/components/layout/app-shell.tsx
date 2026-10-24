@@ -15,18 +15,17 @@ import type { BranchOrderingState, Session } from '@bitesbox/shared-types';
  */
 export function AppShell({
     session,
-    branch,
     activeBranchId,
     children,
 }: {
     session: Session;
-    branch: BranchOrderingState | null;
     activeBranchId: string | null;
     children: React.ReactNode;
 }) {
     const [navOpen, setNavOpen] = React.useState(false);
     const permissions = session.permissions ?? [];
     const pathname = usePathname();
+    const selectedBranch = session.branches?.find((branch) => branch.id === activeBranchId);
 
     React.useEffect(() => {
         const primaryRole = session.primary_role ?? 'STAFF';
@@ -42,7 +41,7 @@ export function AppShell({
     // Sidebar badges. Cheap head-only counts, refreshed on a slow interval so a
     // long-lived dashboard tab stays roughly accurate without polling hard.
     const { data: counts = {} } = useQuery<SidebarCounts>({
-        queryKey: ['sidebar-counts', branch?.branch_id],
+        queryKey: ['sidebar-counts', activeBranchId],
         refetchInterval: 60_000,
         staleTime: 30_000,
         queryFn: async () => {
@@ -64,7 +63,7 @@ export function AppShell({
                         'OUT_FOR_DELIVERY',
                         'RIDER_ARRIVED_CUSTOMER',
                     ]);
-                if (branch?.branch_id) query = query.eq('branch_id', branch.branch_id);
+                if (activeBranchId) query = query.eq('branch_id', activeBranchId);
                 const { count } = await query;
                 result.live_orders = count ?? 0;
             }
@@ -74,7 +73,7 @@ export function AppShell({
                     .from('refunds')
                     .select('id, orders!inner(branch_id)', { count: 'exact', head: true })
                     .in('status', ['REQUESTED', 'APPROVAL_PENDING']);
-                if (branch?.branch_id) query = query.eq('orders.branch_id', branch.branch_id);
+                if (activeBranchId) query = query.eq('orders.branch_id', activeBranchId);
                 const { count } = await query;
                 result.pending_refunds = count ?? 0;
             }
@@ -84,7 +83,7 @@ export function AppShell({
                     .from('support_tickets')
                     .select('id', { count: 'exact', head: true })
                     .in('status', ['OPEN', 'IN_PROGRESS', 'ESCALATED']);
-                if (branch?.branch_id) query = query.eq('branch_id', branch.branch_id);
+                if (activeBranchId) query = query.eq('branch_id', activeBranchId);
                 const { count } = await query;
                 result.open_tickets = count ?? 0;
             }
@@ -93,18 +92,41 @@ export function AppShell({
         },
     });
 
+    const canManageBranch = permissions.includes('branch.manage');
+    const branchQuery = useQuery<BranchOrderingState | null>({
+        queryKey: ['branch-ordering-state', activeBranchId],
+        enabled: canManageBranch && Boolean(activeBranchId),
+        staleTime: 15_000,
+        queryFn: async () => {
+            if (!activeBranchId) return null;
+            const supabase = createSupabaseBrowserClient();
+            const { data, error } = await supabase.rpc('branch_ordering_state', {
+                p_branch_id: activeBranchId,
+            });
+            if (error) throw error;
+            return (data as unknown as BranchOrderingState | null) ?? null;
+        },
+    });
+
     return (
         <div className="flex min-h-dvh">
             <Sidebar
                 permissions={permissions}
                 counts={counts}
-                branchName={branch?.branch_name ?? 'Bakhtiyarpur'}
+                branchName={selectedBranch?.name ?? 'Bakhtiyarpur'}
                 open={navOpen}
                 onClose={() => setNavOpen(false)}
             />
 
             <div className="flex min-w-0 flex-1 flex-col">
-                <Topbar session={session} branch={branch} activeBranchId={activeBranchId} onOpenNav={() => setNavOpen(true)} />
+                <Topbar
+                    session={session}
+                    branch={branchQuery.data ?? null}
+                    branchLoading={canManageBranch && branchQuery.isPending}
+                    branchUnavailable={canManageBranch && branchQuery.isError}
+                    activeBranchId={activeBranchId}
+                    onOpenNav={() => setNavOpen(true)}
+                />
                 <main id="main" className="min-w-0 flex-1 px-4 py-5 lg:px-6 lg:py-6">
                     {children}
                 </main>

@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChevronDown, Pause, Play, PauseCircle, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,7 +49,7 @@ const RESUME_OPTIONS = [
  * `branch_status_log` for the audit trail.
  */
 export function BranchStatusControl({ branch }: { branch: BranchOrderingState }) {
-    const router = useRouter();
+    const queryClient = useQueryClient();
     const [dialogFor, setDialogFor] = React.useState<BranchStatus | null>(null);
     const [reason, setReason] = React.useState<BranchClosureReason>('TOO_BUSY');
     const [note, setNote] = React.useState('');
@@ -89,7 +88,7 @@ export function BranchStatusControl({ branch }: { branch: BranchOrderingState })
             );
             setDialogFor(null);
             setNote('');
-            router.refresh();
+            void queryClient.invalidateQueries({ queryKey: ['branch-ordering-state', branch.branch_id] });
         },
         onError: (error) => toast.error(errorMessage(error)),
     });
