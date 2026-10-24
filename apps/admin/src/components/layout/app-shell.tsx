@@ -109,7 +109,7 @@ export function AppShell({
     });
 
     return (
-        <div className="flex min-h-dvh">
+        <div className="flex h-dvh min-h-0 overflow-hidden">
             <Sidebar
                 permissions={permissions}
                 counts={counts}
@@ -118,7 +118,7 @@ export function AppShell({
                 onClose={() => setNavOpen(false)}
             />
 
-            <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex h-dvh min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                 <Topbar
                     session={session}
                     branch={branchQuery.data ?? null}
@@ -127,7 +127,7 @@ export function AppShell({
                     activeBranchId={activeBranchId}
                     onOpenNav={() => setNavOpen(true)}
                 />
-                <main id="main" className="min-w-0 flex-1 px-4 py-5 lg:px-6 lg:py-6">
+                <main id="main" className="scroll-slim min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 lg:px-6 lg:py-6">
                     {children}
                 </main>
             </div>
