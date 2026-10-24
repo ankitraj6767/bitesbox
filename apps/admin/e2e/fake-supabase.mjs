@@ -11,6 +11,16 @@ const scopedAdminId = '00000000-0000-4000-8000-000000000003';
 const supportTicketId = '00000000-0000-4000-8000-000000000501';
 const supportTicketNumber = 'BB-T-E2E-001';
 let zoneSequence = 0;
+const defaultReferralSettings = {
+    enabled: false,
+    referrer_reward: null,
+    referred_reward: null,
+    minimum_order_amount: null,
+    max_rewards_per_referrer: null,
+    reward_expiry_days: null,
+};
+let referralSettings = { ...defaultReferralSettings };
+let referralFlagEnabled = false;
 
 const branches = [
     {
@@ -147,6 +157,7 @@ const ownerPermissions = [
     'settings.view',
     'settings.update',
     'branch.manage',
+    'feature_flag.update',
 ];
 
 const order = {
@@ -340,6 +351,17 @@ const server = createServer(async (request, response) => {
     if (url.pathname === '/__e2e/branches') {
         return send(response, 200, branches);
     }
+    if (url.pathname === '/__e2e/reset-referrals' && request.method === 'POST') {
+        referralSettings = { ...defaultReferralSettings };
+        referralFlagEnabled = false;
+        return send(response, 200, { ok: true });
+    }
+    if (url.pathname === '/__e2e/referral-state') {
+        return send(response, 200, {
+            settings: referralSettings,
+            feature_flag_enabled: referralFlagEnabled,
+        });
+    }
 
     if (
         url.pathname === '/auth/v1/token' &&
@@ -473,15 +495,8 @@ const server = createServer(async (request, response) => {
         if (name === 'branch_ordering_state') return send(response, 200, null);
         if (name === 'referral_admin_overview') {
             return send(response, 200, {
-                settings: {
-                    enabled: false,
-                    referrer_reward: null,
-                    referred_reward: null,
-                    minimum_order_amount: null,
-                    max_rewards_per_referrer: null,
-                    reward_expiry_days: null,
-                },
-                feature_flag_enabled: false,
+                settings: referralSettings,
+                feature_flag_enabled: referralFlagEnabled,
                 metrics: {
                     attributed: 0,
                     qualified: 0,
@@ -493,14 +508,17 @@ const server = createServer(async (request, response) => {
         }
         if (name === 'update_referral_program' && request.method === 'POST') {
             const body = await jsonBody(request);
-            return send(response, 200, {
-                id: true,
+            referralSettings = {
                 enabled: body.p_enabled,
                 referrer_reward: body.p_referrer_reward,
                 referred_reward: body.p_referred_reward,
                 minimum_order_amount: body.p_minimum_order_amount,
                 max_rewards_per_referrer: body.p_max_rewards_per_referrer,
                 reward_expiry_days: body.p_reward_expiry_days ?? null,
+            };
+            return send(response, 200, {
+                id: true,
+                ...referralSettings,
             });
         }
         if (name === 'approve_refund' && request.method === 'POST') {
@@ -631,6 +649,23 @@ const server = createServer(async (request, response) => {
             for (const branch of changed) Object.assign(branch, body);
             return send(response, 200, singularOrArray(request, changed));
         }
+    }
+
+    if (url.pathname === '/rest/v1/feature_flags' && request.method === 'PATCH') {
+        const claims = getClaims(request);
+        const keyFilter = url.searchParams.get('key');
+        const body = await jsonBody(request);
+        if (!claims || claims.email !== 'owner@bitesbox.test') {
+            return send(response, 403, {
+                code: 'permission_denied',
+                message: 'Permission denied',
+            });
+        }
+        if (keyFilter === 'eq.referrals' && typeof body.is_enabled === 'boolean') {
+            referralFlagEnabled = body.is_enabled;
+        }
+        const row = { key: 'referrals', is_enabled: referralFlagEnabled };
+        return send(response, 200, singularOrArray(request, [row]));
     }
 
     if (

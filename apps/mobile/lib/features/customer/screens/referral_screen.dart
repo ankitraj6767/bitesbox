@@ -9,6 +9,7 @@ import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
+import '../../../shared/format.dart';
 import '../../../shared/widgets/states.dart';
 import '../providers/customer_providers.dart';
 
@@ -121,8 +122,9 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                                   label: Text(l10n.copyReferral),
                                 ),
                                 FilledButton.icon(
-                                  onPressed: () =>
-                                      _share(data.code, data.sharePath),
+                                  onPressed: data.programActive
+                                      ? () => _share(data.code, data.sharePath)
+                                      : null,
                                   icon: const Icon(Icons.share_rounded),
                                   label: Text(l10n.shareReferral),
                                 ),
@@ -130,7 +132,10 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              l10n.referralCounts(data.attributedCount, data.rewardedCount),
+                              l10n.referralCounts(
+                                data.attributedCount,
+                                data.rewardedCount,
+                              ),
                               style: TextStyle(
                                 color: brand.inkMuted,
                                 fontSize: 12.5,
@@ -140,6 +145,114 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                         ),
                       ),
                     ),
+                    if (data.programActive && data.terms != null) ...[
+                      const SizedBox(height: 14),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.referralProgramTermsTitle,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _ReferralTermRow(
+                                label: l10n.referralYouEarn,
+                                value: Fmt.moneySmart(
+                                  data.terms!.referrerReward,
+                                ),
+                              ),
+                              _ReferralTermRow(
+                                label: l10n.referralFriendEarns,
+                                value: Fmt.moneySmart(
+                                  data.terms!.referredReward,
+                                ),
+                              ),
+                              _ReferralTermRow(
+                                label: l10n.referralMinimumOrder,
+                                value: Fmt.moneySmart(
+                                  data.terms!.minimumOrderAmount,
+                                ),
+                              ),
+                              if (data.terms!.rewardExpiryDays != null)
+                                _ReferralTermRow(
+                                  label: l10n.referralRewardExpiry,
+                                  value: l10n.daysCount(
+                                    data.terms!.rewardExpiryDays!,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (data.referrals.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.referralYourInvites,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              for (
+                                var index = 0;
+                                index < data.referrals.length;
+                                index++
+                              ) ...[
+                                if (index > 0) const Divider(height: 1),
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: Icon(
+                                    data.referrals[index].status == 'REWARDED'
+                                        ? Icons.check_circle_rounded
+                                        : Icons.card_giftcard_rounded,
+                                    color:
+                                        data.referrals[index].status ==
+                                            'REWARDED'
+                                        ? brand.success
+                                        : brand.primary,
+                                  ),
+                                  title: Text(
+                                    l10n.referralInviteNumber(index + 1),
+                                  ),
+                                  subtitle: Text(
+                                    '${_referralStatusLabel(data.referrals[index].status, l10n)} · ${Fmt.dayTime(data.referrals[index].attributedAt)}',
+                                  ),
+                                  trailing:
+                                      data.referrals[index].rewardedAt !=
+                                              null &&
+                                          data.referrals[index].referrerReward >
+                                              0
+                                      ? Text(
+                                          Fmt.moneySmart(
+                                            data
+                                                .referrals[index]
+                                                .referrerReward,
+                                          ),
+                                          style: TextStyle(
+                                            color: brand.success,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 18),
                     TextField(
                       controller: _code,
@@ -152,7 +265,10 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                     ),
                     const SizedBox(height: 10),
                     FilledButton(
-                      onPressed: _busy || _code.text.trim().isEmpty
+                      onPressed:
+                          _busy ||
+                              _code.text.trim().isEmpty ||
+                              !data.programActive
                           ? null
                           : _apply,
                       child: Text(_busy ? l10n.applying : l10n.applyReferral),
@@ -168,7 +284,12 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
 
   Future<void> _copy(String code) async {
     await Clipboard.setData(ClipboardData(text: code));
-    if (mounted) AppFeedback.showSuccess(context, AppLocalizations.of(context).referralCopied);
+    if (mounted) {
+      AppFeedback.showSuccess(
+        context,
+        AppLocalizations.of(context).referralCopied,
+      );
+    }
   }
 
   Future<void> _share(String code, String path) async {
@@ -183,7 +304,12 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       await launchUrl(uri);
     } else {
       await Clipboard.setData(ClipboardData(text: message));
-      if (mounted) AppFeedback.showSuccess(context, AppLocalizations.of(context).inviteCopied);
+      if (mounted) {
+        AppFeedback.showSuccess(
+          context,
+          AppLocalizations.of(context).inviteCopied,
+        );
+      }
     }
   }
 
@@ -205,3 +331,32 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     }
   }
 }
+
+class _ReferralTermRow extends StatelessWidget {
+  const _ReferralTermRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(label, style: TextStyle(color: context.brand.inkMuted)),
+        ),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+      ],
+    ),
+  );
+}
+
+String _referralStatusLabel(String status, AppLocalizations l10n) =>
+    switch (status) {
+      'ATTRIBUTED' => l10n.referralStatusInvited,
+      'QUALIFIED' => l10n.referralStatusQualified,
+      'REWARDED' => l10n.referralStatusRewarded,
+      'REVERSED' => l10n.referralStatusReversed,
+      _ => status,
+    };

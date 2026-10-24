@@ -107,7 +107,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get referralApplied => 'Referral code applied.';
 
   @override
-  String get referralUnavailable => 'The referral program is not active yet.';
+  String get referralUnavailable =>
+      'Invites cannot be applied yet. Check back when the program launches.';
 
   @override
   String get shareReferral => 'Share code';
@@ -165,6 +166,52 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0 · $_temp1';
   }
+
+  @override
+  String get referralProgramTermsTitle => 'How the rewards work';
+
+  @override
+  String get referralYouEarn => 'You earn';
+
+  @override
+  String get referralFriendEarns => 'Your friend earns';
+
+  @override
+  String get referralMinimumOrder => 'After an order of at least';
+
+  @override
+  String get referralRewardExpiry => 'Reward expires after';
+
+  @override
+  String daysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# days',
+      one: '# day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get referralYourInvites => 'Your invites';
+
+  @override
+  String referralInviteNumber(int number) {
+    return 'Invite $number';
+  }
+
+  @override
+  String get referralStatusInvited => 'Invited';
+
+  @override
+  String get referralStatusQualified => 'First eligible order placed';
+
+  @override
+  String get referralStatusRewarded => 'Reward credited';
+
+  @override
+  String get referralStatusReversed => 'Reward reversed';
 
   @override
   String get applying => 'Applying…';

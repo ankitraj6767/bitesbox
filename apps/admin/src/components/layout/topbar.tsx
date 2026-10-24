@@ -16,6 +16,7 @@ import {
 import { CommandPalette } from './command-palette';
 import { BranchStatusControl } from './branch-status-control';
 import { initials, humanise } from '@/lib/utils';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { BranchOrderingState, Session } from '@bitesbox/shared-types';
 
 export function Topbar({
@@ -46,6 +47,26 @@ export function Topbar({
             body: JSON.stringify({ branchId: nextBranchId }),
         });
         if (response.ok) router.refresh();
+    }
+
+    async function signOut() {
+        // Clear this browser's Supabase session immediately, then let the
+        // server route expire every SSR cookie chunk before leaving the page.
+        try {
+            await createSupabaseBrowserClient().auth.signOut({ scope: 'local' });
+        } catch {
+            // The server route also clears the local cookies if Auth is down.
+        }
+        try {
+            await fetch('/auth/signout', {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+            });
+        } catch {
+            // The user should still leave the protected UI if the request fails.
+        }
+        window.location.replace('/login');
     }
 
     return (
@@ -145,14 +166,9 @@ export function Topbar({
 
                     <DropdownMenuSeparator />
 
-                    <DropdownMenuItem asChild destructive>
-                        {/* POST so a prefetch can never sign the operator out. */}
-                        <form action="/auth/signout" method="post" className="w-full">
-                            <button type="submit" className="flex w-full items-center gap-2">
-                                <LogOut />
-                                Sign out
-                            </button>
-                        </form>
+                    <DropdownMenuItem destructive onSelect={() => void signOut()}>
+                        <LogOut />
+                        Sign out
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

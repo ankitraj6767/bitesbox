@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { PERMISSIONS } from "@bitesbox/shared-types";
 import { activeBranchId, requirePermission } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -9,7 +8,7 @@ import {
   branchHolidaySchema,
   branchHoursSchema,
   branchSettingsSchema,
-  featureFlagRolloutSchema,
+  featureFlagUpdateSchema,
   idSchema,
   taxCategorySchema,
 } from "./settings-schema";
@@ -268,9 +267,7 @@ export async function archiveTaxCategory(
 export async function updateFeatureFlag(
   input: unknown,
 ): Promise<SettingsActionResult> {
-  const values = featureFlagRolloutSchema
-    .extend({ is_enabled: z.boolean().optional() })
-    .safeParse(input);
+  const values = featureFlagUpdateSchema.safeParse(input);
   if (!values.success) return invalid(values.error.issues[0]?.message);
   const session = await requirePermission(PERMISSIONS.FEATURE_FLAG_UPDATE);
   const supabase = await createSupabaseServerClient();

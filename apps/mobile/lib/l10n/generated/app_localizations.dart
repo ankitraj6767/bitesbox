@@ -287,7 +287,7 @@ abstract class AppLocalizations {
   /// No description provided for @referralUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'The referral program is not active yet.'**
+  /// **'Invites cannot be applied yet. Check back when the program launches.'**
   String get referralUnavailable;
 
   /// No description provided for @shareReferral.
@@ -367,6 +367,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{invited, plural, =0{No one invited} one{{invited} invited} other{{invited} invited}} · {rewarded, plural, =0{none rewarded} one{{rewarded} rewarded} other{{rewarded} rewarded}}'**
   String referralCounts(int invited, int rewarded);
+
+  /// No description provided for @referralProgramTermsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How the rewards work'**
+  String get referralProgramTermsTitle;
+
+  /// No description provided for @referralYouEarn.
+  ///
+  /// In en, this message translates to:
+  /// **'You earn'**
+  String get referralYouEarn;
+
+  /// No description provided for @referralFriendEarns.
+  ///
+  /// In en, this message translates to:
+  /// **'Your friend earns'**
+  String get referralFriendEarns;
+
+  /// No description provided for @referralMinimumOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'After an order of at least'**
+  String get referralMinimumOrder;
+
+  /// No description provided for @referralRewardExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward expires after'**
+  String get referralRewardExpiry;
+
+  /// No description provided for @daysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{# day} other{# days}}'**
+  String daysCount(int count);
+
+  /// No description provided for @referralYourInvites.
+  ///
+  /// In en, this message translates to:
+  /// **'Your invites'**
+  String get referralYourInvites;
+
+  /// No description provided for @referralInviteNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite {number}'**
+  String referralInviteNumber(int number);
+
+  /// No description provided for @referralStatusInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'Invited'**
+  String get referralStatusInvited;
+
+  /// No description provided for @referralStatusQualified.
+  ///
+  /// In en, this message translates to:
+  /// **'First eligible order placed'**
+  String get referralStatusQualified;
+
+  /// No description provided for @referralStatusRewarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward credited'**
+  String get referralStatusRewarded;
+
+  /// No description provided for @referralStatusReversed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward reversed'**
+  String get referralStatusReversed;
 
   /// No description provided for @applying.
   ///

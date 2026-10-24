@@ -218,6 +218,17 @@ export const featureFlagRolloutSchema = z.object({
   key: z.string().trim().min(1).max(120),
   rollout_percentage: z.number().int().min(0).max(100),
 });
+export const featureFlagUpdateSchema = z
+  .object({
+    key: z.string().trim().min(1).max(120),
+    rollout_percentage: z.number().int().min(0).max(100).optional(),
+    is_enabled: z.boolean().optional(),
+  })
+  .refine(
+    (value) =>
+      value.rollout_percentage !== undefined || value.is_enabled !== undefined,
+    { message: "Set an enabled state or rollout percentage." },
+  );
 
 export type BranchSettingsValues = z.infer<typeof branchSettingsSchema>;
 export type BranchHoursValues = z.infer<typeof branchHoursSchema>;

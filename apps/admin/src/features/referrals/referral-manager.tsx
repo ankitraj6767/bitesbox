@@ -1,13 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardToolbar } from '@/components/ui/card';
 import { Input } from '@/components/ui/form-controls';
+import { ConfirmDialog } from '@/components/ui/overlays';
 import { money } from '@/lib/utils';
+import { updateFeatureFlag } from '@/features/settings/settings-actions';
 
 interface ReferralSettings {
     enabled: boolean;
@@ -40,7 +43,14 @@ interface ReferralOverview {
     activity: ReferralActivity[];
 }
 
-export function ReferralManager({ initial }: { initial: ReferralOverview }) {
+export function ReferralManager({
+    initial,
+    canToggleFeatureFlag,
+}: {
+    initial: ReferralOverview;
+    canToggleFeatureFlag: boolean;
+}) {
+    const router = useRouter();
     const [data, setData] = React.useState(initial);
     const [enabled, setEnabled] = React.useState(initial.settings?.enabled ?? false);
     const [referrerReward, setReferrerReward] = React.useState(initial.settings?.referrer_reward?.toString() ?? '');
@@ -49,6 +59,15 @@ export function ReferralManager({ initial }: { initial: ReferralOverview }) {
     const [cap, setCap] = React.useState(initial.settings?.max_rewards_per_referrer?.toString() ?? '');
     const [expiry, setExpiry] = React.useState(initial.settings?.reward_expiry_days?.toString() ?? '');
     const [busy, setBusy] = React.useState(false);
+    const [flagBusy, setFlagBusy] = React.useState(false);
+    const [flagConfirmation, setFlagConfirmation] = React.useState<boolean | null>(null);
+
+    const hasApprovedTerms = Boolean(
+        data.settings?.enabled &&
+        Number(data.settings.referrer_reward) > 0 &&
+        Number(data.settings.referred_reward) > 0 &&
+        Number(data.settings.minimum_order_amount) > 0,
+    );
 
     async function save(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -64,14 +83,41 @@ export function ReferralManager({ initial }: { initial: ReferralOverview }) {
                 ...(expiry.trim() ? { p_reward_expiry_days: Number(expiry) } : {}),
             });
             if (error) throw error;
-            const { data: refreshed, error: refreshError } = await supabase.rpc('referral_admin_overview');
-            if (refreshError) throw refreshError;
-            setData(refreshed as unknown as ReferralOverview);
+            // The write RPC is authoritative. Do not turn a successful save into
+            // a reported failure because a follow-up overview read timed out.
+            // Rollout is an independent audited feature-flag action.
+            setData((current) => ({
+                ...current,
+                settings: {
+                    enabled,
+                    referrer_reward: Number(referrerReward),
+                    referred_reward: Number(referredReward),
+                    minimum_order_amount: Number(minimumOrder),
+                    max_rewards_per_referrer: cap.trim() ? Number(cap) : null,
+                    reward_expiry_days: expiry.trim() ? Number(expiry) : null,
+                },
+            }));
             toast.success('Referral terms saved. The rollout flag remains independent.');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Could not save referral terms.');
         } finally {
             setBusy(false);
+        }
+    }
+
+    async function setRolloutEnabled(next: boolean) {
+        setFlagBusy(true);
+        try {
+            const result = await updateFeatureFlag({ key: 'referrals', is_enabled: next });
+            if (!result.ok) throw new Error(result.message);
+            setData((current) => ({ ...current, feature_flag_enabled: next }));
+            setFlagConfirmation(null);
+            toast.success(next ? 'Referral rollout enabled for eligible customers.' : 'Referral rollout paused.');
+            router.refresh();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Could not change referral rollout.');
+        } finally {
+            setFlagBusy(false);
         }
     }
 
@@ -116,14 +162,51 @@ export function ReferralManager({ initial }: { initial: ReferralOverview }) {
                         </label>
                         <div className="flex items-end gap-3 md:col-span-2">
                             <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save terms'}</Button>
-                            <Badge tone={data.feature_flag_enabled ? 'positive' : 'caution'}>
-                                Rollout flag {data.feature_flag_enabled ? 'on' : 'off'}
-                            </Badge>
-                            {!data.feature_flag_enabled ? <span className="text-xs text-ink-muted">Customer attribution stays disabled until an authorized owner separately enables the referrals feature flag.</span> : null}
                         </div>
                     </form>
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardToolbar
+                    title="Customer rollout"
+                    description="Terms and rollout are separate audited controls. Enabling rollout makes the approved program available to customers immediately."
+                />
+                <CardContent className="flex flex-wrap items-center gap-3">
+                    <Badge tone={data.feature_flag_enabled ? 'positive' : 'caution'}>
+                        Rollout flag {data.feature_flag_enabled ? 'on' : 'off'}
+                    </Badge>
+                    <Button
+                        variant={data.feature_flag_enabled ? 'secondary' : 'primary'}
+                        disabled={!canToggleFeatureFlag || flagBusy || (!data.feature_flag_enabled && !hasApprovedTerms)}
+                        onClick={() => setFlagConfirmation(!data.feature_flag_enabled)}
+                    >
+                        {data.feature_flag_enabled ? 'Pause customer referrals' : 'Enable customer referrals'}
+                    </Button>
+                    {!canToggleFeatureFlag ? (
+                        <span className="text-xs text-ink-muted">Your role cannot change feature rollouts.</span>
+                    ) : !data.feature_flag_enabled && !hasApprovedTerms ? (
+                        <span className="text-xs text-ink-muted">Save owner-approved reward terms before enabling customer referrals.</span>
+                    ) : null}
+                </CardContent>
+            </Card>
+
+            <ConfirmDialog
+                open={flagConfirmation !== null}
+                onOpenChange={(open) => !open && setFlagConfirmation(null)}
+                title={flagConfirmation ? 'Enable customer referrals?' : 'Pause customer referrals?'}
+                description={flagConfirmation
+                    ? 'New customers can apply referral codes, and qualifying completed orders can earn the saved wallet rewards.'
+                    : 'New referral codes will stop being attributed. Existing wallet entries and referral records remain unchanged.'}
+                confirmLabel={flagConfirmation ? 'Enable referrals' : 'Pause referrals'}
+                destructive={!flagConfirmation}
+                loading={flagBusy}
+                onConfirm={() => {
+                    if (flagConfirmation !== null) {
+                        return setRolloutEnabled(flagConfirmation);
+                    }
+                }}
+            />
 
             <Card>
                 <CardToolbar title="Recent referral activity" description="Codes and order references only; customer contact data is not exposed here." />

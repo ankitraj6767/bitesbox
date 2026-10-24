@@ -49,7 +49,7 @@ class AccountScreen extends ConsumerWidget {
     }
 
     final profile = session.profile;
-    final wallet = ref.watch(walletProvider).valueOrNull;
+    final wallet = ref.watch(walletProvider);
     final unread = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
@@ -125,58 +125,38 @@ class AccountScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (wallet != null && wallet.enabled)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: InkWell(
-                onTap: () => context.push(Routes.wallet),
-                borderRadius: BorderRadius.circular(brand.radiusMd),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: brand.secondary,
-                    borderRadius: BorderRadius.circular(brand.radiusMd),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Wallet balance',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.88),
-                                fontSize: 12.5,
-                              ),
-                            ),
-                            Text(
-                              Fmt.moneySmart(wallet.balance),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 21,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          wallet.when(
+            loading: () => config == null || config.flag('wallet')
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: _WalletBalanceCard(
+                      brand: brand,
+                      loading: true,
+                      onTap: () => context.push(Routes.wallet),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            error: (_, __) => config?.flag('wallet') == true
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: _WalletBalanceCard(
+                      brand: brand,
+                      error: true,
+                      onTap: () => ref.invalidate(walletProvider),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            data: (summary) => summary.enabled
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: _WalletBalanceCard(
+                      brand: brand,
+                      balance: summary.balance,
+                      onTap: () => context.push(Routes.wallet),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
           _Group(
             title: 'Ordering',
             tiles: [
@@ -310,6 +290,82 @@ class AccountScreen extends ConsumerWidget {
     await ref
         .read(sessionProvider.notifier)
         .signOut(deviceToken: ref.read(pushTokenProvider));
+  }
+}
+
+class _WalletBalanceCard extends StatelessWidget {
+  const _WalletBalanceCard({
+    required this.brand,
+    required this.onTap,
+    this.balance,
+    this.loading = false,
+    this.error = false,
+  });
+
+  final BrandTokens brand;
+  final VoidCallback? onTap;
+  final double? balance;
+  final bool loading;
+  final bool error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: brand.secondary,
+      borderRadius: BorderRadius.circular(brand.radiusMd),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(brand.radiusMd),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.account_balance_wallet_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Wallet balance',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.88),
+                        fontSize: 12.5,
+                      ),
+                    ),
+                    if (loading)
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        width: 62,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      )
+                    else
+                      Text(
+                        error ? 'Tap to retry' : Fmt.moneySmart(balance),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

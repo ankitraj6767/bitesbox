@@ -24,6 +24,9 @@ class CustomerShell extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final cartCount = ref.watch(cartUnitCountProvider);
     final unread = ref.watch(unreadNotificationCountProvider);
+    // Warm the balance while the customer is browsing other tabs. Account then
+    // uses the same cached request instead of starting it on first visit.
+    ref.listen(walletProvider, (_, __) {});
 
     return Scaffold(
       body: shell,

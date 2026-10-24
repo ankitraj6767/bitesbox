@@ -71,6 +71,9 @@ test('referral deep link survives phone OTP and is attributed through the RPC co
     await page.getByRole('button', { name: 'Verify code' }).click();
     await expect(page).toHaveURL(/\/referrals$/);
     await expect.poll(() => attributedCode).toBe('BBINVITE42');
+    await expect(page.getByRole('heading', { name: 'How the rewards work' })).toBeVisible();
+    await expect(page.getByText('Reward expires after')).toBeVisible();
+    await expect(page.getByText(/Invite 1: Invited/)).toBeVisible();
 });
 
 test('guest cart moves through OTP into server-priced checkout and order tracking', async ({ page }) => {

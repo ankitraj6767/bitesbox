@@ -46,6 +46,39 @@ void main() {
       expect(summary.attributedCount, 2);
       expect(summary.rewardedCount, 0);
     });
+
+    test('active referral summary exposes configured terms and invite progress', () {
+      final summary = ReferralSummary.fromJson({
+        'code': 'BB9X3QK4P7',
+        'share_path': '/r/BB9X3QK4P7',
+        'program_active': true,
+        'attributed_count': 1,
+        'qualified_count': 0,
+        'rewarded_count': 0,
+        'terms': {
+          'referrer_reward': 25,
+          'referred_reward': 30,
+          'minimum_order_amount': 300,
+          'reward_expiry_days': 90,
+        },
+        'referrals': [
+          {
+            'status': 'ATTRIBUTED',
+            'attributed_at': '2026-10-23T08:00:00.000Z',
+            'qualified_at': null,
+            'rewarded_at': null,
+            'reward_amount': 0,
+          },
+        ],
+      });
+
+      expect(summary.programActive, isTrue);
+      expect(summary.terms?.referrerReward, 25);
+      expect(summary.terms?.referredReward, 30);
+      expect(summary.terms?.minimumOrderAmount, 300);
+      expect(summary.terms?.rewardExpiryDays, 90);
+      expect(summary.referrals.single.status, 'ATTRIBUTED');
+    });
   });
 
   test('English and Hindi generated localization expose critical checkout copy', () async {

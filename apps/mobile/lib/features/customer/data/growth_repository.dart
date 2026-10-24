@@ -74,14 +74,20 @@ class ReferralSummary {
     required this.sharePath,
     required this.programActive,
     required this.attributedCount,
+    required this.qualifiedCount,
     required this.rewardedCount,
+    required this.referrals,
+    this.terms,
   });
 
   final String code;
   final String sharePath;
   final bool programActive;
   final int attributedCount;
+  final int qualifiedCount;
   final int rewardedCount;
+  final ReferralRewardTerms? terms;
+  final List<ReferralActivity> referrals;
 
   factory ReferralSummary.fromJson(Map<String, dynamic> json) =>
       ReferralSummary(
@@ -89,7 +95,59 @@ class ReferralSummary {
         sharePath: asString(json['share_path']),
         programActive: asBool(json['program_active']),
         attributedCount: asInt(json['attributed_count']),
+        qualifiedCount: asInt(json['qualified_count']),
         rewardedCount: asInt(json['rewarded_count']),
+        terms: asMapOrNull(json['terms']) == null
+            ? null
+            : ReferralRewardTerms.fromJson(asMap(json['terms'])),
+        referrals: asList(json['referrals'], ReferralActivity.fromJson),
+      );
+}
+
+class ReferralRewardTerms {
+  const ReferralRewardTerms({
+    required this.referrerReward,
+    required this.referredReward,
+    required this.minimumOrderAmount,
+    this.rewardExpiryDays,
+  });
+
+  final double referrerReward;
+  final double referredReward;
+  final double minimumOrderAmount;
+  final int? rewardExpiryDays;
+
+  factory ReferralRewardTerms.fromJson(Map<String, dynamic> json) =>
+      ReferralRewardTerms(
+        referrerReward: asDouble(json['referrer_reward']),
+        referredReward: asDouble(json['referred_reward']),
+        minimumOrderAmount: asDouble(json['minimum_order_amount']),
+        rewardExpiryDays: asIntOrNull(json['reward_expiry_days']),
+      );
+}
+
+class ReferralActivity {
+  const ReferralActivity({
+    required this.status,
+    required this.attributedAt,
+    required this.referrerReward,
+    this.qualifiedAt,
+    this.rewardedAt,
+  });
+
+  final String status;
+  final DateTime? attributedAt;
+  final DateTime? qualifiedAt;
+  final DateTime? rewardedAt;
+  final double referrerReward;
+
+  factory ReferralActivity.fromJson(Map<String, dynamic> json) =>
+      ReferralActivity(
+        status: asString(json['status']),
+        attributedAt: asDate(json['attributed_at']),
+        qualifiedAt: asDate(json['qualified_at']),
+        rewardedAt: asDate(json['rewarded_at']),
+        referrerReward: asDouble(json['reward_amount']),
       );
 }
 

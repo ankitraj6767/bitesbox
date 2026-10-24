@@ -107,7 +107,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get referralApplied => 'रेफ़रल कोड लागू हो गया।';
 
   @override
-  String get referralUnavailable => 'रेफ़रल प्रोग्राम अभी चालू नहीं है।';
+  String get referralUnavailable =>
+      'अभी आमंत्रण कोड लागू नहीं हो सकते। प्रोग्राम शुरू होने पर फिर देखें।';
 
   @override
   String get shareReferral => 'कोड साझा करें';
@@ -165,6 +166,52 @@ class AppLocalizationsHi extends AppLocalizations {
     );
     return '$_temp0 · $_temp1';
   }
+
+  @override
+  String get referralProgramTermsTitle => 'इनाम कैसे मिलेंगे';
+
+  @override
+  String get referralYouEarn => 'आपको मिलेगा';
+
+  @override
+  String get referralFriendEarns => 'आपके दोस्त को मिलेगा';
+
+  @override
+  String get referralMinimumOrder => 'कम से कम इतने रुपये के ऑर्डर पर';
+
+  @override
+  String get referralRewardExpiry => 'इनाम की समय-सीमा';
+
+  @override
+  String daysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# दिन',
+      one: '# दिन',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get referralYourInvites => 'आपके आमंत्रण';
+
+  @override
+  String referralInviteNumber(int number) {
+    return 'आमंत्रण $number';
+  }
+
+  @override
+  String get referralStatusInvited => 'आमंत्रित';
+
+  @override
+  String get referralStatusQualified => 'पहला योग्य ऑर्डर हुआ';
+
+  @override
+  String get referralStatusRewarded => 'इनाम वॉलेट में आया';
+
+  @override
+  String get referralStatusReversed => 'इनाम वापस लिया गया';
 
   @override
   String get applying => 'लागू हो रहा है…';

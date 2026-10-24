@@ -80,6 +80,33 @@ test('staff can sign in and reach the protected refund queue', async ({
     await expect(page.getByText('BB-E2E-001')).toBeVisible();
 });
 
+test('staff sign out clears the local session and returns to login', async ({
+    page,
+}) => {
+    await page.context().addCookies([
+        {
+            ...sessionCookie('owner@bitesbox.test', 'aal2'),
+            url: 'http://localhost:3100',
+        },
+    ]);
+    await page.goto('/referrals');
+    await expect(page.getByRole('button', { name: 'Account menu' })).toBeVisible();
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign out' }).click();
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByLabel('Email address')).toBeVisible();
+    await expect
+        .poll(async () =>
+            (await page.context().cookies()).filter((cookie) =>
+                cookie.name.startsWith('sb-127-auth-token'),
+            ),
+        )
+        .toHaveLength(0);
+    await page.goto('/overview');
+    await expect(page).toHaveURL(/\/login\?next=/);
+});
+
 test('AAL2 staff with refund permission can approve an eligible seeded refund', async ({
     page,
 }) => {
@@ -249,6 +276,9 @@ test('owner can edit the selected outlet and sees guarded archive controls', asy
 test('owner can configure referral terms while the independent rollout flag remains off', async ({
     page,
 }) => {
+    await expect(
+        await page.request.post('http://127.0.0.1:55320/__e2e/reset-referrals'),
+    ).toBeOK();
     await page.context().addCookies([
         {
             ...sessionCookie('owner@bitesbox.test', 'aal2'),
@@ -290,6 +320,54 @@ test('owner can configure referral terms while the independent rollout flag rema
         ),
     ).toBeVisible();
     await expect(page.getByText('Rollout flag off')).toBeVisible();
+});
+
+test('owner can enable customer referrals after saving approved reward terms', async ({
+    page,
+}) => {
+    await expect(
+        await page.request.post('http://127.0.0.1:55320/__e2e/reset-referrals'),
+    ).toBeOK();
+    await page.context().addCookies([
+        {
+            ...sessionCookie('owner@bitesbox.test', 'aal2'),
+            url: 'http://localhost:3100',
+        },
+    ]);
+    await page.goto('/referrals');
+    await page.getByLabel('Program configured and approved by the owner').check();
+    await page.getByLabel('Referrer wallet reward (₹)').fill('25');
+    await page.getByLabel('Referred customer wallet reward (₹)').fill('30');
+    await page.getByLabel('Minimum qualifying order (₹)').fill('300');
+    await page.getByLabel('Maximum rewarded referrals per customer (optional)').fill('5');
+
+    const termsSave = page.waitForResponse(
+        (response) =>
+            response.url().endsWith('/rest/v1/rpc/update_referral_program') &&
+            response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Save terms' }).click();
+    expect((await termsSave).status()).toBe(200);
+    await expect(page.getByRole('button', { name: 'Enable customer referrals' })).toBeEnabled();
+
+    await page.getByRole('button', { name: 'Enable customer referrals' }).click();
+    await page.getByRole('button', { name: 'Enable referrals' }).click();
+    await expect(
+        page.getByText('Referral rollout enabled for eligible customers.'),
+    ).toBeVisible();
+    await expect(page.getByText('Rollout flag on')).toBeVisible();
+    const state = await page.request.get(
+        'http://127.0.0.1:55320/__e2e/referral-state',
+    );
+    expect(await state.json()).toMatchObject({
+        feature_flag_enabled: true,
+        settings: {
+            enabled: true,
+            referrer_reward: 25,
+            referred_reward: 30,
+            minimum_order_amount: 300,
+        },
+    });
 });
 
 test('support ticket detail resolves its explicit refund relationship', async ({

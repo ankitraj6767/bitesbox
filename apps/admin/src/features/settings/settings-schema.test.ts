@@ -4,6 +4,7 @@ import {
   branchHoursSchema,
   branchSettingsSchema,
   featureFlagRolloutSchema,
+  featureFlagUpdateSchema,
   taxCategorySchema,
 } from "./settings-schema";
 
@@ -164,5 +165,21 @@ describe("settings validation", () => {
         rollout_percentage: 100.5,
       }).success,
     ).toBe(false);
+  });
+
+  it("allows a flag toggle without changing its rollout percentage", () => {
+    expect(
+      featureFlagUpdateSchema.safeParse({ key: "referrals", is_enabled: true })
+        .success,
+    ).toBe(true);
+    expect(
+      featureFlagUpdateSchema.safeParse({
+        key: "referrals",
+        rollout_percentage: 35,
+      }).success,
+    ).toBe(true);
+    expect(featureFlagUpdateSchema.safeParse({ key: "referrals" }).success).toBe(
+      false,
+    );
   });
 });

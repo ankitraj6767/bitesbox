@@ -159,7 +159,12 @@ const server = createServer(async (request, response) => {
         if (name === 'my_session') return claims ? send(response, 200, session(claims)) : send(response, 401, { code: 'no_session' });
         if (name === 'my_favorites') return claims ? send(response, 200, [{ ...product(body.p_locale, body.p_branch_id ?? branchA), is_favorite: true }]) : send(response, 401, { code: 'no_session' });
         if (name === 'set_my_favorite') return claims ? send(response, 200, { product_id: productId, is_favorite: body.p_favorite }) : send(response, 401, { code: 'no_session' });
-        if (name === 'my_referral_summary') return claims ? send(response, 200, { code: 'BBE2E9K3', share_path: '/r/BBE2E9K3', program_active: false, attributed_count: 0, rewarded_count: 0, referrals: [] }) : send(response, 401, { code: 'no_session' });
+        if (name === 'my_referral_summary') return claims ? send(response, 200, {
+            code: 'BBE2E9K3', share_path: '/r/BBE2E9K3', program_active: true,
+            terms: { referrer_reward: 25, referred_reward: 30, minimum_order_amount: 300, reward_expiry_days: 90 },
+            attributed_count: 1, qualified_count: 0, rewarded_count: 0,
+            referrals: [{ status: 'ATTRIBUTED', attributed_at: '2026-10-23T08:00:00.000Z', qualified_at: null, rewarded_at: null, reward_amount: 0 }],
+        }) : send(response, 401, { code: 'no_session' });
         if (name === 'attribute_referral') return claims && body.p_code === 'BBINVITE42' ? send(response, 200, { attributed: true, referral_code: 'BBINVITE42' }) : send(response, 400, { code: 'invalid_referral_code', message: 'Referral code is invalid.' });
         if (name === 'update_my_profile') return send(response, 200, { preferred_language: body.p_preferred_language });
         if (name === 'set_preferred_branch') return claims && outlets.some((item) => item.id === body.p_branch_id) ? send(response, 200, { branch_id: body.p_branch_id }) : send(response, 400, { code: 'branch_unavailable' });

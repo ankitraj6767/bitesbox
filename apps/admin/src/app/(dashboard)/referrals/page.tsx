@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Card } from '@/components/ui/card';
 import { ErrorState } from '@/components/ui/states';
 import { ReferralManager } from '@/features/referrals/referral-manager';
-import { requirePermission } from '@/lib/session';
+import { hasPermission, requirePermission } from '@/lib/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PERMISSIONS } from '@bitesbox/shared-types';
 
@@ -38,7 +38,7 @@ interface ReferralOverview {
 }
 
 export default async function ReferralsPage() {
-    await requirePermission(PERMISSIONS.REFERRAL_MANAGE);
+    const session = await requirePermission(PERMISSIONS.REFERRAL_MANAGE);
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.rpc('referral_admin_overview');
 
@@ -48,7 +48,10 @@ export default async function ReferralsPage() {
             {error || !data ? (
                 <Card><ErrorState title="Could not load referral activity" message={error?.message ?? 'The referral service returned no data.'} /></Card>
             ) : (
-                <ReferralManager initial={data as unknown as ReferralOverview} />
+                <ReferralManager
+                    initial={data as unknown as ReferralOverview}
+                    canToggleFeatureFlag={hasPermission(session, PERMISSIONS.FEATURE_FLAG_UPDATE)}
+                />
             )}
         </>
     );

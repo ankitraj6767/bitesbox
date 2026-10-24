@@ -243,8 +243,26 @@ select tap.eq(
   true,
   'only an authorized owner can open the test rollout gate'
 );
+select tap.eq(
+  (public.referral_admin_overview() ->> 'feature_flag_enabled')::boolean,
+  true,
+  'admin overview reports the global referral rollout switch'
+);
 select tap.reset();
 select tap.remember('inviter_code', (select referral_code from public.profiles where id = tap.seed('customer_d')));
+
+select tap.as_user(tap.seed('customer_d'));
+select tap.eq(
+  (public.my_referral_summary() ->> 'program_active')::boolean,
+  true,
+  'customer summary exposes active state after owner enables rollout'
+);
+select tap.eq(
+  (public.my_referral_summary() -> 'terms' ->> 'referrer_reward')::numeric,
+  1::numeric,
+  'customer summary returns the owner-configured referrer reward'
+);
+select tap.reset();
 
 select tap.as_user(tap.seed('customer_d'));
 select tap.throws(
