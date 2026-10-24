@@ -338,7 +338,7 @@ select tap.eq(
 select tap.eq(
   (select body from public.notifications where user_id = tap.seed('customer_a')
    and event = 'REFERRAL_REWARD' and channel = 'IN_APP'),
-  '₹1.00 आपके Bites Box वॉलेट में जोड़े गए हैं।',
+  '₹1.00 आपके Bites Box वॉलेट में जोड़ दिए गए हैं।',
   'reward copy uses the customer preferred Hindi notification template'
 );
 
