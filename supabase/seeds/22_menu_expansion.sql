@@ -1,5 +1,6 @@
 -- SEED 22 · 100 additional, image-backed menu choices.
 -- Product photos are bundled in the customer apps; see the shared path resolver.
+-- Safe to apply more than once so manual hosted deployments can be retried.
 insert into public.products (
   id, category_id, subcategory_id, name, slug, short_description, description,
   thumbnail_path, hero_image_path, food_type, spice_level, allergens, dietary_tags,
@@ -108,6 +109,7 @@ insert into public.products (
   ('77777777-0000-0000-0000-000000000098', '33333333-0000-0000-0000-00000000000c', null, 'Anda Bhurji Pav', 'anda-bhurji-pav', 'Scrambled egg, tomato, onion and buttery pav; bhurji cooked fresh on a hot tawa.', 'A freshly prepared Anda Bhurji Pav built around scrambled egg, tomato, onion and buttery pav. Preparation: bhurji cooked fresh on a hot tawa. Finished with coriander and lemon; served with served with two pav.', 'menu-images/products/expansion/anda-bhurji-pav.jpg', 'menu-images/products/expansion/anda-bhurji-pav.jpg', 'EGG', 'MEDIUM', array['egg', 'gluten', 'dairy']::text[], array['high-protein']::text[], 149, null, 10, '22222222-0000-0000-0000-000000000001', 16, 1, 510, false, false, true, false, false, 1097, 10, array['anda', 'bhurji', 'pav', 'scrambled', 'egg', 'tomato', 'onion', 'buttery', 'breakfast', 'bites', 'box']::text[], 'Anda Bhurji Pav | Bites Box', 'Scrambled egg, tomato, onion and buttery pav. Prepared fresh to order in the Bites Box kitchen.'),
   ('77777777-0000-0000-0000-000000000099', '33333333-0000-0000-0000-00000000000c', null, 'Indori Masala Poha', 'poha-masala', 'Soft flattened rice, onion, curry leaves and roasted peanut; steamed lightly and tempered with mustard seed.', 'A freshly prepared Indori Masala Poha built around soft flattened rice, onion, curry leaves and roasted peanut. Preparation: steamed lightly and tempered with mustard seed. Finished with sev, coriander and lemon; served with served warm.', 'menu-images/products/expansion/poha-masala.jpg', 'menu-images/products/expansion/poha-masala.jpg', 'VEG', 'MILD', array['peanuts']::text[], array['vegetarian']::text[], 129, null, 10, '22222222-0000-0000-0000-000000000001', 14, 1, 390, false, false, true, false, false, 1098, 10, array['indori', 'masala', 'poha', 'soft', 'flattened', 'rice', 'onion', 'curry', 'leaves', 'roasted', 'peanut', 'breakfast', 'veg', 'bites', 'box']::text[], 'Indori Masala Poha | Bites Box', 'Soft flattened rice, onion, curry leaves and roasted peanut. Prepared fresh to order in the Bites Box kitchen.'),
   ('77777777-0000-0000-0000-000000000100', '33333333-0000-0000-0000-00000000000c', null, 'Jalebi and Rabri Breakfast', 'jalebi-rabri-breakfast', 'Crisp jalebi, saffron rabri and a hint of cardamom; jalebi fried fresh and paired with chilled rabri.', 'A freshly prepared Jalebi and Rabri Breakfast built around crisp jalebi, saffron rabri and a hint of cardamom. Preparation: jalebi fried fresh and paired with chilled rabri. Finished with pistachio and rose; served with a festive breakfast treat.', 'menu-images/products/expansion/jalebi-rabri-breakfast.jpg', 'menu-images/products/expansion/jalebi-rabri-breakfast.jpg', 'VEG', 'NONE', array['gluten', 'dairy']::text[], array['vegetarian']::text[], 149, null, 10, '22222222-0000-0000-0000-000000000001', 16, 1, 540, false, false, true, false, false, 1099, 10, array['jalebi', 'rabri', 'breakfast', 'crisp', 'saffron', 'hint', 'cardamom', 'veg', 'bites', 'box']::text[], 'Jalebi and Rabri Breakfast | Bites Box', 'Crisp jalebi, saffron rabri and a hint of cardamom. Prepared fresh to order in the Bites Box kitchen.')
+on conflict (id) do nothing
 ;
 
 insert into public.product_images (product_id, storage_path, alt_text, width, height, variants, is_primary, display_order)
@@ -116,4 +118,10 @@ select
   jsonb_build_object('thumb', p.thumbnail_path, 'medium', p.hero_image_path, 'large', p.hero_image_path),
   true, 1
 from public.products p
-where p.id::text like '77777777-%';
+where p.id::text like '77777777-%'
+  and not exists (
+    select 1
+    from public.product_images existing
+    where existing.product_id = p.id
+      and existing.is_primary
+  );
