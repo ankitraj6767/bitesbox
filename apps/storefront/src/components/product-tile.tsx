@@ -98,7 +98,6 @@ export function ProductTile({
           <span
             className={`food-mark food-mark-${(product.food_type ?? "VEG").toLowerCase()}`}
             role="img"
-            role="img"
             aria-label={
               product.food_type === "NON_VEG"
                 ? locale === "hi"
