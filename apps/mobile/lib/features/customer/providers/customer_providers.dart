@@ -194,6 +194,8 @@ final searchResultsProvider = FutureProvider<SearchResults?>((ref) async {
       .search(query, branchId: branchId, locale: locale);
 });
 
+enum MenuSortOrder { recommended, popular, priceLowToHigh, topRated }
+
 /// Menu filters the customer can toggle. Purely a view concern: availability and
 /// pricing still come from the server.
 class MenuFilters {
@@ -203,6 +205,7 @@ class MenuFilters {
     this.bestSellersOnly = false,
     this.hideUnavailable = false,
     this.categoryId,
+    this.sortOrder = MenuSortOrder.recommended,
   });
 
   final bool vegOnly;
@@ -210,6 +213,7 @@ class MenuFilters {
   final bool bestSellersOnly;
   final bool hideUnavailable;
   final String? categoryId;
+  final MenuSortOrder sortOrder;
 
   bool get isActive =>
       vegOnly || nonVegOnly || bestSellersOnly || hideUnavailable;
@@ -226,6 +230,7 @@ class MenuFilters {
     bool? bestSellersOnly,
     bool? hideUnavailable,
     String? categoryId,
+    MenuSortOrder? sortOrder,
     bool clearCategory = false,
   }) {
     return MenuFilters(
@@ -234,6 +239,7 @@ class MenuFilters {
       bestSellersOnly: bestSellersOnly ?? this.bestSellersOnly,
       hideUnavailable: hideUnavailable ?? this.hideUnavailable,
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
