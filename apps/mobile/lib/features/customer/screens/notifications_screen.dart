@@ -78,7 +78,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 2),
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: brand.hairline,
+                indent: 16,
+                endIndent: 16,
+              ),
               itemBuilder: (context, index) {
                 final item = list[index];
                 return _NotificationTile(
@@ -179,81 +184,68 @@ class _NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final brand = context.brand;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Material(
-        color: isUnread
-            ? brand.primary.withValues(alpha: 0.045)
-            : brand.surface,
-        elevation: isUnread ? 1 : 0,
-        shadowColor: brand.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(brand.radiusLg),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(brand.radiusLg),
-          child: Padding(
-            padding: const EdgeInsets.all(15),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: brand.primary.withValues(alpha: 0.09),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Icon(
-                    _iconFor(item.event),
-                    size: 19,
-                    color: brand.primary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: isUnread
-                              ? FontWeight.w800
-                              : FontWeight.w700,
-                          color: brand.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        item.body,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          height: 1.4,
-                          color: brand.inkMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        Fmt.relative(item.createdAt),
-                        style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isUnread)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(top: 6, left: 8),
-                    decoration: BoxDecoration(
-                      color: brand.primary,
-                      shape: BoxShape.circle,
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        color: isUnread ? brand.primary.withValues(alpha: 0.035) : null,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: brand.surfaceMuted,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _iconFor(item.event),
+                size: 17,
+                color: brand.inkMuted,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                      color: brand.ink,
                     ),
                   ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    item.body,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      height: 1.4,
+                      color: brand.inkMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    Fmt.relative(item.createdAt),
+                    style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
+                  ),
+                ],
+              ),
             ),
-          ),
+            if (isUnread)
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(top: 6, left: 8),
+                decoration: BoxDecoration(
+                  color: brand.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+          ],
         ),
       ),
     );

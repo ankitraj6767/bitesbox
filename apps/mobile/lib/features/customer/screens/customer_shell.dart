@@ -34,13 +34,6 @@ class CustomerShell extends ConsumerWidget {
         decoration: BoxDecoration(
           color: brand.surface,
           border: Border(top: BorderSide(color: brand.hairline)),
-          boxShadow: [
-            BoxShadow(
-              color: brand.ink.withValues(alpha: 0.035),
-              blurRadius: 20,
-              offset: const Offset(0, -6),
-            ),
-          ],
         ),
         child: SafeArea(
           top: false,
@@ -49,11 +42,8 @@ class CustomerShell extends ConsumerWidget {
             onDestinationSelected: _onDestinationSelected,
             backgroundColor: brand.surface,
             surfaceTintColor: Colors.transparent,
-            indicatorColor: brand.primary.withValues(alpha: 0.13),
-            indicatorShape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            height: 72,
+            indicatorColor: brand.primary.withValues(alpha: 0.12),
+            height: 64,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: [
               NavigationDestination(

@@ -84,52 +84,27 @@ class _AddressCard extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isSelected
-            ? Color.lerp(brand.surface, brand.primary, 0.025)
-            : brand.surface,
-        borderRadius: BorderRadius.circular(brand.radiusLg),
+        color: brand.surface,
+        borderRadius: BorderRadius.circular(brand.radiusMd),
         border: Border.all(
-          color: isSelected
-              ? brand.primary.withValues(alpha: 0.78)
-              : brand.hairline,
+          color: isSelected ? brand.primary : brand.hairline,
           width: isSelected ? 1.6 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: (isSelected ? brand.primary : brand.ink).withValues(
-              alpha: isSelected ? 0.075 : 0.025,
-            ),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         children: [
           InkWell(
             onTap: usable ? () => _select(context, ref) : null,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(brand.radiusLg),
-            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(brand.radiusMd)),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: usable
-                          ? brand.primary.withValues(alpha: 0.09)
-                          : brand.surfaceMuted,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      _iconFor(address.label),
-                      size: 19,
-                      color: usable ? brand.primary : brand.inkMuted,
-                    ),
+                  Icon(
+                    _iconFor(address.label),
+                    size: 20,
+                    color: usable ? brand.primary : brand.inkMuted,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -158,9 +133,7 @@ class _AddressCard extends ConsumerWidget {
                               AppPill(
                                 label: 'Selected',
                                 dense: true,
-                                background: brand.primary.withValues(
-                                  alpha: 0.12,
-                                ),
+                                background: brand.primary.withValues(alpha: 0.12),
                                 foreground: brand.primary,
                               ),
                             ],
@@ -179,18 +152,14 @@ class _AddressCard extends ConsumerWidget {
                           const SizedBox(height: 5),
                           Text(
                             '${Fmt.distance(address.distanceKm)} from our kitchen',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: brand.inkMuted,
-                            ),
+                            style: TextStyle(fontSize: 12, color: brand.inkMuted),
                           ),
                         ],
                         if (!usable) ...[
                           const SizedBox(height: 8),
                           AppNotice(
                             tone: NoticeTone.caution,
-                            message:
-                                'We do not deliver here yet. Self pickup is still available.',
+                            message: 'We do not deliver here yet. Self pickup is still available.',
                           ),
                         ],
                       ],
@@ -207,8 +176,7 @@ class _AddressCard extends ConsumerWidget {
                 child: _Action(
                   icon: Icons.edit_outlined,
                   label: 'Edit',
-                  onTap: () =>
-                      context.push(Routes.addressEditor, extra: address),
+                  onTap: () => context.push(Routes.addressEditor, extra: address),
                 ),
               ),
               Container(width: 1, height: 42, color: brand.hairline),
@@ -228,11 +196,11 @@ class _AddressCard extends ConsumerWidget {
   }
 
   IconData _iconFor(String label) => switch (label) {
-    'HOME' => Icons.home_outlined,
-    'WORK' => Icons.work_outline_rounded,
-    'HOTEL' => Icons.hotel_outlined,
-    _ => Icons.location_on_outlined,
-  };
+        'HOME' => Icons.home_outlined,
+        'WORK' => Icons.work_outline_rounded,
+        'HOTEL' => Icons.hotel_outlined,
+        _ => Icons.location_on_outlined,
+      };
 
   /// Selecting an address re-prices the cart: the zone decides the fee, the ETA
   /// and whether cash on delivery is even allowed.

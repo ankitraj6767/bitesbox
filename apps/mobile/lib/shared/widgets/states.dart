@@ -22,40 +22,14 @@ class AppLoader extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: brand.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: brand.hairline),
-              boxShadow: [
-                BoxShadow(
-                  color: brand.ink.withValues(alpha: 0.04),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(15),
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: brand.primary,
-                backgroundColor: brand.primary.withValues(alpha: 0.10),
-              ),
-            ),
+          SizedBox(
+            width: 26,
+            height: 26,
+            child: CircularProgressIndicator(strokeWidth: 2.4, color: brand.primary),
           ),
           if (label != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              label!,
-              style: TextStyle(
-                color: brand.inkMuted,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            const SizedBox(height: 14),
+            Text(label!, style: TextStyle(color: brand.inkMuted, fontSize: 13.5)),
           ],
         ],
       ),
@@ -66,7 +40,12 @@ class AppLoader extends StatelessWidget {
 /// Shimmering placeholder block. Used to hold layout while content loads, which
 /// stops the menu from jumping around on a slow connection.
 class SkeletonBox extends StatelessWidget {
-  const SkeletonBox({this.width, this.height = 16, this.radius = 8, super.key});
+  const SkeletonBox({
+    this.width,
+    this.height = 16,
+    this.radius = 8,
+    super.key,
+  });
 
   final double? width;
   final double height;
@@ -110,72 +89,34 @@ class AppEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
-    final iconSize = compact ? 56.0 : 86.0;
-    final glyphSize = compact ? 25.0 : 34.0;
 
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 32,
-          vertical: compact ? 24 : 48,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: compact ? 24 : 48),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: iconSize,
-              height: iconSize,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    brand.primary.withValues(alpha: 0.17),
-                    brand.accent.withValues(alpha: 0.08),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(compact ? 20 : 28),
-                border: Border.all(
-                  color: brand.primary.withValues(alpha: 0.11),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: brand.primary.withValues(alpha: 0.08),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: brand.primary, size: glyphSize),
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(color: brand.surfaceMuted, shape: BoxShape.circle),
+              child: Icon(icon, color: brand.inkMuted, size: 26),
             ),
-            SizedBox(height: compact ? 14 : 22),
+            const SizedBox(height: 16),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: compact ? 16.5 : 21,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.45,
-                height: 1.2,
-                color: brand.ink,
-              ),
+              style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: brand.ink),
             ),
             if (message != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: brand.inkMuted,
-                ),
+                style: TextStyle(fontSize: 14, height: 1.45, color: brand.inkMuted),
               ),
             ],
-            if (action != null) ...[
-              SizedBox(height: compact ? 16 : 24),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 20), action!],
           ],
         ),
       ),
@@ -198,55 +139,39 @@ class AppErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
-    final appError = error is AppError
-        ? error as AppError
-        : AppError.from(error);
+    final appError = error is AppError ? error as AppError : AppError.from(error);
     final offline = appError.code == ErrorCodes.networkError;
-    final iconSize = compact ? 56.0 : 82.0;
 
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 32,
-          vertical: compact ? 24 : 48,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: compact ? 24 : 48),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: iconSize,
-              height: iconSize,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
-                color: brand.error.withValues(alpha: 0.09),
-                borderRadius: BorderRadius.circular(compact ? 20 : 27),
-                border: Border.all(color: brand.error.withValues(alpha: 0.14)),
+                color: brand.error.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
               ),
               child: Icon(
                 offline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
                 color: brand.error,
-                size: compact ? 25 : 32,
+                size: 26,
               ),
             ),
-            SizedBox(height: compact ? 14 : 20),
+            const SizedBox(height: 16),
             Text(
               offline ? 'You are offline' : 'Something went wrong',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: compact ? 16.5 : 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
-                color: brand.ink,
-              ),
+              style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: brand.ink),
             ),
             const SizedBox(height: 6),
             Text(
               appError.message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.5,
-                color: brand.inkMuted,
-              ),
+              style: TextStyle(fontSize: 14, height: 1.45, color: brand.inkMuted),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 20),
@@ -254,9 +179,7 @@ class AppErrorState extends StatelessWidget {
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Try again'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(160, 46),
-                ),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(160, 46)),
               ),
             ],
           ],
@@ -326,25 +249,25 @@ class AppNotice extends StatelessWidget {
 
     final (background, foreground, defaultIcon) = switch (tone) {
       NoticeTone.caution => (
-        brand.warning.withValues(alpha: 0.10),
-        brand.warning,
-        Icons.info_outline_rounded,
-      ),
+          brand.warning.withValues(alpha: 0.10),
+          brand.warning,
+          Icons.info_outline_rounded,
+        ),
       NoticeTone.critical => (
-        brand.error.withValues(alpha: 0.10),
-        brand.error,
-        Icons.error_outline_rounded,
-      ),
+          brand.error.withValues(alpha: 0.10),
+          brand.error,
+          Icons.error_outline_rounded,
+        ),
       NoticeTone.positive => (
-        brand.success.withValues(alpha: 0.10),
-        brand.success,
-        Icons.check_circle_outline_rounded,
-      ),
+          brand.success.withValues(alpha: 0.10),
+          brand.success,
+          Icons.check_circle_outline_rounded,
+        ),
       NoticeTone.info => (
-        brand.secondary.withValues(alpha: 0.08),
-        brand.secondary,
-        Icons.info_outline_rounded,
-      ),
+          brand.secondary.withValues(alpha: 0.08),
+          brand.secondary,
+          Icons.info_outline_rounded,
+        ),
     };
 
     return Container(

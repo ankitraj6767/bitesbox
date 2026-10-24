@@ -89,8 +89,7 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
       } else {
         AppFeedback.showInfo(
           context,
-          quote.coupon?.message ??
-              'That coupon could not be applied to your cart.',
+          quote.coupon?.message ?? 'That coupon could not be applied to your cart.',
         );
       }
     } catch (error) {
@@ -110,15 +109,8 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
     return Container(
       decoration: BoxDecoration(
         color: brand.surface,
-        borderRadius: BorderRadius.circular(brand.radiusLg),
-        border: Border.all(color: brand.hairline.withValues(alpha: 0.8)),
-        boxShadow: [
-          BoxShadow(
-            color: brand.ink.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 7),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(brand.radiusMd),
+        border: Border.all(color: brand.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,9 +120,7 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: brand.primary.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(brand.radiusLg),
-              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(brand.radiusMd)),
             ),
             child: Row(
               children: [
@@ -141,7 +131,7 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
                       Text(
                         coupon.headline,
                         style: TextStyle(
-                          fontSize: 21,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
                           color: brand.primary,
@@ -160,17 +150,11 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: brand.surface,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: brand.primary,
-                      style: BorderStyle.solid,
-                    ),
+                    border: Border.all(color: brand.primary, style: BorderStyle.solid),
                   ),
                   child: Text(
                     coupon.code,
@@ -193,11 +177,7 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
                 if ((coupon.description ?? '').isNotEmpty) ...[
                   Text(
                     coupon.description!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.45,
-                      color: brand.inkMuted,
-                    ),
+                    style: TextStyle(fontSize: 14, height: 1.45, color: brand.inkMuted),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -208,14 +188,12 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
                     if (coupon.minOrderAmount > 0)
                       _Detail(
                         icon: Icons.shopping_bag_outlined,
-                        text:
-                            'Min order ${Fmt.moneySmart(coupon.minOrderAmount)}',
+                        text: 'Min order ${Fmt.moneySmart(coupon.minOrderAmount)}',
                       ),
                     if (coupon.maxDiscountAmount != null)
                       _Detail(
                         icon: Icons.trending_down_rounded,
-                        text:
-                            'Up to ${Fmt.moneySmart(coupon.maxDiscountAmount)}',
+                        text: 'Up to ${Fmt.moneySmart(coupon.maxDiscountAmount)}',
                       ),
                     if (coupon.endsAt != null)
                       _Detail(
@@ -248,16 +226,14 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
                       _busy
                           ? 'Applying…'
                           : ((coupon.estimatedDiscount ?? 0) > 0
-                                ? 'Apply and save ${Fmt.moneySmart(coupon.estimatedDiscount)}'
-                                : 'Apply to my cart'),
+                              ? 'Apply and save ${Fmt.moneySmart(coupon.estimatedDiscount)}'
+                              : 'Apply to my cart'),
                     ),
                   )
                 else
                   AppNotice(
                     tone: NoticeTone.caution,
-                    message:
-                        coupon.reason ??
-                        'This offer does not apply to your cart.',
+                    message: coupon.reason ?? 'This offer does not apply to your cart.',
                   ),
               ],
             ),

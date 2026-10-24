@@ -109,7 +109,6 @@ class _TopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
-    final firstName = greetingName?.trim().split(RegExp(r'\s+')).first;
     final address = ref.watch(selectedAddressProvider);
     final addressesState = ref.watch(addressesProvider);
     final sessionState = ref.watch(sessionProvider);
@@ -127,7 +126,7 @@ class _TopBar extends ConsumerWidget {
         !addressLoading;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         children: [
           Row(
@@ -139,41 +138,28 @@ class _TopBar extends ConsumerWidget {
                       : session.isGuest
                       ? () => context.push(Routes.signIn)
                       : () => context.push(Routes.addresses),
-                  borderRadius: BorderRadius.circular(brand.radiusMd),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: brand.surface,
-                      borderRadius: BorderRadius.circular(brand.radiusMd),
-                      border: Border.all(color: brand.hairline),
-                    ),
+                  borderRadius: BorderRadius.circular(brand.radiusSm),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: brand.primary.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                          child: Icon(
-                            Icons.location_on_rounded,
-                            size: 20,
-                            color: brand.primary,
-                          ),
+                        Icon(
+                          Icons.location_on_rounded,
+                          size: 18,
+                          color: brand.primary,
                         ),
-                        const SizedBox(width: 11),
-                        Expanded(
+                        const SizedBox(width: 6),
+                        Flexible(
                           child: addressLoading
                               ? Semantics(
                                   label: 'Loading saved delivery address',
-                                  child: const Column(
+                                  child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
-                                    children: [
-                                      SkeletonBox(width: 112, height: 11),
-                                      SizedBox(height: 6),
-                                      SkeletonBox(width: 174, height: 13),
+                                    children: const [
+                                      SkeletonBox(width: 112, height: 13),
+                                      SizedBox(height: 5),
+                                      SkeletonBox(width: 174, height: 11),
                                     ],
                                   ),
                                 )
@@ -181,34 +167,21 @@ class _TopBar extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'DELIVERING TO',
-                                      style: TextStyle(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 1.0,
-                                        color: brand.inkMuted,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
                                       session.isGuest
-                                          ? 'Set your delivery address'
+                                          ? 'Sign in to set your address'
                                           : addressError
-                                          ? 'Address unavailable'
+                                          ? 'Saved address unavailable'
                                           : address?.labelText ??
                                                 'Add a delivery address',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: -0.2,
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
                                         color: brand.ink,
                                       ),
                                     ),
                                     Text(
                                       session.isGuest
-                                          ? 'Choose a place after sign in'
+                                          ? 'Choose a delivery location after sign in'
                                           : addressError
                                           ? 'Tap to choose an address'
                                           : address == null
@@ -219,17 +192,16 @@ class _TopBar extends ConsumerWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontSize: 11.5,
+                                        fontSize: 12,
                                         color: brand.inkMuted,
                                       ),
                                     ),
                                   ],
                                 ),
                         ),
-                        const SizedBox(width: 4),
                         Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          size: 19,
+                          size: 18,
                           color: brand.inkMuted,
                         ),
                       ],
@@ -237,80 +209,43 @@ class _TopBar extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 9),
-              Material(
-                color: brand.surface,
-                borderRadius: BorderRadius.circular(brand.radiusMd),
-                child: IconButton(
-                  onPressed: () => context.push(
-                    session.isGuest ? Routes.signIn : Routes.notifications,
-                  ),
-                  icon: Badge(
-                    isLabelVisible:
-                        ref.watch(unreadNotificationCountProvider) > 0,
-                    backgroundColor: brand.primary,
-                    child: const Icon(Icons.notifications_none_rounded),
-                  ),
-                  tooltip: 'Notifications',
+              IconButton(
+                onPressed: () => context.push(
+                  session.isGuest ? Routes.signIn : Routes.notifications,
                 ),
+                icon: Badge(
+                  isLabelVisible:
+                      ref.watch(unreadNotificationCountProvider) > 0,
+                  backgroundColor: brand.primary,
+                  child: const Icon(Icons.notifications_none_rounded),
+                ),
+                tooltip: 'Notifications',
               ),
             ],
           ),
           const CustomerOutletPicker(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           InkWell(
             onTap: () => context.push(Routes.search),
             borderRadius: BorderRadius.circular(brand.radiusMd),
-            child: Material(
-              color: brand.surface,
-              elevation: 2,
-              shadowColor: brand.ink.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(brand.radiusMd),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 9,
-                ),
-                decoration: BoxDecoration(
-                  color: brand.surface,
-                  borderRadius: BorderRadius.circular(brand.radiusMd),
-                  border: Border.all(
-                    color: brand.hairline.withValues(alpha: 0.85),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                color: brand.surface,
+                borderRadius: BorderRadius.circular(brand.radiusMd),
+                border: Border.all(color: brand.hairline),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search_rounded, size: 20, color: brand.inkMuted),
+                  const SizedBox(width: 10),
+                  Text(
+                    greetingName == null
+                        ? 'Search for biryani, litti, thali…'
+                        : 'Hungry, $greetingName? Search the menu',
+                    style: TextStyle(fontSize: 14.5, color: brand.inkMuted),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: brand.primary.withValues(alpha: 0.09),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.search_rounded,
-                        size: 21,
-                        color: brand.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Text(
-                        firstName == null || firstName.isEmpty
-                            ? 'Search dishes, cuisines, combos…'
-                            : 'Craving something, $firstName?',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 14.5, color: brand.inkMuted),
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 18,
-                      color: brand.inkMuted,
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),

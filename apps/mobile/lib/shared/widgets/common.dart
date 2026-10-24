@@ -337,13 +337,13 @@ class AppPill extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: dense ? 8 : 10,
-        vertical: dense ? 4 : 5.5,
+        horizontal: dense ? 7 : 9,
+        vertical: dense ? 3 : 4.5,
       ),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: fg.withValues(alpha: 0.14)),
+        border: Border.all(color: fg.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -355,9 +355,9 @@ class AppPill extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: dense ? 10.5 : 12,
+              fontSize: dense ? 10.5 : 11.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.05,
+              letterSpacing: 0.1,
               color: fg,
             ),
           ),
@@ -400,9 +400,9 @@ class SectionHeader extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 19.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.45,
+                    fontSize: 18.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.35,
                     color: brand.ink,
                   ),
                 ),
@@ -413,7 +413,7 @@ class SectionHeader extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.5,
                       color: brand.inkMuted,
-                      height: 1.4,
+                      height: 1.3,
                     ),
                   ),
                 ],

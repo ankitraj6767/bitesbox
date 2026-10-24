@@ -222,18 +222,11 @@ class _SectionCard extends StatelessWidget {
     final brand = context.brand;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: brand.surface,
-        borderRadius: BorderRadius.circular(brand.radiusLg),
-        border: Border.all(color: brand.hairline.withValues(alpha: 0.8)),
-        boxShadow: [
-          BoxShadow(
-            color: brand.ink.withValues(alpha: 0.03),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(brand.radiusMd),
+        border: Border.all(color: brand.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,8 +237,8 @@ class _SectionCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                     color: brand.ink,
                   ),
                 ),
@@ -423,9 +416,7 @@ class _TimingCard extends ConsumerWidget {
               dense: true,
               title: Text(l10n.asSoonAsPossible),
               subtitle: Text(
-                l10n.readyInAbout(
-                  Fmt.duration(quote.timingEstimate.totalMinutes),
-                ),
+                l10n.readyInAbout(Fmt.duration(quote.timingEstimate.totalMinutes)),
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
             ),
@@ -567,7 +558,9 @@ class _PaymentPicker extends ConsumerWidget {
                 dense: true,
                 title: Text(l10n.cashOnDelivery),
                 subtitle: Text(
-                  codBlocked ? codIssue.message : l10n.payDeliveryPartner,
+                  codBlocked
+                      ? codIssue.message
+                      : l10n.payDeliveryPartner,
                   style: TextStyle(
                     fontSize: 12.5,
                     color: codBlocked ? brand.error : brand.inkMuted,
@@ -623,14 +616,10 @@ class _WalletCard extends ConsumerWidget {
             SwitchListTile.adaptive(
               value: applied,
               contentPadding: EdgeInsets.zero,
-              title: Text(
-                l10n.useWalletBalance(Fmt.moneySmart(wallet.balance)),
-              ),
+              title: Text(l10n.useWalletBalance(Fmt.moneySmart(wallet.balance))),
               subtitle: Text(
                 applied
-                    ? l10n.walletAppliedToOrder(
-                        Fmt.moneySmart(quote.totals.walletApplied),
-                      )
+                    ? l10n.walletAppliedToOrder(Fmt.moneySmart(quote.totals.walletApplied))
                     : l10n.walletAppliedFirst,
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
@@ -725,9 +714,7 @@ class _CouponTile extends StatelessWidget {
             child: Text(
               applied == null
                   ? (quote.promotion?.applied == true
-                        ? l10n.automaticOfferApplied(
-                            quote.promotion!.headline ?? l10n.offers,
-                          )
+                        ? l10n.automaticOfferApplied(quote.promotion!.headline ?? l10n.offers)
                         : l10n.noCouponApplied)
                   : '$applied · ${l10n.savingAmount(Fmt.moneySmart(quote.totals.couponDiscount))}',
               style: TextStyle(
