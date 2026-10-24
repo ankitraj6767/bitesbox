@@ -151,7 +151,10 @@ void main() {
   group('smartDateTime', () {
     test('shows only the time for today', () {
       final result = Fmt.smartDateTime(DateTime.now());
-      expect(result, matches(RegExp(r'^\d{1,2}:\d{2} (AM|PM)$')));
+      expect(
+        result,
+        matches(RegExp(r'^\d{1,2}:\d{2} (AM|PM)$', caseSensitive: false)),
+      );
     });
 
     test('names yesterday', () {

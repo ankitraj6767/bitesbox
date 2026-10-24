@@ -50,10 +50,18 @@ void main() {
             request.url.path == '/rest/v1/rpc/localized_customer_notifications',
       );
       expect(notificationRequests, hasLength(2));
+      expect(
+        notificationRequests
+            .map(
+              (request) =>
+                  (jsonDecode(request.body) as Map<String, dynamic>)['p_limit'],
+            )
+            .toList(),
+        [20, 50],
+      );
       for (final request in notificationRequests) {
         expect(request.method, 'POST');
         final params = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(params['p_limit'], 20);
         expect(params['p_locale'], 'en');
       }
     },
