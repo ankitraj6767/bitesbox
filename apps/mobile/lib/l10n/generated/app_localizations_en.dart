@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get orders => 'Orders';
 
   @override
+  String get friendsTab => 'Friends';
+
+  @override
   String get yourProfile => 'Your profile';
 
   @override

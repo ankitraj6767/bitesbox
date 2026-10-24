@@ -8,7 +8,7 @@ import '../providers/cart_controller.dart';
 import '../providers/customer_settings_sync.dart';
 import '../providers/customer_providers.dart';
 
-/// The customer tab bar: Home, Menu, Orders, Account.
+/// The customer tab bar: Home, Menu, Orders, Friends and Account.
 ///
 /// A guest sees the same tabs — browsing is deliberately open — and only hits a
 /// sign-in wall when they try to order.
@@ -67,6 +67,11 @@ class CustomerShell extends ConsumerWidget {
                 icon: Icon(Icons.receipt_long_outlined),
                 selectedIcon: Icon(Icons.receipt_long_rounded),
                 label: l10n.orders,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.groups_outlined),
+                selectedIcon: const Icon(Icons.groups_rounded),
+                label: l10n.friendsTab,
               ),
               NavigationDestination(
                 icon: Badge(

@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'Orders'**
   String get orders;
 
+  /// No description provided for @friendsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get friendsTab;
+
   /// No description provided for @yourProfile.
   ///
   /// In en, this message translates to:

@@ -127,6 +127,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: Routes.groupOrders,
+                builder: (_, __) => const GroupOrderScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => GroupOrderScreen(
+                      groupOrderId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: Routes.account,
                 builder: (_, __) => const AccountScreen(),
               ),
@@ -148,15 +164,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const CheckoutScreen(),
       ),
       GoRoute(path: Routes.offers, builder: (_, __) => const OffersScreen()),
-      GoRoute(
-        path: Routes.groupOrders,
-        builder: (_, __) => const GroupOrderScreen(),
-      ),
-      GoRoute(
-        path: '/group-order/:id',
-        builder: (_, state) =>
-            GroupOrderScreen(groupOrderId: state.pathParameters['id']!),
-      ),
       GoRoute(
         path: Routes.addresses,
         builder: (_, __) => const AddressesScreen(),

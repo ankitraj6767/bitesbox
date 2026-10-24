@@ -21,6 +21,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get orders => 'ऑर्डर';
 
   @override
+  String get friendsTab => 'दोस्त';
+
+  @override
   String get yourProfile => 'आपकी प्रोफ़ाइल';
 
   @override
