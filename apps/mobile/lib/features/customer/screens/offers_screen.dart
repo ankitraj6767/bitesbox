@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
@@ -22,19 +23,19 @@ class OffersScreen extends ConsumerWidget {
     final coupons = ref.watch(availableCouponsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Offers for you')),
+      appBar: AppBar(title: Text(context.customerText("Offers for you"))),
       body: AsyncValueView<List<CustomerCoupon>>(
         value: coupons,
         onRetry: () => ref.invalidate(availableCouponsProvider),
         data: (list) {
           if (list.isEmpty) {
             return AppEmptyState(
-              title: 'No offers right now',
-              message: 'New offers are added regularly. Do check back.',
+              title: context.customerText("No offers right now"),
+              message: context.customerText("New offers are added regularly. Do check back."),
               icon: Icons.local_offer_outlined,
               action: FilledButton(
                 onPressed: () => context.go(Routes.menu),
-                child: const Text('Browse the menu'),
+                child: Text(context.customerText("Browse the menu")),
               ),
             );
           }
@@ -89,7 +90,7 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
       } else {
         AppFeedback.showInfo(
           context,
-          quote.coupon?.message ?? 'That coupon could not be applied to your cart.',
+          quote.coupon?.message ?? context.customerText("That coupon could not be applied to your cart."),
         );
       }
     } catch (error) {
@@ -217,23 +218,28 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
                 if (cartEmpty)
                   OutlinedButton(
                     onPressed: () => context.go(Routes.menu),
-                    child: const Text('Add items to use this'),
+                    child: Text(context.customerText("Add items to use this")),
                   )
                 else if (usable)
                   FilledButton(
                     onPressed: _busy ? null : _apply,
                     child: Text(
                       _busy
-                          ? 'Applying…'
+                          ? context.customerText("Applying…")
                           : ((coupon.estimatedDiscount ?? 0) > 0
-                              ? 'Apply and save ${Fmt.moneySmart(coupon.estimatedDiscount)}'
-                              : 'Apply to my cart'),
+                              ? context.customerText(
+                                  'Apply and save {amount}',
+                                  values: {
+                                    'amount': Fmt.moneySmart(coupon.estimatedDiscount),
+                                  },
+                                )
+                              : context.customerText('Apply to my cart')),
                     ),
                   )
                 else
                   AppNotice(
                     tone: NoticeTone.caution,
-                    message: coupon.reason ?? 'This offer does not apply to your cart.',
+                    message: coupon.reason ?? context.customerText("This offer does not apply to your cart."),
                   ),
               ],
             ),

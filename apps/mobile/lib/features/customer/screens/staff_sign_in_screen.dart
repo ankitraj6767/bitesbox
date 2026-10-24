@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
@@ -57,14 +58,14 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
     final brand = context.brand;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Staff sign-in')),
+      appBar: AppBar(title: Text(context.customerText("Staff sign-in"))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           children: [
             const SizedBox(height: 8),
             Text(
-              'Sign in with your work account',
+              context.customerText('Sign in with your work account'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -74,7 +75,7 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'For kitchen, delivery and management accounts. Customers should use their mobile number instead.',
+              context.customerText('For kitchen, delivery and management accounts. Customers should use their mobile number instead.'),
               style: TextStyle(
                 fontSize: 14.5,
                 height: 1.45,
@@ -87,8 +88,8 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               autofillHints: const [AutofillHints.username],
-              decoration: const InputDecoration(
-                labelText: 'Work email',
+              decoration: InputDecoration(
+                labelText: context.customerText("Work email"),
                 prefixIcon: Icon(Icons.alternate_email_rounded),
               ),
               onChanged: (_) => setState(() {}),
@@ -99,7 +100,7 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
               obscureText: _obscure,
               autofillHints: const [AutofillHints.password],
               decoration: InputDecoration(
-                labelText: 'Password',
+                labelText: context.customerText("Password"),
                 prefixIcon: const Icon(Icons.lock_outline_rounded),
                 suffixIcon: IconButton(
                   onPressed: () => setState(() => _obscure = !_obscure),
@@ -108,7 +109,7 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
                   ),
-                  tooltip: _obscure ? 'Show password' : 'Hide password',
+                  tooltip: _obscure ? context.customerText("Show password") : context.customerText("Hide password"),
                 ),
               ),
               onChanged: (_) => setState(() {}),
@@ -126,11 +127,11 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Sign in'),
+                  : Text(context.customerText("Sign in")),
             ),
             const SizedBox(height: 18),
             Text(
-              'Forgotten your password? Ask your manager to send a reset link from the admin dashboard.',
+              context.customerText('Forgotten your password? Ask your manager to send a reset link from the admin dashboard.'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -141,7 +142,7 @@ class _StaffSignInScreenState extends ConsumerState<StaffSignInScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => context.push(Routes.riderSignup),
-              child: const Text('New delivery partner? Apply here'),
+              child: Text(context.customerText("New delivery partner? Apply here")),
             ),
           ],
         ),

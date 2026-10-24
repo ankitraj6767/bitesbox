@@ -89,11 +89,17 @@ class MenuRepository {
   }
 
   /// Recent, trending and popular, shown before the customer types anything.
-  Future<SearchSuggestions> suggestions({String? branchId}) async {
+  Future<SearchSuggestions> suggestions({
+    String? branchId,
+    String locale = 'en',
+  }) async {
     final result = await _api.rpc<dynamic>(
-      'search_suggestions',
-      params: {if (branchId != null) 'p_branch_id': branchId},
-      dedupeKey: 'search_suggestions:$branchId',
+      'localized_search_suggestions',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_locale': locale,
+      },
+      dedupeKey: 'search_suggestions:$branchId:$locale',
     );
 
     return SearchSuggestions.fromJson(Map<String, dynamic>.from(result as Map));

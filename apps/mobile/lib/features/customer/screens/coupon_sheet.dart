@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
@@ -52,7 +53,7 @@ class _CouponSheetState extends ConsumerState<CouponSheet> {
 
       // The server may accept the code but decide an automatic offer is better.
       if (coupon != null && !coupon.valid) {
-        AppFeedback.showInfo(context, coupon.message ?? 'That coupon was not applied.');
+        AppFeedback.showInfo(context, coupon.message ?? context.customerText("That coupon was not applied."));
       } else {
         Navigator.of(context).pop();
         AppFeedback.showSuccess(
@@ -74,9 +75,9 @@ class _CouponSheetState extends ConsumerState<CouponSheet> {
 
     return Column(
       children: [
-        const SheetHeader(
-          title: 'Offers for you',
-          subtitle: 'Only one coupon can be used per order.',
+        SheetHeader(
+          title: context.customerText("Offers for you"),
+          subtitle: context.customerText("Only one coupon can be used per order."),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
@@ -87,8 +88,8 @@ class _CouponSheetState extends ConsumerState<CouponSheet> {
                   controller: _controller,
                   textCapitalization: TextCapitalization.characters,
                   inputFormatters: [UpperCaseFormatter()],
-                  decoration: const InputDecoration(
-                    hintText: 'Enter a coupon code',
+                  decoration: InputDecoration(
+                    hintText: context.customerText("Enter a coupon code"),
                     prefixIcon: Icon(Icons.confirmation_number_outlined),
                   ),
                   onSubmitted: (value) {
@@ -107,7 +108,7 @@ class _CouponSheetState extends ConsumerState<CouponSheet> {
                     minimumSize: const Size(84, 52),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                   ),
-                  child: const Text('Apply'),
+                  child: Text(context.customerText("Apply")),
                 ),
               ),
             ],
@@ -119,9 +120,9 @@ class _CouponSheetState extends ConsumerState<CouponSheet> {
             onRetry: () => ref.invalidate(availableCouponsProvider),
             data: (list) {
               if (list.isEmpty) {
-                return const AppEmptyState(
-                  title: 'No offers right now',
-                  message: 'New offers are added regularly. Do check back.',
+                return AppEmptyState(
+                  title: context.customerText("No offers right now"),
+                  message: context.customerText("New offers are added regularly. Do check back."),
                   icon: Icons.local_offer_outlined,
                   compact: true,
                 );
@@ -227,7 +228,7 @@ class _CouponCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     minimumSize: const Size(0, 34),
                   ),
-                  child: Text(busy ? 'Applying…' : 'Apply'),
+                  child: Text(busy ? context.customerText("Applying…") : context.customerText("Apply")),
                 ),
             ],
           ),

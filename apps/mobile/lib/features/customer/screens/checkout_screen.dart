@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/customer_copy.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/format.dart';
@@ -344,7 +345,7 @@ class _AddressCard extends ConsumerWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    selected.labelText,
+                    context.customerText(selected.labelText),
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
@@ -372,7 +373,12 @@ class _AddressCard extends ConsumerWidget {
               if (quote.delivery.distanceKm != null) ...[
                 const SizedBox(height: 6),
                 Text(
-                  '${Fmt.distance(quote.delivery.distanceKm)} from our kitchen',
+                  context.customerText(
+                    '{distance} from our kitchen',
+                    values: {
+                      'distance': Fmt.distance(quote.delivery.distanceKm),
+                    },
+                  ),
                   style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                 ),
               ],
@@ -416,7 +422,9 @@ class _TimingCard extends ConsumerWidget {
               dense: true,
               title: Text(l10n.asSoonAsPossible),
               subtitle: Text(
-                l10n.readyInAbout(Fmt.duration(quote.timingEstimate.totalMinutes)),
+                l10n.readyInAbout(
+                  Fmt.duration(quote.timingEstimate.totalMinutes),
+                ),
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
             ),
@@ -467,14 +475,14 @@ class _TimingCard extends ConsumerWidget {
       initialDate: earliest,
       firstDate: earliest,
       lastDate: now.add(const Duration(days: 7)),
-      helpText: 'Choose a delivery date',
+      helpText: context.customerText('Choose a delivery date'),
     );
     if (date == null || !context.mounted) return;
 
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(earliest),
-      helpText: 'Choose a delivery time',
+      helpText: context.customerText('Choose a delivery time'),
     );
     if (time == null || !context.mounted) return;
 
@@ -558,9 +566,7 @@ class _PaymentPicker extends ConsumerWidget {
                 dense: true,
                 title: Text(l10n.cashOnDelivery),
                 subtitle: Text(
-                  codBlocked
-                      ? codIssue.message
-                      : l10n.payDeliveryPartner,
+                  codBlocked ? codIssue.message : l10n.payDeliveryPartner,
                   style: TextStyle(
                     fontSize: 12.5,
                     color: codBlocked ? brand.error : brand.inkMuted,
@@ -616,10 +622,14 @@ class _WalletCard extends ConsumerWidget {
             SwitchListTile.adaptive(
               value: applied,
               contentPadding: EdgeInsets.zero,
-              title: Text(l10n.useWalletBalance(Fmt.moneySmart(wallet.balance))),
+              title: Text(
+                l10n.useWalletBalance(Fmt.moneySmart(wallet.balance)),
+              ),
               subtitle: Text(
                 applied
-                    ? l10n.walletAppliedToOrder(Fmt.moneySmart(quote.totals.walletApplied))
+                    ? l10n.walletAppliedToOrder(
+                        Fmt.moneySmart(quote.totals.walletApplied),
+                      )
                     : l10n.walletAppliedFirst,
                 style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
               ),
@@ -714,7 +724,11 @@ class _CouponTile extends StatelessWidget {
             child: Text(
               applied == null
                   ? (quote.promotion?.applied == true
-                        ? l10n.automaticOfferApplied(quote.promotion!.headline ?? l10n.offers)
+                        ? l10n.automaticOfferApplied(
+                            context.customerText(
+                              quote.promotion!.headline ?? l10n.offers,
+                            ),
+                          )
                         : l10n.noCouponApplied)
                   : '$applied · ${l10n.savingAmount(Fmt.moneySmart(quote.totals.couponDiscount))}',
               style: TextStyle(
@@ -763,10 +777,27 @@ class _PromiseCard extends StatelessWidget {
               children: [
                 Text(
                   quote.isScheduled
-                      ? 'Scheduled for ${Fmt.dayTime(quote.scheduledFor)}'
+                      ? context.customerText(
+                          'Scheduled for {time}',
+                          values: {'time': Fmt.dayTime(quote.scheduledFor)},
+                        )
                       : (quote.isPickup
-                            ? 'Ready to collect in ${Fmt.duration(estimate.prepMinutes)}'
-                            : 'Arriving in about ${Fmt.duration(estimate.totalMinutes)}'),
+                            ? context.customerText(
+                                'Ready to collect in {duration}',
+                                values: {
+                                  'duration': Fmt.duration(
+                                    estimate.prepMinutes,
+                                  ),
+                                },
+                              )
+                            : context.customerText(
+                                'Arriving in about {duration}',
+                                values: {
+                                  'duration': Fmt.duration(
+                                    estimate.totalMinutes,
+                                  ),
+                                },
+                              )),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -776,9 +807,16 @@ class _PromiseCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   quote.isPickup
-                      ? 'We will let you know the moment it is packed.'
-                      : 'Cooking takes about ${Fmt.duration(estimate.prepMinutes)}, '
-                            'delivery about ${Fmt.duration(estimate.deliveryMinutes)}.',
+                      ? context.customerText(
+                          'We will let you know the moment it is packed.',
+                        )
+                      : context.customerText(
+                          'Cooking takes about {prep}, delivery about {delivery}.',
+                          values: {
+                            'prep': Fmt.duration(estimate.prepMinutes),
+                            'delivery': Fmt.duration(estimate.deliveryMinutes),
+                          },
+                        ),
                   style: TextStyle(
                     fontSize: 12.5,
                     height: 1.35,

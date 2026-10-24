@@ -14,23 +14,27 @@ class AccountRepository {
   }
 
   /// In-app notifications for the signed-in user, newest first.
-  Future<List<AppNotificationItem>> notifications({int limit = 50}) async {
+  Future<List<AppNotificationItem>> notifications({
+    int limit = 50,
+    String locale = 'en',
+  }) async {
     final userId = _api.currentUserId;
     if (userId == null) return const [];
 
-    final rows = await _api.select(
-      'notifications',
-      columns: 'id, event, title, body, order_id, read_at, created_at',
-      filter: (query) => query
-          // Only in-app inbox rows have read receipts. Push and SMS rows track
-          // delivery separately and must never appear as unread inbox items.
-          .eq('user_id', userId)
-          .eq('channel', 'IN_APP')
-          .order('created_at', ascending: false)
-          .limit(limit),
+    final result = await _api.rpc<dynamic>(
+      'localized_customer_notifications',
+      params: {'p_limit': limit, 'p_locale': locale},
+      dedupeKey: 'notifications:$userId:$limit:$locale',
     );
+    final rows = result is List ? result : const <dynamic>[];
 
-    return rows.map(AppNotificationItem.fromJson).toList();
+    return rows
+        .map(
+          (row) => AppNotificationItem.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList();
   }
 
   /// Marks everything read when [ids] is empty.
@@ -91,7 +95,10 @@ class AccountRepository {
         : asString(json['ticket_id']);
   }
 
-  Future<void> postMessage({required String ticketId, required String body}) async {
+  Future<void> postMessage({
+    required String ticketId,
+    required String body,
+  }) async {
     await _api.rpc<dynamic>(
       'post_support_message',
       params: {'p_ticket_id': ticketId, 'p_body': body.trim()},
@@ -108,14 +115,18 @@ class AccountRepository {
     bool? smsEnabled,
     bool? whatsappEnabled,
   }) async {
-    await _api.rpc<dynamic>('update_my_profile', params: {
-      if (fullName != null) 'p_full_name': fullName.trim(),
-      if (email != null && email.trim().isNotEmpty) 'p_email': email.trim(),
-      if (preferredLanguage != null) 'p_preferred_language': preferredLanguage,
-      if (marketingOptIn != null) 'p_marketing_opt_in': marketingOptIn,
-      if (pushEnabled != null) 'p_push_enabled': pushEnabled,
-      if (smsEnabled != null) 'p_sms_enabled': smsEnabled,
-      if (whatsappEnabled != null) 'p_whatsapp_enabled': whatsappEnabled,
-    });
+    await _api.rpc<dynamic>(
+      'update_my_profile',
+      params: {
+        if (fullName != null) 'p_full_name': fullName.trim(),
+        if (email != null && email.trim().isNotEmpty) 'p_email': email.trim(),
+        if (preferredLanguage != null)
+          'p_preferred_language': preferredLanguage,
+        if (marketingOptIn != null) 'p_marketing_opt_in': marketingOptIn,
+        if (pushEnabled != null) 'p_push_enabled': pushEnabled,
+        if (smsEnabled != null) 'p_sms_enabled': smsEnabled,
+        if (whatsappEnabled != null) 'p_whatsapp_enabled': whatsappEnabled,
+      },
+    );
   }
 }

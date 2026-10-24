@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
@@ -97,8 +98,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   ),
                   SliverToBoxAdapter(
                     child: _SectionHeading(
-                      title: 'Browse by craving',
-                      detail: 'A little something for every mood',
+                      title: context.customerText("Browse by craving"),
+                      detail: context.customerText(
+                        context.customerText("A little something for every mood"),
+                      ),
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -127,7 +130,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   ),
                   SliverToBoxAdapter(
                     child: _MenuControls(
-                      title: selectedCategory?.name ?? 'All dishes',
+                      title: selectedCategory?.name ?? context.customerText("All dishes"),
                       count: products.length,
                       filters: filters,
                       onSort: () => _openFilters(context, filters),
@@ -277,7 +280,7 @@ class _MenuMasthead extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'A table full of good things',
+                  context.customerText('A table full of good things'),
                   style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
                 ),
               ],
@@ -363,9 +366,9 @@ class _MenuSpotlight extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'A little more\nto look forward to.',
-                      style: TextStyle(
+                    Text(
+                      context.customerText('A little more\nto look forward to.'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         height: 1.08,
@@ -499,7 +502,7 @@ class _CategoryPicker extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == 0) {
             return _CategoryOption(
-              label: 'All',
+              label: context.customerText("All"),
               count: totalCount,
               selected: selectedId == null,
               onTap: () => onSelect(null),
@@ -564,7 +567,12 @@ class _CategoryOption extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: count == null ? label : '$label, $count dishes',
+      label: count == null
+          ? label
+          : context.customerText(
+              '{label}, {count} dishes',
+              values: {'label': label, 'count': count},
+            ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -647,7 +655,12 @@ class _MenuControls extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '$count ${count == 1 ? 'dish' : 'dishes'} to discover',
+                      context.customerText(
+                        count == 1
+                            ? '{count} dish to discover'
+                            : '{count} dishes to discover',
+                        values: {'count': count},
+                      ),
                       style: TextStyle(fontSize: 12, color: brand.inkMuted),
                     ),
                   ],
@@ -656,7 +669,7 @@ class _MenuControls extends StatelessWidget {
               const SizedBox(width: 8),
               _ControlButton(
                 icon: Icons.swap_vert_rounded,
-                label: _sortLabel(filters.sortOrder),
+                label: _sortLabel(context, filters.sortOrder),
                 active: filters.sortOrder != MenuSortOrder.recommended,
                 onTap: onSort,
               ),
@@ -664,8 +677,11 @@ class _MenuControls extends StatelessWidget {
               _ControlButton(
                 icon: Icons.tune_rounded,
                 label: filters.activeCount == 0
-                    ? 'Filter'
-                    : 'Filter ${filters.activeCount}',
+                    ? context.customerText('Filter')
+                    : context.customerText(
+                        'Filter {count}',
+                        values: {'count': filters.activeCount},
+                      ),
                 active: filters.isActive,
                 onTap: onFilter,
               ),
@@ -679,22 +695,22 @@ class _MenuControls extends StatelessWidget {
               children: [
                 if (filters.vegOnly)
                   _ActiveFilterPill(
-                    label: 'Vegetarian',
+                    label: context.customerText("Vegetarian"),
                     icon: Icons.eco_rounded,
                   ),
                 if (filters.nonVegOnly)
                   _ActiveFilterPill(
-                    label: 'Non-veg',
+                    label: context.customerText("Non-veg"),
                     icon: Icons.set_meal_rounded,
                   ),
                 if (filters.bestSellersOnly)
                   _ActiveFilterPill(
-                    label: 'Bestsellers',
+                    label: context.customerText("Bestsellers"),
                     icon: Icons.local_fire_department_rounded,
                   ),
                 if (filters.hideUnavailable)
                   _ActiveFilterPill(
-                    label: 'Available now',
+                    label: context.customerText("Available now"),
                     icon: Icons.check_circle_outline_rounded,
                   ),
                 TextButton(
@@ -704,7 +720,7 @@ class _MenuControls extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 5),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text('Clear all'),
+                  child: Text(context.customerText("Clear all")),
                 ),
               ],
             ),
@@ -715,11 +731,11 @@ class _MenuControls extends StatelessWidget {
   }
 }
 
-String _sortLabel(MenuSortOrder order) => switch (order) {
-  MenuSortOrder.recommended => 'Sort',
-  MenuSortOrder.popular => 'Popular',
-  MenuSortOrder.priceLowToHigh => 'Price',
-  MenuSortOrder.topRated => 'Top rated',
+String _sortLabel(BuildContext context, MenuSortOrder order) => switch (order) {
+  MenuSortOrder.recommended => context.customerText("Sort"),
+  MenuSortOrder.popular => context.customerText("Popular"),
+  MenuSortOrder.priceLowToHigh => context.customerText("Price"),
+  MenuSortOrder.topRated => context.customerText("Top rated"),
 };
 
 class _ControlButton extends StatelessWidget {
@@ -862,7 +878,7 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Find your kind of good',
+                          context.customerText('Find your kind of good'),
                           style: TextStyle(
                             color: brand.ink,
                             fontSize: 20,
@@ -872,7 +888,7 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Choose what sounds right today.',
+                          context.customerText('Choose what sounds right today.'),
                           style: TextStyle(color: brand.inkMuted, fontSize: 12),
                         ),
                       ],
@@ -880,7 +896,7 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    tooltip: 'Close filters',
+                    tooltip: context.customerText("Close filters"),
                     icon: Icon(Icons.close_rounded, color: brand.inkMuted),
                   ),
                 ],
@@ -891,11 +907,11 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 17, 20, 16),
                 children: [
-                  _SheetSectionTitle(title: 'YOUR PREFERENCES'),
+                  _SheetSectionTitle(title: context.customerText("YOUR PREFERENCES")),
                   const SizedBox(height: 5),
                   _PreferenceTile(
-                    title: 'Vegetarian',
-                    detail: 'Only plant-forward and vegetarian dishes',
+                    title: context.customerText("Vegetarian"),
+                    detail: context.customerText("Only plant-forward and vegetarian dishes"),
                     icon: Icons.eco_rounded,
                     iconColor: brand.veg,
                     selected: _draft.vegOnly,
@@ -903,8 +919,8 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                         _toggle(vegOnly: !_draft.vegOnly, nonVegOnly: false),
                   ),
                   _PreferenceTile(
-                    title: 'Non-vegetarian',
-                    detail: 'Show dishes with meat or seafood',
+                    title: context.customerText("Non-vegetarian"),
+                    detail: context.customerText("Show dishes with meat or seafood"),
                     icon: Icons.set_meal_rounded,
                     iconColor: brand.nonVeg,
                     selected: _draft.nonVegOnly,
@@ -912,8 +928,8 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                         _toggle(nonVegOnly: !_draft.nonVegOnly, vegOnly: false),
                   ),
                   _PreferenceTile(
-                    title: 'Bestsellers',
-                    detail: 'Guest favourites from the menu',
+                    title: context.customerText("Bestsellers"),
+                    detail: context.customerText("Guest favourites from the menu"),
                     icon: Icons.local_fire_department_rounded,
                     iconColor: brand.warning,
                     selected: _draft.bestSellersOnly,
@@ -921,8 +937,8 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                         _toggle(bestSellersOnly: !_draft.bestSellersOnly),
                   ),
                   _PreferenceTile(
-                    title: 'Available now',
-                    detail: 'Hide dishes that are temporarily unavailable',
+                    title: context.customerText("Available now"),
+                    detail: context.customerText("Hide dishes that are temporarily unavailable"),
                     icon: Icons.check_circle_outline_rounded,
                     iconColor: brand.success,
                     selected: _draft.hideUnavailable,
@@ -930,11 +946,11 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                         _toggle(hideUnavailable: !_draft.hideUnavailable),
                   ),
                   const SizedBox(height: 17),
-                  _SheetSectionTitle(title: 'SORT YOUR MENU'),
+                  _SheetSectionTitle(title: context.customerText("SORT YOUR MENU")),
                   const SizedBox(height: 8),
                   _SortOption(
-                    title: 'Recommended',
-                    detail: 'A balanced mix of the menu',
+                    title: context.customerText("Recommended"),
+                    detail: context.customerText("A balanced mix of the menu"),
                     selected: _draft.sortOrder == MenuSortOrder.recommended,
                     onTap: () => setState(
                       () => _draft = _draft.copyWith(
@@ -943,8 +959,8 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                     ),
                   ),
                   _SortOption(
-                    title: 'Popular choices',
-                    detail: 'Bestsellers and highly rated dishes first',
+                    title: context.customerText("Popular choices"),
+                    detail: context.customerText("Bestsellers and highly rated dishes first"),
                     selected: _draft.sortOrder == MenuSortOrder.popular,
                     onTap: () => setState(
                       () => _draft = _draft.copyWith(
@@ -953,8 +969,8 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                     ),
                   ),
                   _SortOption(
-                    title: 'Top rated',
-                    detail: 'Highest customer ratings first',
+                    title: context.customerText("Top rated"),
+                    detail: context.customerText("Highest customer ratings first"),
                     selected: _draft.sortOrder == MenuSortOrder.topRated,
                     onTap: () => setState(
                       () => _draft = _draft.copyWith(
@@ -963,8 +979,8 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                     ),
                   ),
                   _SortOption(
-                    title: 'Price: low to high',
-                    detail: 'Start with the lighter spend',
+                    title: context.customerText("Price: low to high"),
+                    detail: context.customerText("Start with the lighter spend"),
                     selected: _draft.sortOrder == MenuSortOrder.priceLowToHigh,
                     onTap: () => setState(
                       () => _draft = _draft.copyWith(
@@ -987,7 +1003,7 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                       ),
                     ),
                     child: Text(
-                      'Reset',
+                      context.customerText('Reset'),
                       style: TextStyle(
                         color: brand.inkMuted,
                         fontWeight: FontWeight.w700,
@@ -1008,7 +1024,12 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
                           ),
                         ),
                         child: Text(
-                          'Show dishes${_draft.activeCount > 0 ? ' (${_draft.activeCount})' : ''}',
+                          context.customerText(
+                            _draft.activeCount > 0
+                                ? 'Show dishes ({count})'
+                                : 'Show dishes',
+                            values: {'count': _draft.activeCount},
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),

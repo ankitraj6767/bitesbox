@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
@@ -74,12 +75,12 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         const ActiveOrderStrip(),
                         if (data.sections.isEmpty)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.only(top: 60),
                             child: AppEmptyState(
-                              title: 'Nothing here yet',
+                              title: context.customerText("Nothing here yet"),
                               message:
-                                  'Our menu is being set up. Please check back shortly.',
+                                  context.customerText("Our menu is being set up. Please check back shortly."),
                               icon: Icons.restaurant_outlined,
                             ),
                           )
@@ -152,7 +153,7 @@ class _TopBar extends ConsumerWidget {
                         Flexible(
                           child: addressLoading
                               ? Semantics(
-                                  label: 'Loading saved delivery address',
+                                  label: context.customerText("Loading saved delivery address"),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -168,11 +169,13 @@ class _TopBar extends ConsumerWidget {
                                   children: [
                                     Text(
                                       session.isGuest
-                                          ? 'Sign in to set your address'
+                                          ? context.customerText('Sign in to set your address')
                                           : addressError
-                                          ? 'Saved address unavailable'
-                                          : address?.labelText ??
-                                                'Add a delivery address',
+                                          ? context.customerText('Saved address unavailable')
+                                          : context.customerText(
+                                              address?.labelText ??
+                                                  'Add a delivery address',
+                                            ),
                                       style: TextStyle(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
@@ -181,11 +184,11 @@ class _TopBar extends ConsumerWidget {
                                     ),
                                     Text(
                                       session.isGuest
-                                          ? 'Choose a delivery location after sign in'
+                                          ? context.customerText('Choose a delivery location after sign in')
                                           : addressError
-                                          ? 'Tap to choose an address'
+                                          ? context.customerText('Tap to choose an address')
                                           : address == null
-                                          ? 'Tap to choose where to deliver'
+                                          ? context.customerText('Tap to choose where to deliver')
                                           : (address.secondary.trim().isNotEmpty
                                                 ? address.secondary
                                                 : '${address.city}, ${address.state}'),
@@ -219,7 +222,7 @@ class _TopBar extends ConsumerWidget {
                   backgroundColor: brand.primary,
                   child: const Icon(Icons.notifications_none_rounded),
                 ),
-                tooltip: 'Notifications',
+                tooltip: context.customerText("Notifications"),
               ),
             ],
           ),
@@ -241,8 +244,11 @@ class _TopBar extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Text(
                     greetingName == null
-                        ? 'Search for biryani, litti, thali…'
-                        : 'Hungry, $greetingName? Search the menu',
+                        ? context.customerText('Search for biryani, litti, thali…')
+                        : context.customerText(
+                            'Hungry, {name}? Search the menu',
+                            values: {'name': greetingName},
+                          ),
                     style: TextStyle(fontSize: 14.5, color: brand.inkMuted),
                   ),
                 ],

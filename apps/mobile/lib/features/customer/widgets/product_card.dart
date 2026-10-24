@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/errors/app_error.dart';
 import '../../../core/theme/brand_tokens.dart';
@@ -84,7 +85,7 @@ class ProductListCard extends ConsumerWidget {
                         if (product.isBestSeller) ...[
                           const SizedBox(width: 8),
                           AppPill(
-                            label: 'Bestseller',
+                            label: context.customerText("Bestseller"),
                             icon: Icons.local_fire_department_rounded,
                             background: brand.accent.withValues(alpha: 0.14),
                             foreground: brand.warning,
@@ -93,7 +94,7 @@ class ProductListCard extends ConsumerWidget {
                         ] else if (product.isNew) ...[
                           const SizedBox(width: 8),
                           AppPill(
-                            label: 'New',
+                            label: context.customerText("New"),
                             background: brand.secondary.withValues(alpha: 0.10),
                             foreground: brand.secondary,
                             dense: true,
@@ -259,7 +260,7 @@ class MenuProductCard extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                '${product.hasVariants ? 'from ' : ''}${Fmt.moneySmart(product.displayPrice)}',
+                                '${product.hasVariants ? context.customerText("from ") : ''}${Fmt.moneySmart(product.displayPrice)}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -372,7 +373,7 @@ class _MenuAddControl extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
-          'Currently unavailable',
+          context.customerText('Currently unavailable'),
           style: TextStyle(
             color: brand.inkMuted,
             fontSize: 10.5,
@@ -387,7 +388,12 @@ class _MenuAddControl extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              quantity == 1 ? 'In your box' : '$quantity in your box',
+              quantity == 1
+                  ? context.customerText('In your box')
+                  : context.customerText(
+                      '{count} in your box',
+                      values: {'count': quantity},
+                    ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -426,7 +432,12 @@ class _MenuAddControl extends StatelessWidget {
           size: 15,
         ),
         label: Text(
-          quantity > 0 ? '$quantity in your box' : 'ADD',
+          quantity > 0
+              ? context.customerText(
+                  '{count} in your box',
+                  values: {'count': quantity},
+                )
+              : context.customerText("ADD"),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
@@ -457,7 +468,7 @@ class _PriceRow extends StatelessWidget {
     return Row(
       children: [
         if (product.hasVariants)
-          Text('from ', style: TextStyle(fontSize: 13, color: brand.inkMuted)),
+          Text(context.customerText("from "), style: TextStyle(fontSize: 13, color: brand.inkMuted)),
         Text(
           Fmt.moneySmart(product.displayPrice),
           style: TextStyle(
@@ -478,7 +489,7 @@ class _PriceRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            '${product.discountPercent}% off',
+            context.customerText('${product.discountPercent}% off'),
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
@@ -567,7 +578,10 @@ class _ImageWithAction extends ConsumerWidget {
                 side: BorderSide(color: brand.primary.withValues(alpha: 0.4)),
               ),
               child: Text(
-                '$quantity in cart',
+                context.customerText(
+                  '{count} in cart',
+                  values: {'count': quantity},
+                ),
                 style: const TextStyle(fontSize: 12.5),
               ),
             )
@@ -584,7 +598,7 @@ class _ImageWithAction extends ConsumerWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              child: const Text('ADD'),
+              child: Text(context.customerText("ADD")),
             ),
         ],
       ),
@@ -651,7 +665,7 @@ class ProductRailCard extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '${product.discountPercent}% OFF',
+                          context.customerText('${product.discountPercent}% OFF'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,
@@ -679,7 +693,10 @@ class ProductRailCard extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          '$quantity in cart',
+                          context.customerText(
+                            '{count} in cart',
+                            values: {'count': quantity},
+                          ),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,

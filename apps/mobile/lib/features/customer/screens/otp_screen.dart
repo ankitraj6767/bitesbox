@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../l10n/customer_copy.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,7 +73,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   Future<void> _verify() async {
     final code = _controller.text.trim();
     if (code.length != _codeLength) {
-      setState(() => _error = 'Enter the $_codeLength-digit code.');
+      setState(() {
+        _error = context.customerText(
+          'Enter the {count}-digit code.',
+          values: {'count': _codeLength},
+        );
+      });
       return;
     }
 
@@ -110,7 +116,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       if (!mounted) return;
       setState(() {
         _verifying = false;
-        _error = 'That code is incorrect or has expired.';
+        _error = context.customerText('That code is incorrect or has expired.');
       });
       AppFeedback.showError(context, error);
       _controller.clear();
@@ -123,7 +129,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     try {
       await ref.read(authRepositoryProvider).sendOtp(widget.phone);
       if (!mounted) return;
-      AppFeedback.showInfo(context, 'We have sent a new code.');
+      AppFeedback.showInfo(context, context.customerText("We have sent a new code."));
       _startCountdown();
     } catch (error) {
       if (!mounted) return;
@@ -147,7 +153,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             children: [
               const SizedBox(height: 8),
               Text(
-                'Enter the code',
+                context.customerText('Enter the code'),
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
@@ -160,7 +166,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 TextSpan(
                   style: TextStyle(fontSize: 15, height: 1.45, color: brand.inkMuted),
                   children: [
-                    const TextSpan(text: 'Sent to '),
+                    TextSpan(text: context.customerText('Sent to ')),
                     TextSpan(
                       text: widget.phone,
                       style: TextStyle(fontWeight: FontWeight.w600, color: brand.ink),
@@ -210,25 +216,28 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Verify and continue'),
+                    : Text(context.customerText("Verify and continue")),
               ),
               const SizedBox(height: 18),
               Center(
                 child: _secondsLeft > 0
                     ? Text(
-                        'Resend code in ${_secondsLeft}s',
+                        context.customerText(
+                          'Resend code in {seconds}s',
+                          values: {'seconds': _secondsLeft},
+                        ),
                         style: TextStyle(fontSize: 14, color: brand.inkMuted),
                       )
                     : TextButton(
                         onPressed: _resending ? null : _resend,
-                        child: Text(_resending ? 'Sending…' : 'Resend code'),
+                        child: Text(_resending ? context.customerText("Sending…") : context.customerText("Resend code")),
                       ),
               ),
               const Spacer(),
               Center(
                 child: TextButton(
                   onPressed: () => context.pop(),
-                  child: const Text('Change number'),
+                  child: Text(context.customerText("Change number")),
                 ),
               ),
               const SizedBox(height: 8),

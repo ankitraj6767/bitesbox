@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
@@ -29,19 +30,24 @@ class SupportListScreen extends ConsumerWidget {
     final config = ref.watch(appConfigProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Help and support')),
+      appBar: AppBar(title: Text(context.customerText("Help and support"))),
       body: Column(
         children: [
-          _ContactStrip(phone: config?.supportPhone, whatsapp: config?.whatsappPhone),
+          _ContactStrip(
+            phone: config?.supportPhone,
+            whatsapp: config?.whatsappPhone,
+          ),
           Expanded(
             child: AsyncValueView<List<SupportTicket>>(
               value: tickets,
               onRetry: () => ref.invalidate(supportTicketsProvider),
               data: (list) {
                 if (list.isEmpty) {
-                  return const AppEmptyState(
-                    title: 'No support requests',
-                    message: 'If something goes wrong with an order, raise a request and we will sort it out.',
+                  return AppEmptyState(
+                    title: context.customerText("No support requests"),
+                    message: context.customerText(
+                      "If something goes wrong with an order, raise a request and we will sort it out.",
+                    ),
                     icon: Icons.support_agent_rounded,
                   );
                 }
@@ -56,7 +62,8 @@ class SupportListScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     itemCount: list.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) => _TicketCard(ticket: list[index]),
+                    itemBuilder: (context, index) =>
+                        _TicketCard(ticket: list[index]),
                   ),
                 );
               },
@@ -67,7 +74,7 @@ class SupportListScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(Routes.newTicket),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New request'),
+        label: Text(context.customerText("New request")),
       ),
     );
   }
@@ -96,22 +103,26 @@ class _ContactStrip extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Need to speak to someone right away?',
-              style: TextStyle(fontSize: 13.5, height: 1.4, color: brand.inkMuted),
+              context.customerText('Need to speak to someone right away?'),
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.4,
+                color: brand.inkMuted,
+              ),
             ),
           ),
           if (phone != null)
             IconButton.filledTonal(
               onPressed: () => Launcher.dial(phone),
               icon: const Icon(Icons.call_rounded, size: 20),
-              tooltip: 'Call us',
+              tooltip: context.customerText("Call us"),
             ),
           if (whatsapp != null) ...[
             const SizedBox(width: 8),
             IconButton.filledTonal(
               onPressed: () => Launcher.whatsapp(whatsapp),
               icon: const Icon(Icons.chat_rounded, size: 20),
-              tooltip: 'Message us on WhatsApp',
+              tooltip: context.customerText("Message us on WhatsApp"),
             ),
           ],
         ],
@@ -146,7 +157,7 @@ class _TicketCard extends StatelessWidget {
             Row(
               children: [
                 AppPill(
-                  label: ticket.statusLabel,
+                  label: context.customerText(ticket.statusLabel),
                   dense: true,
                   background: colour.withValues(alpha: 0.10),
                   foreground: colour,
@@ -169,7 +180,7 @@ class _TicketCard extends StatelessWidget {
             ),
             const SizedBox(height: 3),
             Text(
-              '${ticket.ticketNumber} · ${ticket.categoryLabel}',
+              '${ticket.ticketNumber} · ${context.customerText(ticket.categoryLabel)}',
               style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
             ),
           ],
@@ -186,7 +197,8 @@ class SupportThreadScreen extends ConsumerStatefulWidget {
   final String ticketId;
 
   @override
-  ConsumerState<SupportThreadScreen> createState() => _SupportThreadScreenState();
+  ConsumerState<SupportThreadScreen> createState() =>
+      _SupportThreadScreenState();
 }
 
 class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
@@ -226,7 +238,10 @@ class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(thread.valueOrNull?.ticket.ticketNumber ?? 'Support'),
+        title: Text(
+          thread.valueOrNull?.ticket.ticketNumber ??
+              context.customerText("Support"),
+        ),
       ),
       body: AsyncValueView<SupportThread>(
         value: thread,
@@ -239,12 +254,16 @@ class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
                 children: [
                   _TicketSummary(ticket: data.ticket, order: data.order),
                   const SizedBox(height: 18),
-                  ...data.messages.map((message) => _MessageBubble(message: message)),
+                  ...data.messages.map(
+                    (message) => _MessageBubble(message: message),
+                  ),
                   if (data.messages.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 30),
                       child: Text(
-                        'Our team will reply here shortly.',
+                        context.customerText(
+                          'Our team will reply here shortly.',
+                        ),
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 13.5, color: brand.inkMuted),
                       ),
@@ -269,8 +288,8 @@ class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
                           minLines: 1,
                           maxLines: 4,
                           textCapitalization: TextCapitalization.sentences,
-                          decoration: const InputDecoration(
-                            hintText: 'Type a message…',
+                          decoration: InputDecoration(
+                            hintText: context.customerText("Type a message…"),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 12,
@@ -282,7 +301,7 @@ class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
                       IconButton.filled(
                         onPressed: _sending ? null : _send,
                         icon: const Icon(Icons.send_rounded, size: 20),
-                        tooltip: 'Send',
+                        tooltip: context.customerText("Send"),
                       ),
                     ],
                   ),
@@ -296,8 +315,8 @@ class _SupportThreadScreenState extends ConsumerState<SupportThreadScreen> {
                 child: SafeArea(
                   top: false,
                   child: Text(
-                    'This request is ${data.ticket.statusLabel.toLowerCase()}. '
-                    'Raise a new one if you still need help.',
+                    '${context.customerText("This request is {status}.", values: {'status': context.customerText(data.ticket.statusLabel).toLowerCase()})} '
+                    '${context.customerText("Raise a new one if you still need help.")}',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: brand.inkMuted),
                   ),
@@ -339,7 +358,7 @@ class _TicketSummary extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${ticket.categoryLabel} · raised ${Fmt.smartDateTime(ticket.createdAt)}',
+            '${context.customerText(ticket.categoryLabel)} · ${context.customerText("raised {time}", values: {'time': Fmt.smartDateTime(ticket.createdAt)})}',
             style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
           ),
           if (order != null) ...[
@@ -348,7 +367,11 @@ class _TicketSummary extends StatelessWidget {
               onTap: () => context.push(Routes.order(order!.id)),
               child: Row(
                 children: [
-                  Icon(Icons.receipt_long_rounded, size: 15, color: brand.primary),
+                  Icon(
+                    Icons.receipt_long_rounded,
+                    size: 15,
+                    color: brand.primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     '${order!.orderNumber} · ${Fmt.moneySmart(order!.totals.grandTotal)}',
@@ -358,7 +381,11 @@ class _TicketSummary extends StatelessWidget {
                       color: brand.primary,
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, size: 17, color: brand.primary),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 17,
+                    color: brand.primary,
+                  ),
                 ],
               ),
             ),
@@ -423,7 +450,9 @@ class _MessageBubble extends StatelessWidget {
               Fmt.smartDateTime(message.createdAt),
               style: TextStyle(
                 fontSize: 10.5,
-                color: mine ? Colors.white.withValues(alpha: 0.75) : brand.inkMuted,
+                color: mine
+                    ? Colors.white.withValues(alpha: 0.75)
+                    : brand.inkMuted,
               ),
             ),
           ],
@@ -462,7 +491,9 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
     setState(() => _busy = true);
 
     try {
-      final ticketId = await ref.read(accountRepositoryProvider).createTicket(
+      final ticketId = await ref
+          .read(accountRepositoryProvider)
+          .createTicket(
             category: _category,
             subject: _subject.text,
             description: _description.text,
@@ -471,7 +502,10 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
 
       if (!mounted) return;
       ref.invalidate(supportTicketsProvider);
-      AppFeedback.showSuccess(context, 'Request raised. We will reply shortly.');
+      AppFeedback.showSuccess(
+        context,
+        context.customerText("Request raised. We will reply shortly."),
+      );
 
       if (ticketId.isNotEmpty) {
         context.pushReplacement(Routes.ticket(ticketId));
@@ -492,12 +526,12 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
     final orders = ref.watch(myOrdersProvider('ALL')).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New request')),
+      appBar: AppBar(title: Text(context.customerText("New request"))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'What is this about?',
+            context.customerText('What is this about?'),
             style: TextStyle(
               fontSize: 14.5,
               fontWeight: FontWeight.w700,
@@ -507,12 +541,14 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
             initialValue: _category,
-            decoration: const InputDecoration(labelText: 'Category'),
+            decoration: InputDecoration(
+              labelText: context.customerText("Category"),
+            ),
             items: SupportTicket.categoryLabels.entries
                 .map(
                   (entry) => DropdownMenuItem(
                     value: entry.key,
-                    child: Text(entry.value),
+                    child: Text(context.customerText(entry.value)),
                   ),
                 )
                 .toList(),
@@ -522,15 +558,19 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
           if (orders != null && orders.orders.isNotEmpty)
             DropdownButtonFormField<String?>(
               initialValue: _orderId,
-              decoration: const InputDecoration(
-                labelText: 'Related order (optional)',
+              decoration: InputDecoration(
+                labelText: context.customerText("Related order (optional)"),
               ),
               items: [
-                const DropdownMenuItem<String?>(
+                DropdownMenuItem<String?>(
                   value: null,
-                  child: Text('Not about a specific order'),
+                  child: Text(
+                    context.customerText("Not about a specific order"),
+                  ),
                 ),
-                ...orders.orders.take(15).map(
+                ...orders.orders
+                    .take(15)
+                    .map(
                       (order) => DropdownMenuItem<String?>(
                         value: order.id,
                         child: Text(
@@ -546,8 +586,8 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
             controller: _subject,
             textCapitalization: TextCapitalization.sentences,
             maxLength: 120,
-            decoration: const InputDecoration(
-              labelText: 'Subject',
+            decoration: InputDecoration(
+              labelText: context.customerText("Subject"),
               counterText: '',
             ),
             onChanged: (_) => setState(() {}),
@@ -558,8 +598,8 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
             maxLines: 5,
             maxLength: 1000,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              labelText: 'Tell us what happened',
+            decoration: InputDecoration(
+              labelText: context.customerText("Tell us what happened"),
               alignLabelWithHint: true,
             ),
             onChanged: (_) => setState(() {}),
@@ -567,7 +607,11 @@ class _NewTicketScreenState extends ConsumerState<NewTicketScreen> {
           const SizedBox(height: 8),
           FilledButton(
             onPressed: _busy || !_isValid ? null : _submit,
-            child: Text(_busy ? 'Sending…' : 'Raise request'),
+            child: Text(
+              _busy
+                  ? context.customerText("Sending…")
+                  : context.customerText("Raise request"),
+            ),
           ),
         ],
       ),
@@ -616,13 +660,17 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
   }
 
   bool get _needsItems =>
-      _category == 'MISSING_ITEM' || _category == 'WRONG_ITEM' || _category == 'FOOD_QUALITY';
+      _category == 'MISSING_ITEM' ||
+      _category == 'WRONG_ITEM' ||
+      _category == 'FOOD_QUALITY';
 
   Future<void> _submit() async {
     setState(() => _busy = true);
 
     try {
-      final ticketId = await ref.read(orderRepositoryProvider).requestHelp(
+      final ticketId = await ref
+          .read(orderRepositoryProvider)
+          .requestHelp(
             orderId: widget.order.id,
             category: _category!,
             description: _description.text,
@@ -633,7 +681,10 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
       ref.invalidate(supportTicketsProvider);
       Navigator.of(context).pop();
 
-      AppFeedback.showSuccess(context, 'Our team is looking into it.');
+      AppFeedback.showSuccess(
+        context,
+        context.customerText("Our team is looking into it."),
+      );
       if (ticketId.isNotEmpty) context.push(Routes.ticket(ticketId));
     } catch (error) {
       if (!mounted) return;
@@ -655,8 +706,11 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SheetHeader(
-              title: 'What went wrong?',
-              subtitle: 'Order ${widget.order.orderNumber}',
+              title: context.customerText("What went wrong?"),
+              subtitle: context.customerText(
+                'Order {number}',
+                values: {'number': widget.order.orderNumber},
+              ),
             ),
             RadioGroup<String>(
               groupValue: _category,
@@ -671,7 +725,7 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
                       (entry) => RadioListTile<String>(
                         value: entry.key,
                         dense: true,
-                        title: Text(entry.value),
+                        title: Text(context.customerText(entry.value)),
                       ),
                     )
                     .toList(),
@@ -681,7 +735,7 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
                 child: Text(
-                  'Which items?',
+                  context.customerText('Which items?'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -693,10 +747,12 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
                 (item) => CheckboxListTile(
                   value: _itemIds.contains(item.id),
                   dense: true,
-                  title: Text('${item.quantity} × ${item.productName}'),
+                  title: Text(
+                    '${item.quantity} × ${context.customerText(item.productName)}',
+                  ),
                   subtitle: item.configurationLabel.isEmpty
                       ? null
-                      : Text(item.configurationLabel),
+                      : Text(context.customerText(item.configurationLabel)),
                   onChanged: (selected) => setState(() {
                     if (selected ?? false) {
                       _itemIds.add(item.id);
@@ -714,8 +770,10 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
                 maxLines: 3,
                 maxLength: 600,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Describe the problem so we can put it right',
+                decoration: InputDecoration(
+                  hintText: context.customerText(
+                    "Describe the problem so we can put it right",
+                  ),
                   counterText: '',
                 ),
                 onChanged: (_) => setState(() {}),
@@ -725,20 +783,31 @@ class _OrderHelpSheetState extends ConsumerState<OrderHelpSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Our team will review this and decide on any refund or credit.',
-                style: TextStyle(fontSize: 12.5, height: 1.4, color: brand.inkMuted),
+                context.customerText(
+                  'Our team will review this and decide on any refund or credit.',
+                ),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.4,
+                  color: brand.inkMuted,
+                ),
               ),
             ),
             const SizedBox(height: 14),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: FilledButton(
-                onPressed: _busy ||
+                onPressed:
+                    _busy ||
                         _category == null ||
                         _description.text.trim().length < 10
                     ? null
                     : _submit,
-                child: Text(_busy ? 'Sending…' : 'Send to support'),
+                child: Text(
+                  _busy
+                      ? context.customerText("Sending…")
+                      : context.customerText("Send to support"),
+                ),
               ),
             ),
           ],

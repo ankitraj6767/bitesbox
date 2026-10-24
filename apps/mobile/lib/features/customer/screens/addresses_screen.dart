@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
@@ -26,20 +27,20 @@ class AddressesScreen extends ConsumerWidget {
     final selectedId = ref.watch(cartQuoteProvider).addressId;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Delivery addresses')),
+      appBar: AppBar(title: Text(context.customerText("Delivery addresses"))),
       body: AsyncValueView<List<CustomerAddress>>(
         value: addresses,
         onRetry: () => ref.invalidate(addressesProvider),
         data: (list) {
           if (list.isEmpty) {
             return AppEmptyState(
-              title: 'No saved addresses',
-              message: 'Add where you would like your food delivered.',
+              title: context.customerText("No saved addresses"),
+              message: context.customerText("Add where you would like your food delivered."),
               icon: Icons.location_off_outlined,
               action: FilledButton.icon(
                 onPressed: () => context.push(Routes.addressEditor),
                 icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Add an address'),
+                label: Text(context.customerText("Add an address")),
               ),
             );
           }
@@ -65,7 +66,7 @@ class AddressesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(Routes.addressEditor),
         icon: const Icon(Icons.add_location_alt_outlined),
-        label: const Text('Add address'),
+        label: Text(context.customerText("Add address")),
       ),
     );
   }
@@ -114,7 +115,7 @@ class _AddressCard extends ConsumerWidget {
                         Row(
                           children: [
                             Text(
-                              address.labelText,
+                              context.customerText(address.labelText),
                               style: TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
@@ -124,14 +125,14 @@ class _AddressCard extends ConsumerWidget {
                             const SizedBox(width: 8),
                             if (address.isDefault)
                               AppPill(
-                                label: 'Default',
+                                label: context.customerText("Default"),
                                 dense: true,
                                 background: brand.surfaceMuted,
                               ),
                             if (isSelected) ...[
                               const SizedBox(width: 6),
                               AppPill(
-                                label: 'Selected',
+                                label: context.customerText("Selected"),
                                 dense: true,
                                 background: brand.primary.withValues(alpha: 0.12),
                                 foreground: brand.primary,
@@ -159,7 +160,7 @@ class _AddressCard extends ConsumerWidget {
                           const SizedBox(height: 8),
                           AppNotice(
                             tone: NoticeTone.caution,
-                            message: 'We do not deliver here yet. Self pickup is still available.',
+                            message: context.customerText("We do not deliver here yet. Self pickup is still available."),
                           ),
                         ],
                       ],
@@ -175,7 +176,7 @@ class _AddressCard extends ConsumerWidget {
               Expanded(
                 child: _Action(
                   icon: Icons.edit_outlined,
-                  label: 'Edit',
+                  label: context.customerText("Edit"),
                   onTap: () => context.push(Routes.addressEditor, extra: address),
                 ),
               ),
@@ -183,7 +184,7 @@ class _AddressCard extends ConsumerWidget {
               Expanded(
                 child: _Action(
                   icon: Icons.delete_outline_rounded,
-                  label: 'Delete',
+                  label: context.customerText("Delete"),
                   destructive: true,
                   onTap: () => _delete(context, ref),
                 ),
@@ -210,7 +211,13 @@ class _AddressCard extends ConsumerWidget {
     try {
       await ref.read(cartProvider.notifier).setAddress(address.id);
       if (!context.mounted) return;
-      AppFeedback.showSuccess(context, 'Delivering to ${address.labelText}.');
+      AppFeedback.showSuccess(
+        context,
+        context.customerText(
+          'Delivering to {address}.',
+          values: {'address': address.labelText},
+        ),
+      );
       context.pop();
     } catch (error) {
       if (context.mounted) AppFeedback.showError(context, error);
@@ -220,9 +227,9 @@ class _AddressCard extends ConsumerWidget {
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
     final confirmed = await AppFeedback.confirm(
       context,
-      title: 'Delete this address?',
+      title: context.customerText("Delete this address?"),
       message: address.singleLine,
-      confirmLabel: 'Delete',
+      confirmLabel: context.customerText("Delete"),
       destructive: true,
     );
 
@@ -231,7 +238,7 @@ class _AddressCard extends ConsumerWidget {
     try {
       await ref.read(addressRepositoryProvider).remove(address.id);
       ref.invalidate(addressesProvider);
-      if (context.mounted) AppFeedback.showSuccess(context, 'Address deleted.');
+      if (context.mounted) AppFeedback.showSuccess(context, context.customerText("Address deleted."));
     } catch (error) {
       if (context.mounted) AppFeedback.showError(context, error);
     }

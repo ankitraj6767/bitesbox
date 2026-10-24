@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/notifications/push_providers.dart';
 import '../../../core/providers/core_providers.dart';
@@ -28,19 +29,23 @@ class AccountScreen extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.account)),
         body: AppEmptyState(
-          title: 'Sign in to Bites Box',
-          message: 'Save addresses, track orders and collect rewards.',
+          title: context.customerText("Sign in to Bites Box"),
+          message: context.customerText(
+            "Save addresses, track orders and collect rewards.",
+          ),
           icon: Icons.person_outline_rounded,
           action: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               FilledButton(
                 onPressed: () => context.push(Routes.signIn),
-                child: const Text('Sign in'),
+                child: Text(context.customerText("Sign in")),
               ),
               TextButton(
                 onPressed: () => context.push(Routes.riderSignup),
-                child: const Text('Apply as a delivery partner'),
+                child: Text(
+                  context.customerText("Apply as a delivery partner"),
+                ),
               ),
             ],
           ),
@@ -89,7 +94,8 @@ class AccountScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            profile?.fullName ?? 'Bites Box customer',
+                            profile?.fullName ??
+                                context.customerText('Bites Box customer'),
                             style: TextStyle(
                               fontSize: 16.5,
                               fontWeight: FontWeight.w700,
@@ -108,7 +114,10 @@ class AccountScreen extends ConsumerWidget {
                           if ((profile?.totalOrders ?? 0) > 0) ...[
                             const SizedBox(height: 4),
                             Text(
-                              '${profile!.totalOrders} order${profile.totalOrders == 1 ? '' : 's'} with us',
+                              context.customerText(
+                                '{count} orders with us',
+                                values: {'count': profile!.totalOrders},
+                              ),
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
@@ -158,7 +167,7 @@ class AccountScreen extends ConsumerWidget {
                 : const SizedBox.shrink(),
           ),
           _Group(
-            title: 'Ordering',
+            title: context.customerText("Ordering"),
             tiles: [
               _Tile(
                 icon: Icons.favorite_border_rounded,
@@ -172,74 +181,74 @@ class AccountScreen extends ConsumerWidget {
               ),
               _Tile(
                 icon: Icons.location_on_outlined,
-                label: 'Delivery addresses',
+                label: context.customerText("Delivery addresses"),
                 onTap: () => context.push(Routes.addresses),
               ),
               _Tile(
                 icon: Icons.local_offer_outlined,
-                label: 'Offers and coupons',
+                label: context.customerText("Offers and coupons"),
                 onTap: () => context.push(Routes.offers),
               ),
               _Tile(
                 icon: Icons.notifications_none_rounded,
-                label: 'Notifications',
+                label: context.customerText("Notifications"),
                 badge: unread > 0 ? '$unread' : null,
                 onTap: () => context.push(Routes.notifications),
               ),
             ],
           ),
           _Group(
-            title: 'Help',
+            title: context.customerText("Help"),
             tiles: [
               _Tile(
                 icon: Icons.support_agent_rounded,
-                label: 'Help and support',
+                label: context.customerText("Help and support"),
                 onTap: () => context.push(Routes.support),
               ),
               if (config?.supportPhone != null)
                 _Tile(
                   icon: Icons.call_outlined,
-                  label: 'Call the restaurant',
+                  label: context.customerText("Call the restaurant"),
                   subtitle: config!.supportPhone,
                   onTap: () => Launcher.dial(config.supportPhone),
                 ),
               if (config?.whatsappPhone != null)
                 _Tile(
                   icon: Icons.chat_outlined,
-                  label: 'WhatsApp us',
+                  label: context.customerText("WhatsApp us"),
                   onTap: () => Launcher.whatsapp(config!.whatsappPhone),
                 ),
             ],
           ),
           _Group(
-            title: 'Information',
+            title: context.customerText("Information"),
             tiles: [
               _Tile(
                 icon: Icons.description_outlined,
-                label: 'Policies and terms',
+                label: context.customerText("Policies and terms"),
                 onTap: () => context.push(Routes.policies),
               ),
               _Tile(
                 icon: Icons.help_outline_rounded,
-                label: 'Frequently asked questions',
+                label: context.customerText("Frequently asked questions"),
                 onTap: () => context.push(Routes.faqs),
               ),
             ],
           ),
           if (session.isManagement || session.isKitchen || session.isRider)
             _Group(
-              title: 'Staff',
+              title: context.customerText("Staff"),
               tiles: [
                 if (session.isKitchen || session.isManagement)
                   _Tile(
                     icon: Icons.soup_kitchen_outlined,
-                    label: 'Open the kitchen board',
+                    label: context.customerText("Open the kitchen board"),
                     onTap: () => context.go(Routes.kitchen),
                   ),
                 if (session.isRider)
                   _Tile(
                     icon: Icons.two_wheeler_outlined,
-                    label: 'Open my deliveries',
+                    label: context.customerText("Open my deliveries"),
                     onTap: () => context.go(Routes.rider),
                   ),
               ],
@@ -249,7 +258,10 @@ class AccountScreen extends ConsumerWidget {
             child: OutlinedButton.icon(
               onPressed: () => _signOut(context, ref),
               icon: Icon(Icons.logout_rounded, size: 18, color: brand.error),
-              label: Text('Sign out', style: TextStyle(color: brand.error)),
+              label: Text(
+                context.customerText("Sign out"),
+                style: TextStyle(color: brand.error),
+              ),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: brand.error.withValues(alpha: 0.35)),
               ),
@@ -280,9 +292,11 @@ class AccountScreen extends ConsumerWidget {
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     final confirmed = await AppFeedback.confirm(
       context,
-      title: 'Sign out?',
-      message: 'You will need your mobile number to sign back in.',
-      confirmLabel: 'Sign out',
+      title: context.customerText("Sign out?"),
+      message: context.customerText(
+        "You will need your mobile number to sign back in.",
+      ),
+      confirmLabel: context.customerText("Sign out"),
       destructive: true,
     );
 
@@ -331,7 +345,7 @@ class _WalletBalanceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Wallet balance',
+                      context.customerText('Wallet balance'),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.88),
                         fontSize: 12.5,
@@ -349,7 +363,9 @@ class _WalletBalanceCard extends StatelessWidget {
                       )
                     else
                       Text(
-                        error ? 'Tap to retry' : Fmt.moneySmart(balance),
+                        error
+                            ? context.customerText('Tap to retry')
+                            : Fmt.moneySmart(balance),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 21,

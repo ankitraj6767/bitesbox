@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/customer_copy.dart';
 import '../../../shared/format.dart';
 import '../data/order_models.dart';
 import '../providers/cart_controller.dart';
@@ -60,8 +61,10 @@ class CartBar extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${quote.unitCount} item${quote.unitCount == 1 ? '' : 's'}'
-                          ' · ${Fmt.moneySmart(quote.totals.grandTotal)}',
+                          '${context.customerText(
+                            quote.unitCount == 1 ? '{count} item' : '{count} items',
+                            values: {'count': quote.unitCount},
+                          )} · ${Fmt.moneySmart(quote.totals.grandTotal)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14.5,
@@ -70,10 +73,15 @@ class CartBar extends ConsumerWidget {
                         ),
                         Text(
                           blocked
-                              ? 'An item is unavailable — tap to fix'
+                              ? context.customerText('An item is unavailable — tap to fix')
                               : (quote.totals.hasSavings
-                                    ? 'Saving ${Fmt.moneySmart(quote.totals.totalSavings)}'
-                                    : 'View cart'),
+                                    ? context.customerText(
+                                        'Saving {amount}',
+                                        values: {
+                                          'amount': Fmt.moneySmart(quote.totals.totalSavings),
+                                        },
+                                      )
+                                    : context.customerText('View cart')),
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12.5,
@@ -136,7 +144,7 @@ class ActiveOrderStrip extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        order.statusView.label,
+                        context.customerText(order.statusView.label),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -145,8 +153,14 @@ class ActiveOrderStrip extends ConsumerWidget {
                       ),
                       Text(
                         order.promisedAt == null
-                            ? order.orderNumber
-                            : 'Arriving ${Fmt.until(order.promisedAt)}',
+                            ? context.customerText(
+                                'Order {number}',
+                                values: {'number': order.orderNumber},
+                              )
+                            : context.customerText(
+                                'Arriving {time}',
+                                values: {'time': Fmt.until(order.promisedAt)},
+                              ),
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.88),
                           fontSize: 12.5,
@@ -155,9 +169,9 @@ class ActiveOrderStrip extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const Text(
-                  'Track',
-                  style: TextStyle(
+                Text(
+                  context.customerText('Track'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,

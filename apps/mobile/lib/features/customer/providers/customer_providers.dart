@@ -110,11 +110,15 @@ final groupOrderProvider = FutureProvider.family<GroupOrder, String>((
 });
 
 final publishedDocumentsProvider = FutureProvider<List<CmsDocument>>((ref) {
-  return ref.watch(contentRepositoryProvider).documents();
+  final locale =
+      ref.watch(currentSessionProvider).profile?.preferredLanguage ?? 'en';
+  return ref.watch(contentRepositoryProvider).documents(locale: locale);
 });
 
 final publishedFaqsProvider = FutureProvider<List<CmsFaq>>((ref) {
-  return ref.watch(contentRepositoryProvider).faqs();
+  final locale =
+      ref.watch(currentSessionProvider).profile?.preferredLanguage ?? 'en';
+  return ref.watch(contentRepositoryProvider).faqs(locale: locale);
 });
 
 /// The branch everything is scoped to. Single-brand, multi-branch ready: today
@@ -175,7 +179,11 @@ final searchSuggestionsProvider = FutureProvider<SearchSuggestions>((
   ref,
 ) async {
   final branchId = ref.watch(activeBranchIdProvider);
-  return ref.watch(menuRepositoryProvider).suggestions(branchId: branchId);
+  final locale =
+      ref.watch(currentSessionProvider).profile?.preferredLanguage ?? 'en';
+  return ref
+      .watch(menuRepositoryProvider)
+      .suggestions(branchId: branchId, locale: locale);
 });
 
 /// The live search term. Debouncing happens in the search field so a fast typist
@@ -301,49 +309,47 @@ final myOrdersProvider = FutureProvider.family<OrderList, String>((
 /// A single order, refreshed whenever realtime reports a change to it.
 /// Realtime is best-effort, so assigned deliveries also refresh in foreground
 /// to recover when a location event is missed or the channel reconnects.
-final orderDetailProvider =
-    FutureProvider.autoDispose.family<OrderDetail, String>((
-  ref,
-  orderId,
-) async {
-  final repository = ref.watch(orderRepositoryProvider);
-  const locationRefreshInterval = Duration(seconds: 20);
-  Timer? refreshTimer;
-  AppLifecycleListener? lifecycleListener;
-  var canRefreshLocation = false;
-  var refreshQueued = false;
+final orderDetailProvider = FutureProvider.autoDispose
+    .family<OrderDetail, String>((ref, orderId) async {
+      final repository = ref.watch(orderRepositoryProvider);
+      const locationRefreshInterval = Duration(seconds: 20);
+      Timer? refreshTimer;
+      AppLifecycleListener? lifecycleListener;
+      var canRefreshLocation = false;
+      var refreshQueued = false;
 
-  void refreshIfNeeded() {
-    if (!canRefreshLocation || refreshQueued) return;
-    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
-      return;
-    }
-    refreshQueued = true;
-    ref.invalidateSelf();
-  }
+      void refreshIfNeeded() {
+        if (!canRefreshLocation || refreshQueued) return;
+        if (WidgetsBinding.instance.lifecycleState !=
+            AppLifecycleState.resumed) {
+          return;
+        }
+        refreshQueued = true;
+        ref.invalidateSelf();
+      }
 
-  // Re-read on every signal rather than trusting the realtime payload, so RLS
-  // remains the only thing deciding what the customer can see.
-  final subscription = repository.watchOrder(orderId).listen((_) {
-    ref.invalidateSelf();
-  });
-  lifecycleListener = AppLifecycleListener(onResume: refreshIfNeeded);
-  ref.onDispose(() {
-    refreshTimer?.cancel();
-    lifecycleListener?.dispose();
-    unawaited(subscription.cancel());
-  });
+      // Re-read on every signal rather than trusting the realtime payload, so RLS
+      // remains the only thing deciding what the customer can see.
+      final subscription = repository.watchOrder(orderId).listen((_) {
+        ref.invalidateSelf();
+      });
+      lifecycleListener = AppLifecycleListener(onResume: refreshIfNeeded);
+      ref.onDispose(() {
+        refreshTimer?.cancel();
+        lifecycleListener?.dispose();
+        unawaited(subscription.cancel());
+      });
 
-  final detail = await repository.detail(orderId);
-  canRefreshLocation = detail.shouldRefreshDeliveryLocation;
-  if (canRefreshLocation) {
-    refreshTimer = Timer.periodic(
-      locationRefreshInterval,
-      (_) => refreshIfNeeded(),
-    );
-  }
-  return detail;
-});
+      final detail = await repository.detail(orderId);
+      canRefreshLocation = detail.shouldRefreshDeliveryLocation;
+      if (canRefreshLocation) {
+        refreshTimer = Timer.periodic(
+          locationRefreshInterval,
+          (_) => refreshIfNeeded(),
+        );
+      }
+      return detail;
+    });
 
 final cancellationOptionsProvider =
     FutureProvider.family<CancellationOptions, String>((ref, orderId) async {
@@ -373,7 +379,9 @@ final notificationsProvider = FutureProvider<List<AppNotificationItem>>((
 ) async {
   final session = ref.watch(currentSessionProvider);
   if (session.isGuest) return const [];
-  return ref.watch(accountRepositoryProvider).notifications();
+  return ref
+      .watch(accountRepositoryProvider)
+      .notifications(locale: session.profile?.preferredLanguage ?? 'en');
 });
 
 final unreadNotificationCountProvider = Provider<int>((ref) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/format.dart';
@@ -16,7 +17,7 @@ class PoliciesScreen extends ConsumerWidget {
     final brand = context.brand;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Policies and terms')),
+      appBar: AppBar(title: Text(context.customerText("Policies and terms"))),
       body: AsyncValueView<List<CmsDocument>>(
         value: documents,
         onRetry: () => ref.invalidate(publishedDocumentsProvider),
@@ -29,10 +30,10 @@ class PoliciesScreen extends ConsumerWidget {
           child: items.isEmpty
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
+                  children: [
                     AppEmptyState(
-                      title: 'No policies published',
-                      message: 'Please check back shortly.',
+                      title: context.customerText("No policies published"),
+                      message: context.customerText("Please check back shortly."),
                       icon: Icons.description_outlined,
                     ),
                   ],
@@ -104,7 +105,7 @@ class FaqsScreen extends ConsumerWidget {
     final brand = context.brand;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Frequently asked questions')),
+      appBar: AppBar(title: Text(context.customerText("Frequently asked questions"))),
       body: AsyncValueView<List<CmsFaq>>(
         value: faqs,
         onRetry: () => ref.invalidate(publishedFaqsProvider),
@@ -117,10 +118,10 @@ class FaqsScreen extends ConsumerWidget {
           child: items.isEmpty
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
+                  children: [
                     AppEmptyState(
-                      title: 'No FAQs published',
-                      message: 'Please check back shortly.',
+                      title: context.customerText("No FAQs published"),
+                      message: context.customerText("Please check back shortly."),
                       icon: Icons.help_outline_rounded,
                     ),
                   ],
@@ -169,7 +170,7 @@ class _FaqGroup extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            items.first.categoryLabel.toUpperCase(),
+            context.customerText(items.first.categoryLabel).toUpperCase(),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,

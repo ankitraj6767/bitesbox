@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
@@ -75,7 +76,7 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
 
   Future<void> _submit() async {
     if (_food == 0) {
-      AppFeedback.showInfo(context, 'Please rate the food first.');
+      AppFeedback.showInfo(context, context.customerText("Please rate the food first."));
       return;
     }
 
@@ -96,7 +97,7 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
       ref.invalidate(myOrdersProvider);
 
       Navigator.of(context).pop();
-      AppFeedback.showSuccess(context, 'Thank you. Your feedback helps us improve.');
+      AppFeedback.showSuccess(context, context.customerText("Thank you. Your feedback helps us improve."));
     } catch (error) {
       if (!mounted) return;
       AppFeedback.showError(context, error);
@@ -116,9 +117,9 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SheetHeader(
-              title: 'How was your meal?',
-              subtitle: 'Your rating goes straight to our kitchen team.',
+            SheetHeader(
+              title: context.customerText("How was your meal?"),
+              subtitle: context.customerText("Your rating goes straight to our kitchen team."),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -126,7 +127,7 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _StarRow(
-                    label: 'The food',
+                    label: context.customerText("The food"),
                     value: _food,
                     onChanged: (value) => setState(() {
                       _food = value;
@@ -137,7 +138,7 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
                   if (widget.isDelivery) ...[
                     const SizedBox(height: 16),
                     _StarRow(
-                      label: 'The delivery',
+                      label: context.customerText("The delivery"),
                       value: _delivery,
                       onChanged: (value) => setState(() => _delivery = value),
                     ),
@@ -145,7 +146,9 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
                   if (_food > 0) ...[
                     const SizedBox(height: 20),
                     Text(
-                      _food >= 4 ? 'What went well?' : 'What went wrong?',
+                      context.customerText(
+                        _food >= 4 ? 'What went well?' : 'What went wrong?',
+                      ),
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
@@ -159,7 +162,7 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
                       children: _tagOptions
                           .map(
                             (tag) => FilterChip(
-                              label: Text(tag),
+                              label: Text(context.customerText(tag)),
                               selected: _tags.contains(tag),
                               showCheckmark: false,
                               onSelected: (selected) => setState(() {
@@ -179,15 +182,15 @@ class _ReviewSheetState extends ConsumerState<ReviewSheet> {
                     controller: _comment,
                     maxLines: 3,
                     maxLength: 500,
-                    decoration: const InputDecoration(
-                      hintText: 'Tell us more (optional)',
+                    decoration: InputDecoration(
+                      hintText: context.customerText("Tell us more (optional)"),
                       counterText: '',
                     ),
                   ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: _busy || _food == 0 ? null : _submit,
-                    child: Text(_busy ? 'Sending…' : 'Submit rating'),
+                    child: Text(_busy ? context.customerText("Sending…") : context.customerText("Submit rating")),
                   ),
                 ],
               ),
@@ -238,7 +241,7 @@ class _StarRow extends StatelessWidget {
             if (value > 0) ...[
               const SizedBox(width: 8),
               Text(
-                _labels[value] ?? '',
+                context.customerText(_labels[value] ?? ''),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -256,7 +259,10 @@ class _StarRow extends StatelessWidget {
 
             return Semantics(
               button: true,
-              label: '$star star${star == 1 ? '' : 's'}',
+              label: context.customerText(
+                '{count} star',
+                values: {'count': star},
+              ),
               child: IconButton(
                 onPressed: () => onChanged(star),
                 padding: const EdgeInsets.symmetric(horizontal: 3),

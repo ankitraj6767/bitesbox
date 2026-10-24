@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../core/errors/app_error.dart';
 import '../../core/theme/brand_tokens.dart';
+import '../../l10n/customer_copy.dart';
 
 /// Loading, empty and error presentation, in one place so every screen behaves
 /// the same way. Restaurant ordering happens on poor connections, so the error
@@ -104,14 +105,14 @@ class AppEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              title,
+              context.customerText(title),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: brand.ink),
             ),
             if (message != null) ...[
               const SizedBox(height: 6),
               Text(
-                message!,
+                context.customerText(message!),
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, height: 1.45, color: brand.inkMuted),
               ),
@@ -163,13 +164,13 @@ class AppErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              offline ? 'You are offline' : 'Something went wrong',
+              context.customerText(offline ? 'You are offline' : 'Something went wrong'),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: brand.ink),
             ),
             const SizedBox(height: 6),
             Text(
-              appError.message,
+              context.customerErrorText(appError.code, appError.message),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, height: 1.45, color: brand.inkMuted),
             ),
@@ -284,7 +285,7 @@ class AppNotice extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              message,
+              context.customerText(message),
               style: TextStyle(
                 fontSize: 13.5,
                 height: 1.4,

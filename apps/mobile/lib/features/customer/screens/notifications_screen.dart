@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
@@ -38,7 +39,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(context.customerText("Notifications")),
         actions: [
           if (unread > 0)
             Padding(
@@ -52,7 +53,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.done_all_rounded),
-                tooltip: 'Mark all as read',
+                tooltip: context.customerText("Mark all as read"),
               ),
             ),
         ],
@@ -62,9 +63,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         onRetry: () => ref.invalidate(notificationsProvider),
         data: (list) {
           if (list.isEmpty) {
-            return const AppEmptyState(
-              title: 'No notifications',
-              message: 'Order updates and offers will appear here.',
+            return AppEmptyState(
+              title: context.customerText("No notifications"),
+              message: context.customerText("Order updates and offers will appear here."),
               icon: Icons.notifications_none_rounded,
             );
           }

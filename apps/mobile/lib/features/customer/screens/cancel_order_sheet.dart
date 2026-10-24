@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
@@ -43,13 +44,15 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
   Future<void> _cancel(CancellationOptions options) async {
     final confirmed = await AppFeedback.confirm(
       context,
-      title: 'Cancel this order?',
+      title: context.customerText("Cancel this order?"),
       message: options.refundAmount > 0
-          ? 'You will be refunded ${Fmt.moneySmart(options.refundAmount)}. '
-              'This cannot be undone.'
-          : 'This cannot be undone.',
-      confirmLabel: 'Yes, cancel',
-      cancelLabel: 'Keep order',
+          ? context.customerText(
+              'You will be refunded {amount}.',
+              values: {'amount': Fmt.moneySmart(options.refundAmount)},
+            )
+          : context.customerText('This cannot be undone.'),
+      confirmLabel: context.customerText('Yes, cancel'),
+      cancelLabel: context.customerText("Keep order"),
       destructive: true,
     );
 
@@ -69,7 +72,7 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
       ref.invalidate(myOrdersProvider);
 
       Navigator.of(context).pop();
-      AppFeedback.showSuccess(context, 'Your order has been cancelled.');
+      AppFeedback.showSuccess(context, context.customerText("Your order has been cancelled."));
     } catch (error) {
       if (!mounted) return;
       AppFeedback.showError(context, error);
@@ -95,12 +98,12 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SheetHeader(title: 'Cannot cancel'),
+                SheetHeader(title: context.customerText("Cannot cancel")),
                 AppNotice(tone: NoticeTone.caution, message: data.message),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Got it'),
+                  child: Text(context.customerText("Got it")),
                 ),
               ],
             ),
@@ -114,9 +117,9 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SheetHeader(
-                  title: 'Cancel your order',
-                  subtitle: 'Tell us why so we can do better.',
+                SheetHeader(
+                  title: context.customerText("Cancel your order"),
+                  subtitle: context.customerText("Tell us why so we can do better."),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -133,8 +136,13 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
                       children: [
                         Text(
                           data.refundAmount > 0
-                              ? 'Refund: ${Fmt.moneySmart(data.refundAmount)}'
-                              : 'No refund applies',
+                              ? context.customerText(
+                                  'Refund: {amount}',
+                                  values: {
+                                    'amount': Fmt.moneySmart(data.refundAmount),
+                                  },
+                                )
+                              : context.customerText('No refund applies'),
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -153,7 +161,12 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
                         if (data.hasFee) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'Cancellation fee: ${Fmt.moneySmart(data.cancellationFee)}',
+                            context.customerText(
+                              'Cancellation fee: {amount}',
+                              values: {
+                                'amount': Fmt.moneySmart(data.cancellationFee),
+                              },
+                            ),
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
@@ -164,7 +177,7 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
                         if (data.requiresApproval) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'Our team will review this cancellation.',
+                            context.customerText('Our team will review this cancellation.'),
                             style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                           ),
                         ],
@@ -183,7 +196,7 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
                           (entry) => RadioListTile<String>(
                             value: entry.key,
                             dense: true,
-                            title: Text(entry.value),
+                            title: Text(context.customerText(entry.value)),
                           ),
                         )
                         .toList(),
@@ -195,8 +208,8 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
                     controller: _note,
                     maxLines: 2,
                     maxLength: 300,
-                    decoration: const InputDecoration(
-                      hintText: 'Anything else we should know? (optional)',
+                    decoration: InputDecoration(
+                      hintText: context.customerText("Anything else we should know? (optional)"),
                       counterText: '',
                     ),
                   ),
@@ -209,7 +222,7 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                          child: const Text('Keep order'),
+                          child: Text(context.customerText("Keep order")),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -217,7 +230,7 @@ class _CancelOrderSheetState extends ConsumerState<CancelOrderSheet> {
                         child: FilledButton(
                           onPressed: _busy ? null : () => _cancel(data),
                           style: FilledButton.styleFrom(backgroundColor: brand.error),
-                          child: Text(_busy ? 'Cancelling…' : 'Cancel order'),
+                          child: Text(_busy ? context.customerText("Cancelling…") : context.customerText("Cancel order")),
                         ),
                       ),
                     ],

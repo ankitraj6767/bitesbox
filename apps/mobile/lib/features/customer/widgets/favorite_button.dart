@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
@@ -32,7 +33,7 @@ class _FavoriteButtonState extends ConsumerState<FavoriteButton> {
         .contains(widget.productId);
     final brand = context.brand;
     return IconButton(
-      tooltip: isFavorite ? 'Remove from favorites' : 'Save to favorites',
+      tooltip: isFavorite ? context.customerText("Remove from favorites") : context.customerText("Save to favorites"),
       onPressed: _busy ? null : () => _toggle(isFavorite),
       style: IconButton.styleFrom(
         backgroundColor: widget.filledBackground

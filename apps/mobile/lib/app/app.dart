@@ -10,6 +10,7 @@ import '../core/theme/app_theme.dart';
 import '../core/theme/brand_tokens.dart';
 import '../core/update/update_gate.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../shared/format.dart';
 
 /// The application root.
 ///
@@ -24,6 +25,7 @@ class BitesBoxApp extends ConsumerWidget {
     final router = ref.watch(goRouterProvider);
     final tokens = ref.watch(brandTokensProvider);
     final session = ref.watch(currentSessionProvider);
+    Fmt.setLanguage(session.profile?.preferredLanguage ?? 'en');
 
     final roleCategory = session.isCustomer
         ? 'customer'

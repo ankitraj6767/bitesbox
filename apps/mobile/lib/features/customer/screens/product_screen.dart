@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/widgets/states.dart';
@@ -42,7 +43,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(detail.valueOrNull?.product.name ?? 'Dish'),
+        title: Text(detail.valueOrNull?.product.name ?? context.customerText("Dish")),
         actions: [
           if (detail.valueOrNull != null)
             FavoriteButton(
@@ -79,7 +80,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                 FilledButton(
                   onPressed: () =>
                       ProductSheet.show(context, productId: widget.productId),
-                  child: const Text('Choose options'),
+                  child: Text(context.customerText("Choose options")),
                 ),
               ],
             ),

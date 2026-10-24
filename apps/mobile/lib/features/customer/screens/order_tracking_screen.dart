@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
@@ -38,12 +39,12 @@ class OrderTrackingScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(detail.valueOrNull?.orderNumber ?? 'Your order'),
+        title: Text(detail.valueOrNull?.orderNumber ?? context.customerText("Your order")),
         actions: [
           IconButton(
             onPressed: () => ref.invalidate(orderDetailProvider(orderId)),
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
+            tooltip: context.customerText("Refresh"),
           ),
         ],
       ),
@@ -145,7 +146,7 @@ class _StatusHeader extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  view.label,
+                  context.customerText(view.label),
                   style: TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w800,
@@ -159,7 +160,9 @@ class _StatusHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      eta == 0 ? 'Any moment' : '$eta min',
+                      eta == 0
+                          ? context.customerText('Any moment')
+                          : context.customerText('$eta min'),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -167,7 +170,9 @@ class _StatusHeader extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      order.isPickup ? 'until ready' : 'until arrival',
+                      context.customerText(
+                        order.isPickup ? 'until ready' : 'until arrival',
+                      ),
                       style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
                     ),
                   ],
@@ -176,14 +181,14 @@ class _StatusHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            view.description,
+            context.customerText(view.description),
             style: TextStyle(fontSize: 14, height: 1.45, color: brand.inkMuted),
           ),
           if (order.timing.isDelayed && order.isActive) ...[
             const SizedBox(height: 10),
             AppNotice(
               tone: NoticeTone.caution,
-              message: 'This order is running a little late. We are sorry about the wait.',
+              message: context.customerText("This order is running a little late. We are sorry about the wait."),
             ),
           ],
           if (order.isScheduled && order.scheduledFor != null) ...[
@@ -193,7 +198,10 @@ class _StatusHeader extends StatelessWidget {
                 Icon(Icons.event_rounded, size: 15, color: brand.inkMuted),
                 const SizedBox(width: 6),
                 Text(
-                  'Scheduled for ${Fmt.dayTime(order.scheduledFor)}',
+                  context.customerText(
+                    'Scheduled for {time}',
+                    values: {'time': Fmt.dayTime(order.scheduledFor)},
+                  ),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -230,7 +238,7 @@ class _PaymentPending extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Payment not completed',
+            context.customerText('Payment not completed'),
             style: TextStyle(
               fontSize: 15.5,
               fontWeight: FontWeight.w700,
@@ -239,9 +247,10 @@ class _PaymentPending extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Our kitchen has not received this order yet. Pay '
-            '${Fmt.moneySmart(order.totals.payableAmount)} to confirm it. '
-            'You will not be charged twice.',
+            context.customerText(
+              'Our kitchen has not received this order yet. Pay {amount} to confirm it. You will not be charged twice.',
+              values: {'amount': Fmt.moneySmart(order.totals.payableAmount)},
+            ),
             style: TextStyle(fontSize: 13.5, height: 1.45, color: brand.inkMuted),
           ),
           const SizedBox(height: 12),
@@ -251,7 +260,12 @@ class _PaymentPending extends ConsumerWidget {
             child: Text(
               checkout.isBusy
                   ? checkout.busyLabel
-                  : 'Pay ${Fmt.moneySmart(order.totals.payableAmount)}',
+                  : context.customerText(
+                      'Pay {amount}',
+                      values: {
+                        'amount': Fmt.moneySmart(order.totals.payableAmount),
+                      },
+                    ),
             ),
           ),
         ],
@@ -267,7 +281,7 @@ class _PaymentPending extends ConsumerWidget {
 
     if (paid) {
       ref.invalidate(orderDetailProvider(order.id));
-      AppFeedback.showSuccess(context, 'Payment confirmed. Your order is on its way.');
+      AppFeedback.showSuccess(context, context.customerText("Payment confirmed. Your order is on its way."));
       controller.reset();
       return;
     }
@@ -303,9 +317,9 @@ class _DeliveryOtpCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Share your delivery OTP',
-                  style: TextStyle(
+                Text(
+                  context.customerText('Share your delivery OTP'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -313,8 +327,7 @@ class _DeliveryOtpCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Your OTP was sent by SMS. Give it to the delivery partner only '
-                  'when you have your order in hand.',
+                  context.customerText('Your OTP was sent by SMS. Give it to the delivery partner only when you have your order in hand.'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 12.5,
@@ -361,14 +374,17 @@ class _RiderMap extends StatelessWidget {
           kind: MapPointKind.rider,
           caption: location.etaMinutes == null
               ? Fmt.distance(location.distanceKm)
-              : 'about ${location.etaMinutes} min away',
+              : context.customerText(
+                  'about {count} min away',
+                  values: {'count': location.etaMinutes},
+                ),
         ),
         if (order.delivery.latitude != null && order.delivery.longitude != null)
           MapPoint(
             id: 'destination',
             latitude: order.delivery.latitude!,
             longitude: order.delivery.longitude!,
-            label: 'Your address',
+            label: context.customerText("Your address"),
             kind: MapPointKind.customer,
           ),
       ],
@@ -437,7 +453,7 @@ class _RiderCard extends StatelessWidget {
                 IconButton.filledTonal(
                   onPressed: () => Launcher.dial(rider.phone),
                   icon: const Icon(Icons.call_rounded, size: 20),
-                  tooltip: 'Call the delivery partner',
+                  tooltip: context.customerText("Call the delivery partner"),
                 ),
             ],
           ),
@@ -456,9 +472,16 @@ class _RiderCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       location.distanceKm == null
-                          ? 'On the way to you'
-                          : '${Fmt.distance(location.distanceKm)} away'
-                              '${location.etaMinutes == null ? '' : ' · about ${location.etaMinutes} min'}',
+                          ? context.customerText('On the way to you')
+                          : context.customerText(
+                              location.etaMinutes == null
+                                  ? '{distance} away'
+                                  : '{distance} away · about {minutes} min',
+                              values: {
+                                'distance': Fmt.distance(location.distanceKm),
+                                'minutes': location.etaMinutes,
+                              },
+                            ),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -477,14 +500,17 @@ class _RiderCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         minimumSize: const Size(0, 32),
                       ),
-                      child: const Text('View on map'),
+                      child: Text(context.customerText("View on map")),
                     ),
                 ],
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Last location update ${Fmt.relative(location.recordedAt)}',
+              context.customerText(
+                'Last location update {time}',
+                values: {'time': Fmt.relative(location.recordedAt)},
+              ),
               style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
             ),
           ] else ...[
@@ -502,8 +528,13 @@ class _RiderCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       location?.recordedAt == null
-                          ? 'Live location is unavailable right now.'
-                          : 'Location last updated ${Fmt.relative(location!.recordedAt)}. This point may be out of date.',
+                          ? context.customerText('Live location is unavailable right now.')
+                          : context.customerText(
+                              'Location last updated {time}. This point may be out of date.',
+                              values: {
+                                'time': Fmt.relative(location!.recordedAt),
+                              },
+                            ),
                       style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                     ),
                   ),
@@ -537,7 +568,10 @@ class _ItemsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${order.itemCount} item${order.itemCount == 1 ? '' : 's'}',
+            context.customerText(
+              order.itemCount == 1 ? '{count} item' : '{count} items',
+              values: {'count': order.itemCount},
+            ),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -558,7 +592,7 @@ class _ItemsCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${item.quantity} × ${item.productName}',
+                          '${item.quantity} × ${context.customerText(item.productName)}',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -569,7 +603,7 @@ class _ItemsCard extends StatelessWidget {
                         ),
                         if (item.configurationLabel.isNotEmpty)
                           Text(
-                            item.configurationLabel,
+                            context.customerText(item.configurationLabel),
                             style: TextStyle(
                               fontSize: 12.5,
                               height: 1.3,
@@ -587,7 +621,10 @@ class _ItemsCard extends StatelessWidget {
                           ),
                         if (item.refundedQuantity > 0)
                           Text(
-                            '${item.refundedQuantity} refunded',
+                            context.customerText(
+                              '{count} refunded',
+                              values: {'count': item.refundedQuantity},
+                            ),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -649,11 +686,14 @@ class _AddressCard extends StatelessWidget {
 
     return _InfoCard(
       icon: Icons.location_on_outlined,
-      title: 'Delivery address',
+      title: context.customerText("Delivery address"),
       body: order.delivery.formatted,
       footer: (order.delivery.instructions ?? '').isEmpty
           ? null
-          : 'Note: ${order.delivery.instructions}',
+          : context.customerText(
+              'Note: {instructions}',
+              values: {'instructions': order.delivery.instructions},
+            ),
       trailing: order.delivery.latitude == null
           ? null
           : IconButton(
@@ -662,7 +702,7 @@ class _AddressCard extends StatelessWidget {
                 longitude: order.delivery.longitude!,
               ),
               icon: Icon(Icons.map_outlined, size: 20, color: brand.inkMuted),
-              tooltip: 'View on map',
+              tooltip: context.customerText("View on map"),
             ),
     );
   }
@@ -680,17 +720,17 @@ class _PickupCard extends ConsumerWidget {
 
     return _InfoCard(
       icon: Icons.storefront_outlined,
-      title: 'Collect from',
+      title: context.customerText("Collect from"),
       body: config?.branchName ?? 'Bites Box',
       footer: order.status == 'READY_FOR_PICKUP'
-          ? 'Your order is packed and waiting at the counter.'
-          : 'We will let you know the moment it is ready.',
+          ? context.customerText("Your order is packed and waiting at the counter.")
+          : context.customerText('We will let you know the moment it is ready.'),
       trailing: phone == null
           ? null
           : IconButton(
               onPressed: () => Launcher.dial(phone),
               icon: const Icon(Icons.call_rounded, size: 20),
-              tooltip: 'Call the outlet',
+              tooltip: context.customerText("Call the outlet"),
             ),
     );
   }
@@ -707,15 +747,23 @@ class _PaymentCard extends StatelessWidget {
 
     return _InfoCard(
       icon: payment.isCod ? Icons.payments_outlined : Icons.credit_card_rounded,
-      title: 'Payment',
-      body: payment.label,
+      title: context.customerText("Payment"),
+      body: context.customerText(payment.label),
       footer: payment.isCod
           ? (payment.codStatus == 'COD_COLLECTED'
-              ? 'Cash collected on delivery.'
-              : 'Please have ${Fmt.moneySmart(order.totals.payableAmount)} ready.')
+              ? context.customerText('Cash collected on delivery.')
+              : context.customerText(
+                  'Please have {amount} ready.',
+                  values: {
+                    'amount': Fmt.moneySmart(order.totals.payableAmount),
+                  },
+                ))
           : (payment.isPaid
-              ? 'Paid ${Fmt.smartDateTime(payment.paidAt)}'
-              : 'Awaiting confirmation'),
+              ? context.customerText(
+                  'Paid {time}',
+                  values: {'time': Fmt.smartDateTime(payment.paidAt)},
+                )
+              : context.customerText('Awaiting confirmation')),
     );
   }
 }
@@ -740,7 +788,7 @@ class _RefundsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Refunds',
+            context.customerText('Refunds'),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -758,7 +806,7 @@ class _RefundsCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          refund.statusLabel,
+                          context.customerText(refund.statusLabel),
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
@@ -766,9 +814,11 @@ class _RefundsCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          refund.destination == 'WALLET'
-                              ? 'To your Bites Box wallet'
-                              : 'To your original payment method',
+                          context.customerText(
+                            refund.destination == 'WALLET'
+                                ? 'To your Bites Box wallet'
+                                : 'To your original payment method',
+                          ),
                           style: TextStyle(fontSize: 12, color: brand.inkMuted),
                         ),
                         Text(
@@ -791,7 +841,7 @@ class _RefundsCard extends StatelessWidget {
             ),
           ),
           Text(
-            'Bank refunds usually appear within 5 to 7 working days.',
+            context.customerText('Bank refunds usually appear within 5 to 7 working days.'),
             style: TextStyle(fontSize: 12, height: 1.4, color: brand.inkMuted),
           ),
         ],
@@ -820,7 +870,7 @@ class _TimelineCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Order updates',
+            context.customerText('Order updates'),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -848,7 +898,7 @@ class _Actions extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () => CancelOrderSheet.show(context, orderId: order.id),
             icon: const Icon(Icons.close_rounded, size: 18),
-            label: const Text('Cancel this order'),
+            label: Text(context.customerText("Cancel this order")),
             style: OutlinedButton.styleFrom(
               foregroundColor: context.brand.error,
               side: BorderSide(color: context.brand.error.withValues(alpha: 0.4)),
@@ -863,7 +913,7 @@ class _Actions extends ConsumerWidget {
               isDelivery: !order.isPickup,
             ),
             icon: const Icon(Icons.star_rounded, size: 18),
-            label: const Text('Rate this order'),
+            label: Text(context.customerText("Rate this order")),
           ),
         ],
         if (order.canReorder) ...[
@@ -871,14 +921,14 @@ class _Actions extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () => _reorder(context, ref),
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Order this again'),
+            label: Text(context.customerText("Order this again")),
           ),
         ],
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: () => OrderHelpSheet.show(context, order: order),
           icon: const Icon(Icons.support_agent_rounded, size: 18),
-          label: const Text('I need help with this order'),
+          label: Text(context.customerText("I need help with this order")),
         ),
       ],
     );
@@ -892,8 +942,10 @@ class _Actions extends ConsumerWidget {
       if (skipped.isNotEmpty) {
         AppFeedback.showInfo(
           context,
-          '${skipped.map((item) => item.label).join(', ')} '
-          '${skipped.length == 1 ? 'is' : 'are'} unavailable and was not added.',
+          context.customerText(
+            'We could not reorder {items} because they are unavailable.',
+            values: {'items': skipped.map((item) => item.label).join(', ')},
+          ),
         );
       }
 

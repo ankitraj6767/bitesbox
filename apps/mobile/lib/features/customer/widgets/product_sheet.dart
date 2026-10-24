@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
@@ -103,7 +104,10 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
       if (max != null && selected.length >= max) {
         AppFeedback.showInfo(
           context,
-          'You can pick up to $max from ${group.name}.',
+          context.customerText(
+            'You can pick up to {max} from {group}.',
+            values: {'max': max, 'group': context.customerText(group.name)},
+          ),
         );
         return;
       }
@@ -172,7 +176,13 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
     final missing = _unsatisfied(detail);
     if (missing.isNotEmpty) {
       setState(() => _showErrors = true);
-      AppFeedback.showInfo(context, 'Please choose ${missing.first.name}.');
+      AppFeedback.showInfo(
+        context,
+        context.customerText(
+          'Please choose {option}.',
+          values: {'option': context.customerText(missing.first.name)},
+        ),
+      );
       return;
     }
 
@@ -193,7 +203,10 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
       Navigator.of(context).pop();
       AppFeedback.showSuccess(
         context,
-        '${detail.product.name} added to your cart.',
+        context.customerText(
+          '{name} added to your cart.',
+          values: {'name': detail.product.name},
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -257,7 +270,7 @@ class _Content extends StatelessWidget {
                         const SizedBox(width: 8),
                         if (product.isBestSeller)
                           AppPill(
-                            label: 'Bestseller',
+                            label: context.customerText("Bestseller"),
                             icon: Icons.local_fire_department_rounded,
                             background: brand.accent.withValues(alpha: 0.14),
                             foreground: brand.warning,
@@ -299,26 +312,37 @@ class _Content extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         AppPill(
-                          label: Fmt.duration(product.preparationMinutes),
+                          label: context.customerText(
+                            Fmt.duration(product.preparationMinutes),
+                          ),
                           icon: Icons.schedule_rounded,
                         ),
                         if (product.servesCount != null)
                           AppPill(
-                            label: 'Serves ${product.servesCount}',
+                            label: context.customerText(
+                              'Serves {count}',
+                              values: {'count': product.servesCount},
+                            ),
                             icon: Icons.people_outline_rounded,
                           ),
                         if (product.calories != null)
                           AppPill(
-                            label: '${product.calories} kcal',
+                            label: context.customerText(
+                              '${product.calories} kcal',
+                            ),
                             icon: Icons.local_fire_department_outlined,
                           ),
                         if (product.spiceLevel != 'NONE')
                           AppPill(
-                            label: Fmt.humanise(product.spiceLevel),
+                            label: context.customerText(
+                              Fmt.humanise(product.spiceLevel),
+                            ),
                             icon: Icons.whatshot_rounded,
                           ),
                         ...product.dietaryTags.map(
-                          (tag) => AppPill(label: Fmt.humanise(tag)),
+                          (tag) => AppPill(
+                            label: context.customerText(Fmt.humanise(tag)),
+                          ),
                         ),
                       ],
                     ),
@@ -326,15 +350,26 @@ class _Content extends StatelessWidget {
                       const SizedBox(height: 14),
                       AppNotice(
                         tone: NoticeTone.caution,
-                        message:
-                            'Contains ${product.allergens.map(Fmt.humanise).join(', ').toLowerCase()}.',
+                        message: context.customerText(
+                          'Contains {items}.',
+                          values: {
+                            'items': product.allergens
+                                .map(
+                                  (item) =>
+                                      context.customerText(Fmt.humanise(item)),
+                                )
+                                .join(', '),
+                          },
+                        ),
                       ),
                     ],
                     if (unavailable) ...[
                       const SizedBox(height: 14),
                       AppNotice(
                         tone: NoticeTone.critical,
-                        message: product.unavailableReason,
+                        message: context.customerText(
+                          product.unavailableReason,
+                        ),
                       ),
                     ],
                   ],
@@ -349,7 +384,7 @@ class _Content extends StatelessWidget {
                   children: [
                     if (product.allowsSpecialInstructions) ...[
                       Text(
-                        'Cooking instructions',
+                        context.customerText('Cooking instructions'),
                         style: TextStyle(
                           fontSize: 15.5,
                           fontWeight: FontWeight.w700,
@@ -361,21 +396,25 @@ class _Content extends StatelessWidget {
                         controller: state._instructions,
                         maxLines: 2,
                         maxLength: 200,
-                        decoration: const InputDecoration(
-                          hintText: 'Less spicy, no onion…',
+                        decoration: InputDecoration(
+                          hintText: context.customerText(
+                            "Less spicy, no onion…",
+                          ),
                           counterText: '',
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'We will pass this to the kitchen. Some requests may not be possible.',
+                        context.customerText(
+                          'We will pass this to the kitchen. Some requests may not be possible.',
+                        ),
                         style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                       ),
                     ],
                     if (detail.reviews.isNotEmpty) ...[
                       const SizedBox(height: 22),
                       Text(
-                        'What customers say',
+                        context.customerText('What customers say'),
                         style: TextStyle(
                           fontSize: 15.5,
                           fontWeight: FontWeight.w700,
@@ -410,19 +449,22 @@ class _Content extends StatelessWidget {
 
     return groups.entries.map((entry) {
       return _OptionSection(
-        title: entry.key,
-        rule: 'Required · pick 1',
+        title: context.customerText(entry.key),
+        rule: context.customerText("Required · pick 1"),
         showError: false,
         children: entry.value
             .map(
               (variant) => _OptionRow(
-                label: variant.name,
+                label: context.customerText(variant.name),
                 price: variant.price,
                 priceIsAbsolute: true,
                 comparePrice: variant.comparePrice,
                 subtitle: variant.servesCount == null
                     ? null
-                    : 'Serves ${variant.servesCount}',
+                    : context.customerText(
+                        'Serves {count}',
+                        values: {'count': variant.servesCount},
+                      ),
                 selected: state._variantId == variant.id,
                 isRadio: true,
                 enabled: variant.isAvailable,
@@ -444,9 +486,11 @@ class _Content extends StatelessWidget {
       final selected = state._selections[group.id] ?? const <String>[];
 
       return _OptionSection(
-        title: group.name,
-        rule: group.rule,
-        subtitle: group.description,
+        title: context.customerText(group.name),
+        rule: context.customerText(group.rule),
+        subtitle: group.description == null
+            ? null
+            : context.customerText(group.description!),
         showError: state._showErrors && unsatisfied.contains(group.id),
         children: group.modifiers.map((modifier) {
           // The free allowance goes to the cheapest picks, exactly as the server
@@ -461,9 +505,11 @@ class _Content extends StatelessWidget {
               rank >= 0 && rank < group.freeSelections && modifier.price > 0;
 
           return _OptionRow(
-            label: modifier.name,
+            label: context.customerText(modifier.name),
             price: modifier.price,
-            subtitle: modifier.description,
+            subtitle: modifier.description == null
+                ? null
+                : context.customerText(modifier.description!),
             selected: state._isSelected(group.id, modifier.id),
             isRadio: group.isSingleChoice,
             enabled: modifier.isAvailable,
@@ -644,7 +690,7 @@ class _OptionRow extends StatelessWidget {
               const SizedBox(width: 10),
               if (freeByAllowance)
                 AppPill(
-                  label: 'Free',
+                  label: context.customerText("Free"),
                   dense: true,
                   background: brand.success.withValues(alpha: 0.12),
                   foreground: brand.success,
@@ -718,7 +764,7 @@ class _ReviewTile extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                Fmt.relative(review.createdAt),
+                context.customerText(Fmt.relative(review.createdAt)),
                 style: TextStyle(fontSize: 12, color: brand.inkMuted),
               ),
             ],
@@ -795,7 +841,7 @@ class _AddBar extends StatelessWidget {
                       )
                     : Text(
                         disabled
-                            ? product.unavailableReason
+                            ? context.customerText(product.unavailableReason)
                             : 'Add · ${Fmt.moneySmart(total)}',
                       ),
               ),

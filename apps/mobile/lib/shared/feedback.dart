@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/errors/app_error.dart';
 import '../core/theme/brand_tokens.dart';
+import '../l10n/customer_copy.dart';
 
 /// Snackbars, confirmations and bottom sheets, in one place so every screen
 /// reports success and failure the same way.
@@ -13,7 +14,7 @@ abstract final class AppFeedback {
 
     _show(
       context,
-      message: appError.message,
+      message: context.customerErrorText(appError.code, appError.message),
       background: brand.error,
       icon: appError.code == ErrorCodes.networkError
           ? Icons.wifi_off_rounded
@@ -25,7 +26,7 @@ abstract final class AppFeedback {
   static void showSuccess(BuildContext context, String message) {
     _show(
       context,
-      message: message,
+      message: context.customerText(message),
       background: context.brand.success,
       icon: Icons.check_circle_outline_rounded,
     );
@@ -34,7 +35,7 @@ abstract final class AppFeedback {
   static void showInfo(BuildContext context, String message) {
     _show(
       context,
-      message: message,
+      message: context.customerText(message),
       background: context.brand.ink,
       icon: Icons.info_outline_rounded,
     );
@@ -86,12 +87,15 @@ abstract final class AppFeedback {
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: Text(message, style: const TextStyle(height: 1.45)),
+        title: Text(dialogContext.customerText(title)),
+        content: Text(
+          dialogContext.customerText(message),
+          style: const TextStyle(height: 1.45),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(cancelLabel),
+            child: Text(dialogContext.customerText(cancelLabel)),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -101,7 +105,7 @@ abstract final class AppFeedback {
                     minimumSize: const Size(0, 44),
                   )
                 : FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-            child: Text(confirmLabel),
+            child: Text(dialogContext.customerText(confirmLabel)),
           ),
         ],
       ),
@@ -166,7 +170,7 @@ class SheetHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  context.customerText(title),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -177,7 +181,7 @@ class SheetHeader extends StatelessWidget {
                 if (subtitle != null) ...[
                   const SizedBox(height: 3),
                   Text(
-                    subtitle!,
+                    context.customerText(subtitle!),
                     style: TextStyle(
                       fontSize: 13.5,
                       color: brand.inkMuted,

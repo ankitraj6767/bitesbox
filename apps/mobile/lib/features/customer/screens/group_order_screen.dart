@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../l10n/customer_copy.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -92,27 +93,29 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
   Future<void> _copyCode(String code) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Group code copied')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.customerText("Group code copied"))),
+    );
   }
 
   Future<void> _leave(GroupOrder group) async {
     final shouldLeave = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Leave this group order?'),
-        content: const Text(
-          'Your items will stay in your own cart and will not be added to the group.',
+        title: Text(context.customerText("Leave this group order?")),
+        content: Text(
+          context.customerText(
+            "Your items will stay in your own cart and will not be added to the group.",
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Stay'),
+            child: Text(context.customerText("Stay")),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Leave group'),
+            child: Text(context.customerText("Leave group")),
           ),
         ],
       ),
@@ -135,18 +138,20 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
     final shouldClose = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Close this group order?'),
-        content: const Text(
-          'Everyone will leave the group. Their separate carts will stay untouched.',
+        title: Text(context.customerText("Close this group order?")),
+        content: Text(
+          context.customerText(
+            "Everyone will leave the group. Their separate carts will stay untouched.",
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep it open'),
+            child: Text(context.customerText("Keep it open")),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Close group'),
+            child: Text(context.customerText("Close group")),
           ),
         ],
       ),
@@ -186,7 +191,7 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
 
     final value = ref.watch(groupOrderProvider(groupOrderId));
     return Scaffold(
-      appBar: AppBar(title: const Text('Group order')),
+      appBar: AppBar(title: Text(context.customerText("Group order"))),
       body: AsyncValueView<GroupOrder>(
         value: value,
         onRetry: () => ref.invalidate(groupOrderProvider(groupOrderId)),
@@ -201,7 +206,7 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
     final session = ref.watch(currentSessionProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Order together')),
+      appBar: AppBar(title: Text(context.customerText("Order together"))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
@@ -220,9 +225,9 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
               children: [
                 const Icon(Icons.groups_rounded, color: Colors.white, size: 32),
                 const SizedBox(height: 18),
-                const Text(
-                  'Good food, shared better.',
-                  style: TextStyle(
+                Text(
+                  context.customerText('Good food, shared better.'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 23,
                     height: 1.15,
@@ -232,7 +237,9 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Start a group, invite your people, and let everyone add their favourites.',
+                  context.customerText(
+                    'Start a group, invite your people, and let everyone add their favourites.',
+                  ),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     height: 1.45,
@@ -249,7 +256,7 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
             FilledButton.icon(
               onPressed: () => context.push(Routes.signIn),
               icon: const Icon(Icons.login_rounded),
-              label: const Text('Sign in to start a group'),
+              label: Text(context.customerText("Sign in to start a group")),
             )
           else ...[
             FilledButton.icon(
@@ -260,7 +267,7 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.add_rounded),
-              label: const Text('Start a group order'),
+              label: Text(context.customerText("Start a group order")),
             ),
             const SizedBox(height: 24),
             Row(
@@ -288,9 +295,9 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
               autocorrect: false,
               enableSuggestions: false,
               maxLength: 32,
-              decoration: const InputDecoration(
-                labelText: 'Group code',
-                hintText: 'Paste the code from your host',
+              decoration: InputDecoration(
+                labelText: context.customerText("Group code"),
+                hintText: context.customerText("Paste the code from your host"),
                 counterText: '',
                 prefixIcon: Icon(Icons.key_rounded),
               ),
@@ -299,7 +306,7 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
             OutlinedButton.icon(
               onPressed: _busy ? null : _join,
               icon: const Icon(Icons.group_add_rounded),
-              label: const Text('Join group order'),
+              label: Text(context.customerText("Join group order")),
             ),
           ],
         ],
@@ -324,8 +331,12 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
                   AppNotice(
                     tone: NoticeTone.caution,
                     message: group.status == 'EXPIRED'
-                        ? 'This group order expired. Start a new group to order together.'
-                        : 'This group order has been closed.',
+                        ? context.customerText(
+                            'This group order expired. Start a new group to order together.',
+                          )
+                        : context.customerText(
+                            'This group order has been closed.',
+                          ),
                   )
                 else
                   _InviteCard(
@@ -339,7 +350,7 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Your group',
+                        context.customerText('Your group'),
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w800,
@@ -348,7 +359,10 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
                       ),
                     ),
                     AppPill(
-                      label: '${group.members.length} people',
+                      label: context.customerText(
+                        '{count} people',
+                        values: {'count': group.members.length},
+                      ),
                       dense: true,
                       background: brand.surfaceMuted,
                       foreground: brand.inkMuted,
@@ -389,30 +403,35 @@ class _GroupOrderScreenState extends ConsumerState<GroupOrderScreen> {
                           : const Icon(Icons.shopping_bag_rounded),
                       label: Text(
                         group.itemCount == 0
-                            ? 'Waiting for items'
-                            : 'Review ${group.itemCount} items',
+                            ? context.customerText('Waiting for items')
+                            : context.customerText(
+                                'Review {count} items',
+                                values: {'count': group.itemCount},
+                              ),
                       ),
                     )
                   else ...[
                     OutlinedButton.icon(
                       onPressed: () => context.go(Routes.menu),
                       icon: const Icon(Icons.restaurant_menu_rounded),
-                      label: const Text('Browse the menu'),
+                      label: Text(context.customerText("Browse the menu")),
                     ),
                     TextButton(
                       onPressed: _busy ? null : () => _leave(group),
-                      child: const Text('Leave group'),
+                      child: Text(context.customerText("Leave group")),
                     ),
                   ],
                   if (group.isHost)
                     TextButton(
                       onPressed: _busy ? null : () => context.go(Routes.menu),
-                      child: const Text('Add something from the menu'),
+                      child: Text(
+                        context.customerText("Add something from the menu"),
+                      ),
                     ),
                   if (group.isHost)
                     TextButton(
                       onPressed: _busy ? null : () => _close(group),
-                      child: const Text('Close group'),
+                      child: Text(context.customerText("Close group")),
                     ),
                 ],
               ),
@@ -464,12 +483,12 @@ class _HowItWorks extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      steps[i].$2,
+                      context.customerText(steps[i].$2),
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      steps[i].$3,
+                      context.customerText(steps[i].$3),
                       style: TextStyle(color: brand.inkMuted, fontSize: 13),
                     ),
                   ],
@@ -512,8 +531,10 @@ class _InviteCard extends StatelessWidget {
           children: [
             Icon(Icons.info_outline_rounded, color: brand.primary),
             const SizedBox(width: 10),
-            const Expanded(
-              child: Text('Ask the host to share the invite code.'),
+            Expanded(
+              child: Text(
+                context.customerText("Ask the host to share the invite code."),
+              ),
             ),
           ],
         ),
@@ -531,7 +552,7 @@ class _InviteCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'INVITE YOUR PEOPLE',
+            context.customerText('INVITE YOUR PEOPLE'),
             style: TextStyle(
               color: brand.primary,
               fontSize: 10.5,
@@ -555,13 +576,13 @@ class _InviteCard extends StatelessWidget {
               ),
               IconButton.filledTonal(
                 onPressed: onCopy,
-                tooltip: 'Copy group code',
+                tooltip: context.customerText("Copy group code"),
                 icon: const Icon(Icons.copy_rounded),
               ),
             ],
           ),
           Text(
-            'This code stays active for 2 hours.',
+            context.customerText('This code stays active for 2 hours.'),
             style: TextStyle(color: brand.inkMuted, fontSize: 12),
           ),
         ],
@@ -607,7 +628,12 @@ class _MemberCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  member.isHost ? '${member.name} · Host' : member.name,
+                  member.isHost
+                      ? context.customerText(
+                          '{name} · Host',
+                          values: {'name': member.name},
+                        )
+                      : member.name,
                   style: TextStyle(
                     color: brand.ink,
                     fontWeight: FontWeight.w700,
@@ -615,7 +641,10 @@ class _MemberCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${member.itemCount} items',
+                context.customerText(
+                  '{count} items',
+                  values: {'count': member.itemCount},
+                ),
                 style: TextStyle(color: brand.inkMuted, fontSize: 12),
               ),
             ],
@@ -640,10 +669,11 @@ class _MemberCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         [
-                          item.name,
-                          if (item.variantName != null) item.variantName!,
+                          context.customerText(item.name),
+                          if (item.variantName != null)
+                            context.customerText(item.variantName!),
                           if (item.modifiers.isNotEmpty)
-                            item.modifiers.join(', '),
+                            context.customerText(item.modifiers.join(', ')),
                         ].join(' · '),
                         style: TextStyle(color: brand.inkMuted, fontSize: 12.5),
                       ),
@@ -654,9 +684,11 @@ class _MemberCard extends StatelessWidget {
           ] else ...[
             const SizedBox(height: 9),
             Text(
-              member.isHost
-                  ? 'Add something from the menu to get started.'
-                  : 'Choosing something tasty…',
+              context.customerText(
+                member.isHost
+                    ? 'Add something from the menu to get started.'
+                    : 'Choosing something tasty…',
+              ),
               style: TextStyle(color: brand.inkMuted, fontSize: 12.5),
             ),
           ],
@@ -687,14 +719,18 @@ class _EmptyGroupHint extends StatelessWidget {
           Icon(Icons.restaurant_rounded, size: 30, color: brand.primary),
           const SizedBox(height: 10),
           Text(
-            isHost ? 'Your group is ready' : 'You’re in the group',
+            context.customerText(
+              isHost ? 'Your group is ready' : 'You’re in the group',
+            ),
             style: TextStyle(color: brand.ink, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 5),
           Text(
-            isHost
-                ? 'Add a favourite and share the invite code.'
-                : 'Browse the menu and add your picks. The host will check out for everyone.',
+            context.customerText(
+              isHost
+                  ? 'Add a favourite and share the invite code.'
+                  : 'Browse the menu and add your picks. The host will check out for everyone.',
+            ),
             textAlign: TextAlign.center,
             style: TextStyle(color: brand.inkMuted, fontSize: 13, height: 1.4),
           ),

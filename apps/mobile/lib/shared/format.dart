@@ -17,9 +17,17 @@ abstract final class Fmt {
     decimalDigits: 2,
   );
 
-  static final DateFormat _time = DateFormat('h:mm a');
-  static final DateFormat _dayTime = DateFormat('d MMM, h:mm a');
-  static final DateFormat _day = DateFormat('d MMM yyyy');
+  static String _dateLocale = 'en_IN';
+
+  /// Set from the active account language so date and duration copy follows the
+  /// same locale as the customer UI without changing Indian currency formatting.
+  static void setLanguage(String languageCode) {
+    _dateLocale = languageCode == 'hi' ? 'hi_IN' : 'en_IN';
+  }
+
+  static DateFormat get _time => DateFormat('h:mm a', _dateLocale);
+  static DateFormat get _dayTime => DateFormat('d MMM, h:mm a', _dateLocale);
+  static DateFormat get _day => DateFormat('d MMM yyyy', _dateLocale);
 
   /// ₹249 — the default for prices and totals.
   static String money(num? amount) => _rupees.format(amount ?? 0);
@@ -60,10 +68,24 @@ abstract final class Fmt {
     if (value == null) return '—';
     final diff = DateTime.now().difference(value.toLocal());
 
-    if (diff.inSeconds < 45) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
-    if (diff.inHours < 24) return '${diff.inHours} h ago';
-    if (diff.inDays < 7) return '${diff.inDays} d ago';
+    if (diff.inSeconds < 45) {
+      return _dateLocale == 'hi_IN' ? 'अभी-अभी' : 'just now';
+    }
+    if (diff.inMinutes < 60) {
+      return _dateLocale == 'hi_IN'
+          ? '${diff.inMinutes} मिनट पहले'
+          : '${diff.inMinutes} min ago';
+    }
+    if (diff.inHours < 24) {
+      return _dateLocale == 'hi_IN'
+          ? '${diff.inHours} घंटे पहले'
+          : '${diff.inHours} h ago';
+    }
+    if (diff.inDays < 7) {
+      return _dateLocale == 'hi_IN'
+          ? '${diff.inDays} दिन पहले'
+          : '${diff.inDays} d ago';
+    }
     return day(value);
   }
 
@@ -72,10 +94,16 @@ abstract final class Fmt {
     if (value == null) return '—';
     final diff = value.toLocal().difference(DateTime.now());
 
-    if (diff.isNegative) return 'any moment now';
-    if (diff.inMinutes < 1) return 'in under a minute';
-    if (diff.inMinutes < 60) return 'in ${diff.inMinutes} min';
-    return 'at ${time(value)}';
+    if (diff.isNegative) return _dateLocale == 'hi_IN' ? 'अभी' : 'any moment now';
+    if (diff.inMinutes < 1) {
+      return _dateLocale == 'hi_IN' ? 'एक मिनट से कम में' : 'in under a minute';
+    }
+    if (diff.inMinutes < 60) {
+      return _dateLocale == 'hi_IN'
+          ? '${diff.inMinutes} मिनट में'
+          : 'in ${diff.inMinutes} min';
+    }
+    return _dateLocale == 'hi_IN' ? time(value) : 'at ${time(value)}';
   }
 
   /// mm:ss for kitchen timers, "1h 05m" beyond an hour.
@@ -90,6 +118,14 @@ abstract final class Fmt {
 
   /// "24 min" / "1 hr 5 min"
   static String duration(int minutes) {
+    if (_dateLocale == 'hi_IN') {
+      if (minutes < 60) return '$minutes मिनट';
+      final hindiHours = minutes ~/ 60;
+      final hindiMinutes = minutes % 60;
+      final hoursLabel = hindiHours == 1 ? 'घंटा' : 'घंटे';
+      if (hindiMinutes == 0) return '$hindiHours $hoursLabel';
+      return '$hindiHours $hoursLabel $hindiMinutes मिनट';
+    }
     if (minutes < 60) return '$minutes min';
     final hours = minutes ~/ 60;
     final rest = minutes % 60;
@@ -106,8 +142,14 @@ abstract final class Fmt {
   /// "1.4 km" / "800 m"
   static String distance(num? km) {
     if (km == null) return '—';
-    if (km < 1) return '${(km * 1000).round()} m';
-    return '${km.toStringAsFixed(1)} km';
+    if (km < 1) {
+      return _dateLocale == 'hi_IN'
+          ? '${(km * 1000).round()} मीटर'
+          : '${(km * 1000).round()} m';
+    }
+    return _dateLocale == 'hi_IN'
+        ? '${km.toStringAsFixed(1)} किमी'
+        : '${km.toStringAsFixed(1)} km';
   }
 
   /// Masks a phone number for display on a shared screen: +9199•••••01

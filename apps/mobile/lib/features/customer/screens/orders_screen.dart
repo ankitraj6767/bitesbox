@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
@@ -24,14 +25,16 @@ class OrdersScreen extends ConsumerWidget {
 
     if (session.isGuest) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Your orders')),
+        appBar: AppBar(title: Text(context.customerText("Your orders"))),
         body: AppEmptyState(
-          title: 'Sign in to see your orders',
-          message: 'Your order history and live tracking live in your account.',
+          title: context.customerText("Sign in to see your orders"),
+          message: context.customerText(
+            "Your order history and live tracking live in your account.",
+          ),
           icon: Icons.receipt_long_outlined,
           action: FilledButton(
             onPressed: () => context.push(Routes.signIn),
-            child: const Text('Sign in'),
+            child: Text(context.customerText("Sign in")),
           ),
         ),
       );
@@ -41,9 +44,12 @@ class OrdersScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Your orders'),
+          title: Text(context.customerText("Your orders")),
           bottom: const TabBar(
-            tabs: [Tab(text: 'Active'), Tab(text: 'Past')],
+            tabs: [
+              Tab(text: 'Active'),
+              Tab(text: 'Past'),
+            ],
           ),
         ),
         body: const TabBarView(
@@ -74,14 +80,20 @@ class _OrderList extends ConsumerWidget {
       data: (list) {
         if (list.orders.isEmpty) {
           return AppEmptyState(
-            title: scope == 'CURRENT' ? 'No live orders' : 'No past orders yet',
+            title: scope == 'CURRENT'
+                ? context.customerText("No live orders")
+                : context.customerText("No past orders yet"),
             message: scope == 'CURRENT'
-                ? 'When you place an order you can follow it here, step by step.'
-                : 'Your completed orders will appear here.',
+                ? context.customerText(
+                    'When you place an order you can follow it here, step by step.',
+                  )
+                : context.customerText(
+                    "Your completed orders will appear here.",
+                  ),
             icon: Icons.receipt_long_outlined,
             action: FilledButton(
               onPressed: () => context.go(Routes.menu),
-              child: const Text('Browse the menu'),
+              child: Text(context.customerText("Browse the menu")),
             ),
           );
         }
@@ -96,7 +108,8 @@ class _OrderList extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             itemCount: list.orders.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) => _OrderCard(order: list.orders[index]),
+            itemBuilder: (context, index) =>
+                _OrderCard(order: list.orders[index]),
           ),
         );
       },
@@ -128,16 +141,18 @@ class _OrderCard extends ConsumerWidget {
         children: [
           InkWell(
             onTap: () => context.push(Routes.order(order.id)),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(brand.radiusMd)),
-            child: Padding
-              (padding: const EdgeInsets.all(14),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(brand.radiusMd),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       AppPill(
-                        label: view.label,
+                        label: context.customerText(view.label),
                         dense: true,
                         background: statusColour.withValues(alpha: 0.10),
                         foreground: statusColour,
@@ -168,7 +183,7 @@ class _OrderCard extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              order.itemsLabel,
+                              context.customerText(order.itemsLabel),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -180,9 +195,12 @@ class _OrderCard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${order.orderNumber} · ${Fmt.moneySmart(order.grandTotal)}'
-                              '${order.isPickup ? ' · Pickup' : ''}',
-                              style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
+                              '${context.customerText("Order {number}", values: {'number': order.orderNumber})} · ${Fmt.moneySmart(order.grandTotal)}'
+                              '${order.isPickup ? ' · ${context.customerText("Pickup")}' : ''}',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: brand.inkMuted,
+                              ),
                             ),
                           ],
                         ),
@@ -198,12 +216,17 @@ class _OrderCard extends ConsumerWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Icon(Icons.schedule_rounded, size: 14, color: brand.secondary),
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 14,
+                          color: brand.secondary,
+                        ),
                         const SizedBox(width: 6),
                         Text(
-                          order.isPickup
-                              ? 'Ready ${Fmt.until(order.promisedAt)}'
-                              : 'Arriving ${Fmt.until(order.promisedAt)}',
+                          context.customerText(
+                            order.isPickup ? 'Ready {time}' : 'Arriving {time}',
+                            values: {'time': Fmt.until(order.promisedAt)},
+                          ),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -216,7 +239,12 @@ class _OrderCard extends ConsumerWidget {
                   if (order.refundedAmount > 0) ...[
                     const SizedBox(height: 8),
                     Text(
-                      '${Fmt.moneySmart(order.refundedAmount)} refunded',
+                      context.customerText(
+                        '{amount} refunded',
+                        values: {
+                          'amount': Fmt.moneySmart(order.refundedAmount),
+                        },
+                      ),
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -233,7 +261,7 @@ class _OrderCard extends ConsumerWidget {
           if (order.awaitingPayment)
             _CardAction(
               icon: Icons.payment_rounded,
-              label: 'Finish payment',
+              label: context.customerText("Finish payment"),
               emphasis: true,
               onTap: () => context.push(Routes.order(order.id)),
             )
@@ -244,7 +272,7 @@ class _OrderCard extends ConsumerWidget {
                   Expanded(
                     child: _CardAction(
                       icon: Icons.star_outline_rounded,
-                      label: 'Rate order',
+                      label: context.customerText("Rate order"),
                       onTap: () => ReviewSheet.show(
                         context,
                         orderId: order.id,
@@ -258,7 +286,7 @@ class _OrderCard extends ConsumerWidget {
                   Expanded(
                     child: _CardAction(
                       icon: Icons.refresh_rounded,
-                      label: 'Reorder',
+                      label: context.customerText("Reorder"),
                       onTap: () => _reorder(context, ref),
                     ),
                   ),
@@ -275,13 +303,18 @@ class _OrderCard extends ConsumerWidget {
       if (!context.mounted) return;
 
       if (skipped.isEmpty) {
-        AppFeedback.showSuccess(context, 'Added back to your cart.');
+        AppFeedback.showSuccess(
+          context,
+          context.customerText("Added back to your cart."),
+        );
       } else {
         // Being specific about what was dropped beats a vague warning.
         AppFeedback.showInfo(
           context,
-          'Added, but ${skipped.map((item) => item.label).join(', ')} '
-          '${skipped.length == 1 ? 'is' : 'are'} unavailable.',
+          context.customerText(
+            'Added, but {items} could not be reordered because they are unavailable.',
+            values: {'items': skipped.map((item) => item.label).join(', ')},
+          ),
         );
       }
 
@@ -316,7 +349,11 @@ class _CardAction extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: emphasis ? brand.primary : brand.inkMuted),
+            Icon(
+              icon,
+              size: 16,
+              color: emphasis ? brand.primary : brand.inkMuted,
+            ),
             const SizedBox(width: 7),
             Text(
               label,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/config/env.dart';
 import '../../core/theme/brand_tokens.dart';
+import '../../l10n/customer_copy.dart';
 
 /// Veg / non-veg marker. Regulated signalling in India, so the colours are fixed
 /// rather than themed, and it always carries a semantic label for screen readers.
@@ -353,7 +354,7 @@ class AppPill extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            label,
+            context.customerText(label),
             style: TextStyle(
               fontSize: dense ? 10.5 : 11.5,
               fontWeight: FontWeight.w700,
@@ -398,7 +399,7 @@ class SectionHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  context.customerText(title),
                   style: TextStyle(
                     fontSize: 18.5,
                     fontWeight: FontWeight.w700,
@@ -409,7 +410,7 @@ class SectionHeader extends StatelessWidget {
                 if (subtitle != null && subtitle!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    subtitle!,
+                    context.customerText(subtitle!),
                     style: TextStyle(
                       fontSize: 13.5,
                       color: brand.inkMuted,
@@ -430,7 +431,7 @@ class SectionHeader extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Text(actionLabel!),
+                  Text(context.customerText(actionLabel!)),
                   const SizedBox(width: 2),
                   const Icon(Icons.arrow_forward_ios_rounded, size: 11),
                 ],

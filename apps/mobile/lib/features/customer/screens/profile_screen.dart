@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/auth/session.dart' show UserProfile;
 import '../../../core/errors/app_error.dart';
@@ -72,7 +73,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _save() async {
     if (_name.text.trim().length < 2) {
-      AppFeedback.showInfo(context, 'Please enter your name.');
+      AppFeedback.showInfo(
+        context,
+        context.customerText("Please enter your name."),
+      );
       return;
     }
 
@@ -105,7 +109,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.read(sessionProvider.notifier).updateProfile(savedProfile);
       if (!mounted) return;
       _hydrate(savedProfile, force: true);
-      AppFeedback.showSuccess(context, 'Profile updated.');
+      AppFeedback.showSuccess(
+        context,
+        context.customerText("Profile updated."),
+      );
     } catch (error) {
       if (!mounted) return;
       AppFeedback.showError(context, error);
@@ -138,13 +145,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           data: (loadedSession) => loadedSession.authenticated
               ? AppErrorState(
-                  error: const AppError(
+                  error: AppError(
                     code: 'PROFILE_UNAVAILABLE',
-                    message: 'Your profile could not be loaded.',
+                    message: context.customerText(
+                      "Your profile could not be loaded.",
+                    ),
                   ),
                   onRetry: () => ref.read(sessionProvider.notifier).refresh(),
                 )
-              : const Center(child: Text('Sign in to view your profile.')),
+              : Center(
+                  child: Text(
+                    context.customerText("Sign in to view your profile."),
+                  ),
+                ),
         ),
       );
     }
@@ -157,8 +170,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           TextField(
             controller: _name,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Full name',
+            decoration: InputDecoration(
+              labelText: context.customerText("Full name"),
               prefixIcon: Icon(Icons.person_outline_rounded),
             ),
           ),
@@ -167,9 +180,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              helperText: 'Used for bills and order receipts',
+            decoration: InputDecoration(
+              labelText: context.customerText("Email"),
+              helperText: context.customerText(
+                "Used for bills and order receipts",
+              ),
               prefixIcon: Icon(Icons.alternate_email_rounded),
             ),
           ),
@@ -178,8 +193,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             enabled: false,
             controller: TextEditingController(text: profile.phone),
             decoration: InputDecoration(
-              labelText: 'Mobile number',
-              helperText: 'Sign in with a different number to change this',
+              labelText: context.customerText("Mobile number"),
+              helperText: context.customerText(
+                "Sign in with a different number to change this",
+              ),
               prefixIcon: const Icon(Icons.phone_outlined),
               suffixIcon: Icon(
                 Icons.verified_rounded,
@@ -208,7 +225,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'How should we reach you?',
+            context.customerText('How should we reach you?'),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -227,7 +244,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           SwitchListTile.adaptive(
             value: _push,
             contentPadding: EdgeInsets.zero,
-            title: const Text('Push notifications'),
+            title: Text(context.customerText("Push notifications")),
             onChanged: (value) => setState(() {
               _push = value;
               _pushChanged = true;
@@ -236,7 +253,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           SwitchListTile.adaptive(
             value: _sms,
             contentPadding: EdgeInsets.zero,
-            title: const Text('SMS'),
+            title: Text(context.customerText("SMS")),
             onChanged: (value) => setState(() {
               _sms = value;
               _smsChanged = true;
@@ -245,7 +262,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           SwitchListTile.adaptive(
             value: _whatsapp,
             contentPadding: EdgeInsets.zero,
-            title: const Text('WhatsApp'),
+            title: Text(context.customerText("WhatsApp")),
             onChanged: (value) => setState(() {
               _whatsapp = value;
               _whatsappChanged = true;
@@ -257,7 +274,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             contentPadding: EdgeInsets.zero,
             title: Text(l10n.offersConsent),
             subtitle: Text(
-              'Occasional messages about discounts and additions to the menu.',
+              context.customerText(
+                'Occasional messages about discounts and additions to the menu.',
+              ),
               style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
             ),
             onChanged: (value) => setState(() {
@@ -268,12 +287,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _busy ? null : _save,
-            child: Text(_busy ? 'Saving…' : l10n.saveChanges),
+            child: Text(
+              _busy ? context.customerText("Saving…") : l10n.saveChanges,
+            ),
           ),
           const SizedBox(height: 24),
           if (session.roles.isNotEmpty) ...[
             Text(
-              'Your access',
+              context.customerText('Your access'),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -287,7 +308,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: session.roles
                   .map(
                     (grant) => Chip(
-                      label: Text(grant.role.label),
+                      label: Text(context.customerText(grant.role.label)),
                       visualDensity: VisualDensity.compact,
                     ),
                   )

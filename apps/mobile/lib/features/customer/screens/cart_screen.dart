@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/customer_copy.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/format.dart';
@@ -78,7 +79,10 @@ class CartScreen extends ConsumerWidget {
               ...quote.blockingIssues.map(
                 (issue) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: AppNotice(tone: NoticeTone.critical, message: issue.message),
+                  child: AppNotice(
+                    tone: NoticeTone.critical,
+                    message: issue.message,
+                  ),
                 ),
               ),
               ...quote.warnings.map(
@@ -95,9 +99,18 @@ class CartScreen extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    for (var index = 0; index < quote.lines.length; index++) ...[
+                    for (
+                      var index = 0;
+                      index < quote.lines.length;
+                      index++
+                    ) ...[
                       if (index > 0)
-                        Divider(height: 1, color: brand.hairline, indent: 14, endIndent: 14),
+                        Divider(
+                          height: 1,
+                          color: brand.hairline,
+                          indent: 14,
+                          endIndent: 14,
+                        ),
                       _CartLineTile(line: quote.lines[index]),
                     ],
                   ],
@@ -110,7 +123,8 @@ class CartScreen extends ConsumerWidget {
               BillSummary(
                 totals: quote.totals,
                 couponCode: quote.appliedCouponCode,
-                promotionLabel: quote.promotion?.headline ?? quote.promotion?.name,
+                promotionLabel:
+                    quote.promotion?.headline ?? quote.promotion?.name,
                 isDelivery: quote.isDelivery,
               ),
             ],
@@ -168,7 +182,7 @@ class _CartLineTile extends ConsumerWidget {
                     const SizedBox(width: 7),
                     Expanded(
                       child: Text(
-                        line.productName,
+                        context.customerText(line.productName),
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
@@ -181,15 +195,23 @@ class _CartLineTile extends ConsumerWidget {
                 if (line.configurationLabel.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Text(
-                    line.configurationLabel,
-                    style: TextStyle(fontSize: 12.5, height: 1.3, color: brand.inkMuted),
+                    context.customerText(line.configurationLabel),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.3,
+                      color: brand.inkMuted,
+                    ),
                   ),
                 ],
                 if ((line.specialInstructions ?? '').isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.edit_note_rounded, size: 13, color: brand.inkMuted),
+                      Icon(
+                        Icons.edit_note_rounded,
+                        size: 13,
+                        color: brand.inkMuted,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -208,7 +230,11 @@ class _CartLineTile extends ConsumerWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.error_outline_rounded, size: 14, color: brand.error),
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: brand.error,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         l10n.unavailableRemoveToContinue,
@@ -260,7 +286,11 @@ class _CartLineTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _setQuantity(BuildContext context, WidgetRef ref, int quantity) async {
+  Future<void> _setQuantity(
+    BuildContext context,
+    WidgetRef ref,
+    int quantity,
+  ) async {
     try {
       await ref
           .read(cartProvider.notifier)
@@ -291,7 +321,9 @@ class _CouponRow extends ConsumerWidget {
           color: brand.surface,
           borderRadius: BorderRadius.circular(brand.radiusMd),
           border: Border.all(
-            color: applied == null ? brand.hairline : brand.success.withValues(alpha: 0.5),
+            color: applied == null
+                ? brand.hairline
+                : brand.success.withValues(alpha: 0.5),
           ),
         ),
         child: Row(
@@ -316,7 +348,10 @@ class _CouponRow extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$applied applied',
+                          context.customerText(
+                            '{code} applied',
+                            values: {'code': applied},
+                          ),
                           style: TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
@@ -324,8 +359,18 @@ class _CouponRow extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          'Saving ${Fmt.moneySmart(quote.totals.couponDiscount)}',
-                          style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
+                          context.customerText(
+                            'Saving {amount}',
+                            values: {
+                              'amount': Fmt.moneySmart(
+                                quote.totals.couponDiscount,
+                              ),
+                            },
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: brand.inkMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -336,7 +381,11 @@ class _CouponRow extends ConsumerWidget {
                 child: Text(l10n.remove),
               )
             else
-              Icon(Icons.chevron_right_rounded, size: 20, color: brand.inkMuted),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: brand.inkMuted,
+              ),
           ],
         ),
       ),
@@ -364,8 +413,9 @@ class _FreeDeliveryNudge extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final shortfall =
-        quote.delivery.shortfallToFreeDelivery(quote.totals.itemsSubtotal);
+    final shortfall = quote.delivery.shortfallToFreeDelivery(
+      quote.totals.itemsSubtotal,
+    );
     if (shortfall == null) return const SizedBox.shrink();
 
     return Padding(
@@ -373,8 +423,10 @@ class _FreeDeliveryNudge extends StatelessWidget {
       child: AppNotice(
         tone: NoticeTone.info,
         icon: Icons.delivery_dining_rounded,
-        message:
-            'Add ${Fmt.moneySmart(shortfall)} more to get free delivery on this order.',
+        message: context.customerText(
+          'Add {amount} more to get free delivery on this order.',
+          values: {'amount': Fmt.moneySmart(shortfall)},
+        ),
       ),
     );
   }

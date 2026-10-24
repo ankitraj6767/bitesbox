@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/providers/core_providers.dart';
@@ -39,7 +40,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final phone = _controller.text.trim();
 
     if (!AuthRepository.isValidIndianMobile(phone)) {
-      setState(() => _error = 'Enter a valid 10-digit mobile number.');
+      setState(
+        () => _error = context.customerText(
+          'Enter a valid 10-digit mobile number.',
+        ),
+      );
       return;
     }
 
@@ -81,7 +86,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 alignment: Alignment.topRight,
                 child: TextButton(
                   onPressed: () => context.go(Routes.home),
-                  child: const Text('Browse the menu'),
+                  child: Text(context.customerText("Browse the menu")),
                 ),
               ),
               const SizedBox(height: 12),
@@ -97,7 +102,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Welcome to ${brand.name}',
+                context.customerText(
+                  'Welcome to {brand}',
+                  values: {'brand': brand.name},
+                ),
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
@@ -107,7 +115,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter your mobile number and we will send you a one-time code.',
+                context.customerText(
+                  'Enter your mobile number and we will send you a one-time code.',
+                ),
                 style: TextStyle(
                   fontSize: 15,
                   height: 1.45,
@@ -162,11 +172,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Send code'),
+                    : Text(context.customerText("Send code")),
               ),
               const Spacer(),
               Text(
-                'By continuing you agree to our terms of service and privacy policy.',
+                context.customerText(
+                  'By continuing you agree to our terms of service and privacy policy.',
+                ),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12.5,
@@ -178,14 +190,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               Center(
                 child: TextButton(
                   onPressed: () => context.push(Routes.staffSignIn),
-                  child: const Text('Staff sign-in'),
+                  child: Text(context.customerText("Staff sign-in")),
                 ),
               ),
               Center(
                 child: TextButton(
                   onPressed: () => context.push(Routes.riderSignup),
-                  child: const Text(
-                    'Want to deliver with us? Apply as a delivery partner',
+                  child: Text(
+                    context.customerText(
+                      'Want to deliver with us? Apply as a delivery partner',
+                    ),
                   ),
                 ),
               ),
@@ -194,12 +208,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 children: [
                   TextButton(
                     onPressed: () => context.push(Routes.policies),
-                    child: const Text('Policies'),
+                    child: Text(context.customerText("Policies")),
                   ),
                   Text('·', style: TextStyle(color: brand.inkMuted)),
                   TextButton(
                     onPressed: () => context.push(Routes.faqs),
-                    child: const Text('FAQs'),
+                    child: Text(context.customerText("FAQs")),
                   ),
                 ],
               ),

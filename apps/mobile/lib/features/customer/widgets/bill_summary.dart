@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/format.dart';
@@ -40,7 +41,7 @@ class BillSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bill details',
+            context.customerText('Bill details'),
             style: TextStyle(
               fontSize: 15.5,
               fontWeight: FontWeight.w700,
@@ -48,40 +49,42 @@ class BillSummary extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _Row(label: 'Item total', amount: totals.itemsSubtotal),
+          _Row(label: context.customerText("Item total"), amount: totals.itemsSubtotal),
           if (totals.itemsDiscount > 0)
             _Row(
-              label: 'Item discounts',
+              label: context.customerText("Item discounts"),
               amount: -totals.itemsDiscount,
               positive: true,
             ),
           if (totals.promotionDiscount > 0)
             _Row(
-              label: promotionLabel ?? 'Offer applied',
+              label: promotionLabel == null
+                  ? context.customerText("Offer applied")
+                  : context.customerText(promotionLabel!),
               amount: -totals.promotionDiscount,
               positive: true,
             ),
           if (totals.couponDiscount > 0)
             _Row(
-              label: couponCode == null ? 'Coupon discount' : 'Coupon $couponCode',
+              label: couponCode == null ? context.customerText("Coupon discount") : 'Coupon $couponCode',
               amount: -totals.couponDiscount,
               positive: true,
             ),
           if (totals.packagingCharge > 0)
-            _Row(label: 'Packaging', amount: totals.packagingCharge),
+            _Row(label: context.customerText("Packaging"), amount: totals.packagingCharge),
           if (isDelivery)
             _Row(
-              label: 'Delivery fee',
+              label: context.customerText("Delivery fee"),
               amount: totals.deliveryFee,
               strikethroughAmount:
                   totals.hasDeliveryWaiver ? totals.deliveryFeeWaived : null,
               freeLabel: totals.deliveryFee == 0 ? 'FREE' : null,
             ),
           if (totals.serviceFee > 0)
-            _Row(label: 'Service fee', amount: totals.serviceFee),
+            _Row(label: context.customerText("Service fee"), amount: totals.serviceFee),
           if (totals.taxAmount > 0)
             _Row(
-              label: 'GST and charges',
+              label: context.customerText("GST and charges"),
               amount: totals.taxAmount,
               // Inclusive GST is already inside the item price; saying so avoids
               // the "why is tax added twice" question.
@@ -90,37 +93,40 @@ class BillSummary extends StatelessWidget {
           if (showTaxBreakdown && totals.taxAmount > 0) ...[
             const SizedBox(height: 2),
             if (totals.cgstAmount > 0)
-              _SubRow(label: 'CGST', amount: totals.cgstAmount),
+              _SubRow(label: context.customerText("CGST"), amount: totals.cgstAmount),
             if (totals.sgstAmount > 0)
-              _SubRow(label: 'SGST', amount: totals.sgstAmount),
+              _SubRow(label: context.customerText("SGST"), amount: totals.sgstAmount),
             if (totals.igstAmount > 0)
-              _SubRow(label: 'IGST', amount: totals.igstAmount),
+              _SubRow(label: context.customerText("IGST"), amount: totals.igstAmount),
             if (totals.cessAmount > 0)
-              _SubRow(label: 'Cess', amount: totals.cessAmount),
+              _SubRow(label: context.customerText("Cess"), amount: totals.cessAmount),
           ],
           if (totals.tipAmount > 0)
-            _Row(label: 'Tip for delivery partner', amount: totals.tipAmount),
+            _Row(label: context.customerText("Tip for delivery partner"), amount: totals.tipAmount),
           if (totals.loyaltyDiscount > 0)
             _Row(
-              label: '${totals.loyaltyPointsRedeemed} loyalty points',
+              label: context.customerText(
+                '{count} loyalty points',
+                values: {'count': totals.loyaltyPointsRedeemed},
+              ),
               amount: -totals.loyaltyDiscount,
               positive: true,
             ),
           if (totals.roundOff != 0)
-            _Row(label: 'Round off', amount: totals.roundOff),
+            _Row(label: context.customerText("Round off"), amount: totals.roundOff),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Divider(height: 1, color: brand.hairline),
           ),
-          _Row(label: 'Order total', amount: totals.grandTotal, emphasis: true),
+          _Row(label: context.customerText("Order total"), amount: totals.grandTotal, emphasis: true),
           if (totals.walletApplied > 0) ...[
             _Row(
-              label: 'Paid from wallet',
+              label: context.customerText("Paid from wallet"),
               amount: -totals.walletApplied,
               positive: true,
             ),
             const SizedBox(height: 6),
-            _Row(label: 'To pay now', amount: totals.payableAmount, emphasis: true),
+            _Row(label: context.customerText("To pay now"), amount: totals.payableAmount, emphasis: true),
           ],
           if (totals.hasSavings) ...[
             const SizedBox(height: 12),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
@@ -103,7 +104,7 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
         if (mounted) {
-          AppFeedback.showInfo(context, 'Turn on location services to pin your address.');
+          AppFeedback.showInfo(context, context.customerText("Turn on location services to pin your address."));
         }
         return;
       }
@@ -230,7 +231,7 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
     final isEditing = widget.address != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Edit address' : 'Add address')),
+      appBar: AppBar(title: Text(isEditing ? context.customerText("Edit address") : context.customerText("Add address"))),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -252,7 +253,7 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
             ],
             const SizedBox(height: 20),
             Text(
-              'Save this address as',
+              context.customerText('Save this address as'),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -270,7 +271,7 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
               ]
                   .map(
                     (option) => ChoiceChip(
-                      label: Text(option.$2),
+                      label: Text(context.customerText(option.$2)),
                       selected: _label == option.$1,
                       onSelected: (_) => setState(() => _label = option.$1),
                     ),
@@ -281,33 +282,33 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
             TextFormField(
               controller: _line1,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'House / flat / building *',
+              decoration: InputDecoration(
+                labelText: context.customerText("House / flat / building *"),
               ),
               validator: (value) => (value ?? '').trim().length < 3
-                  ? 'Please enter the house or building'
+                  ? context.customerText('Please enter the house or building')
                   : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _line2,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Street / road'),
+              decoration: InputDecoration(labelText: context.customerText("Street / road")),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _landmark,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Landmark',
-                helperText: 'Helps the delivery partner find you faster',
+              decoration: InputDecoration(
+                labelText: context.customerText("Landmark"),
+                helperText: context.customerText("Helps the delivery partner find you faster"),
               ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _area,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Area / locality'),
+              decoration: InputDecoration(labelText: context.customerText("Area / locality")),
             ),
             const SizedBox(height: 12),
             Row(
@@ -316,7 +317,7 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
                   child: TextFormField(
                     controller: _city,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(labelText: 'City *'),
+                    decoration: InputDecoration(labelText: context.customerText("City *")),
                     validator: (value) =>
                         (value ?? '').trim().isEmpty ? 'Required' : null,
                   ),
@@ -327,8 +328,8 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
                     controller: _postalCode,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
-                    decoration: const InputDecoration(
-                      labelText: 'PIN code',
+                    decoration: InputDecoration(
+                      labelText: context.customerText("PIN code"),
                       counterText: '',
                     ),
                   ),
@@ -339,12 +340,12 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
             TextFormField(
               controller: _state,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'State *'),
+              decoration: InputDecoration(labelText: context.customerText("State *")),
               validator: (value) => (value ?? '').trim().isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 20),
             Text(
-              'Who should we hand the order to?',
+              context.customerText('Who should we hand the order to?'),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -355,9 +356,9 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
             TextFormField(
               controller: _contactName,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Contact name',
-                helperText: 'Leave blank to use your own name',
+              decoration: InputDecoration(
+                labelText: context.customerText("Contact name"),
+                helperText: context.customerText("Leave blank to use your own name"),
               ),
             ),
             const SizedBox(height: 12),
@@ -365,8 +366,8 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
               controller: _contactPhone,
               keyboardType: TextInputType.phone,
               maxLength: 10,
-              decoration: const InputDecoration(
-                labelText: 'Contact number',
+              decoration: InputDecoration(
+                labelText: context.customerText("Contact number"),
                 counterText: '',
                 prefixText: '+91 ',
               ),
@@ -376,9 +377,9 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
               controller: _instructions,
               maxLines: 2,
               maxLength: 200,
-              decoration: const InputDecoration(
-                labelText: 'Delivery instructions',
-                hintText: 'Ring the bell twice, leave at the gate…',
+              decoration: InputDecoration(
+                labelText: context.customerText("Delivery instructions"),
+                hintText: context.customerText("Ring the bell twice, leave at the gate…"),
                 counterText: '',
               ),
             ),
@@ -386,13 +387,13 @@ class _AddressEditorScreenState extends ConsumerState<AddressEditorScreen> {
             SwitchListTile.adaptive(
               value: _isDefault,
               contentPadding: EdgeInsets.zero,
-              title: const Text('Make this my default address'),
+              title: Text(context.customerText("Make this my default address")),
               onChanged: (value) => setState(() => _isDefault = value),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _saving ? null : _save,
-              child: Text(_saving ? 'Saving…' : 'Save address'),
+              child: Text(_saving ? context.customerText("Saving…") : context.customerText("Save address")),
             ),
           ],
         ),
@@ -440,7 +441,9 @@ class _LocationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  hasLocation ? 'Location pinned' : 'Pin your location',
+                  context.customerText(
+                    hasLocation ? 'Location pinned' : 'Pin your location',
+                  ),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -451,7 +454,9 @@ class _LocationCard extends StatelessWidget {
                 Text(
                   hasLocation
                       ? '${latitude!.toStringAsFixed(5)}, ${longitude!.toStringAsFixed(5)}'
-                      : 'We use this to check whether we deliver to you.',
+                      : context.customerText(
+                          'We use this to check whether we deliver to you.',
+                        ),
                   style: TextStyle(fontSize: 12.5, color: brand.inkMuted),
                 ),
               ],
@@ -459,7 +464,7 @@ class _LocationCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: locating ? null : onLocate,
-            child: Text(locating ? 'Locating…' : (hasLocation ? 'Update' : 'Use GPS')),
+            child: Text(locating ? context.customerText("Locating…") : (hasLocation ? context.customerText("Update") : context.customerText("Use GPS"))),
           ),
         ],
       ),
@@ -500,7 +505,7 @@ class _ServiceabilityCard extends StatelessWidget {
               Icon(Icons.check_circle_rounded, size: 18, color: brand.success),
               const SizedBox(width: 8),
               Text(
-                'We deliver here',
+                context.customerText('We deliver here'),
                 style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
@@ -515,28 +520,28 @@ class _ServiceabilityCard extends StatelessWidget {
             runSpacing: 6,
             children: [
               if (serviceability.zoneName != null)
-                _Fact(label: 'Zone', value: serviceability.zoneName!),
+                _Fact(label: context.customerText("Zone"), value: serviceability.zoneName!),
               if (serviceability.distanceKm != null)
                 _Fact(
-                  label: 'Distance',
+                  label: context.customerText("Distance"),
                   value: Fmt.distance(serviceability.distanceKm),
                 ),
               if (serviceability.etaMinutes != null)
                 _Fact(
-                  label: 'Typical time',
+                  label: context.customerText("Typical time"),
                   value: Fmt.duration(serviceability.etaMinutes!),
                 ),
               if (serviceability.deliveryFee != null)
                 _Fact(
-                  label: 'Delivery fee',
+                  label: context.customerText("Delivery fee"),
                   value: serviceability.deliveryFee == 0
-                      ? 'Free'
+                      ? context.customerText("Free")
                       : Fmt.moneySmart(serviceability.deliveryFee),
                 ),
               if (serviceability.minOrderAmount != null &&
                   serviceability.minOrderAmount! > 0)
                 _Fact(
-                  label: 'Minimum order',
+                  label: context.customerText("Minimum order"),
                   value: Fmt.moneySmart(serviceability.minOrderAmount),
                 ),
             ],

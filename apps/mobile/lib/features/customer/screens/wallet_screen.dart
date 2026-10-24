@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import '../../../l10n/customer_copy.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,15 +41,15 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final wallet = ref.watch(walletProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bites Box wallet')),
+      appBar: AppBar(title: Text(context.customerText("Bites Box wallet"))),
       body: AsyncValueView<WalletSummary>(
         value: wallet,
         onRetry: () => ref.invalidate(walletProvider),
         data: (data) {
           if (!data.enabled) {
-            return const AppEmptyState(
-              title: 'Wallet is not available',
-              message: 'This feature is currently switched off.',
+            return AppEmptyState(
+              title: context.customerText("Wallet is not available"),
+              message: context.customerText("This feature is currently switched off."),
               icon: Icons.account_balance_wallet_outlined,
             );
           }
@@ -80,7 +81,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Available balance',
+                        context.customerText('Available balance'),
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.88),
                           fontSize: 13,
@@ -99,8 +100,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       const SizedBox(height: 10),
                       Text(
                         data.isFrozen
-                            ? 'Your wallet is on hold. Please contact support.'
-                            : 'Applied to your order total automatically at checkout.',
+                            ? context.customerText('Your wallet is on hold. Please contact support.')
+                            : context.customerText('Applied to your order total automatically at checkout.'),
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 12.5,
@@ -127,7 +128,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                             )
                           : const Icon(Icons.add_rounded),
                       label: Text(
-                        _addingMoney ? 'Opening secure checkout…' : 'Add money',
+                        context.customerText(
+                          _addingMoney ? 'Opening secure checkout…' : 'Add money',
+                        ),
                       ),
                       style: FilledButton.styleFrom(
                         backgroundColor: brand.primary,
@@ -154,7 +157,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
-                          'Secure checkout · Add ₹100–₹10,000 · Use wallet at Bites Box',
+                          context.customerText('Secure checkout · Add ₹100–₹10,000 · Use wallet at Bites Box'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11.5,
@@ -173,13 +176,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         'While your wallet is on hold you can still pay by card, UPI or cash.',
                     action: TextButton(
                       onPressed: () => context.push(Routes.support),
-                      child: const Text('Contact us'),
+                      child: Text(context.customerText("Contact us")),
                     ),
                   ),
                 ],
                 const SizedBox(height: 24),
                 Text(
-                  'Transactions',
+                        context.customerText('Transactions'),
                   style: TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
@@ -188,9 +191,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
                 const SizedBox(height: 10),
                 if (data.transactions.isEmpty)
-                  const AppEmptyState(
-                    title: 'Nothing here yet',
-                    message: 'Top-ups, refunds and cashback will show up here.',
+                  AppEmptyState(
+                    title: context.customerText("Nothing here yet"),
+                    message: context.customerText("Top-ups, refunds and cashback will show up here."),
                     icon: Icons.receipt_outlined,
                     compact: true,
                   )
@@ -266,7 +269,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         if (mounted) {
           AppFeedback.showSuccess(
             context,
-            '${Fmt.moneyPrecise(amount)} added to your wallet',
+            context.customerText(
+              '{amount} added to your wallet',
+              values: {'amount': Fmt.moneyPrecise(amount)},
+            ),
           );
         }
       } else if (mounted) {
@@ -394,7 +400,7 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Add money to your wallet',
+            context.customerText('Add money to your wallet'),
             style: TextStyle(
               color: brand.ink,
               fontSize: 21,
@@ -404,12 +410,12 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
           ),
           const SizedBox(height: 5),
           Text(
-            'Choose an amount. Your balance updates after secure payment confirmation.',
+            context.customerText('Choose an amount. Your balance updates after secure payment confirmation.'),
             style: TextStyle(color: brand.inkMuted, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 20),
           Text(
-            'Quick add',
+            context.customerText('Quick add'),
             style: TextStyle(
               color: brand.ink,
               fontSize: 13,
@@ -423,7 +429,7 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
             children: _suggestions.map((suggestion) {
               final selected = amount == suggestion;
               return ChoiceChip(
-                label: Text('₹${suggestion.toStringAsFixed(0)}'),
+              label: Text(context.customerText('₹${suggestion.toStringAsFixed(0)}')),
                 selected: selected,
                 onSelected: (_) {
                   setState(
@@ -454,12 +460,19 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'Amount',
+              labelText: context.customerText("Amount"),
               prefixText: '₹ ',
-              hintText: 'Enter amount',
-              helperText:
-                  'Minimum ₹${widget.minimum.toStringAsFixed(0)} · Maximum ₹${widget.maximum.toStringAsFixed(0)}',
-              errorText: _amountError,
+              hintText: context.customerText("Enter amount"),
+              helperText: context.customerText(
+                'Minimum ₹{minimum} · Maximum ₹{maximum}',
+                values: {
+                  'minimum': widget.minimum.toStringAsFixed(0),
+                  'maximum': widget.maximum.toStringAsFixed(0),
+                },
+              ),
+              errorText: _amountError == null
+                  ? null
+                  : context.customerText(_amountError!),
               filled: true,
               fillColor: brand.surfaceMuted,
               border: OutlineInputBorder(
@@ -487,8 +500,11 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
               icon: const Icon(Icons.lock_rounded, size: 18),
               label: Text(
                 _isValid
-                    ? 'Continue · ${Fmt.moneyPrecise(amount!)}'
-                    : 'Continue to payment',
+                    ? context.customerText(
+                        'Continue · {amount}',
+                        values: {'amount': Fmt.moneyPrecise(amount!)},
+                      )
+                    : context.customerText('Continue to payment'),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               style: FilledButton.styleFrom(
@@ -503,7 +519,7 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
           const SizedBox(height: 10),
           Center(
             child: Text(
-              'Payments are securely processed by Razorpay.',
+              context.customerText('Payments are securely processed by Razorpay.'),
               style: TextStyle(color: brand.inkMuted, fontSize: 11.5),
             ),
           ),
@@ -582,7 +598,7 @@ class _TransactionTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  transaction.description,
+                  context.customerText(transaction.description),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -591,7 +607,7 @@ class _TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${transaction.kindLabel} · ${Fmt.smartDateTime(transaction.createdAt)}',
+                  '${context.customerText(transaction.kindLabel)} · ${Fmt.smartDateTime(transaction.createdAt)}',
                   style: TextStyle(fontSize: 12, color: brand.inkMuted),
                 ),
               ],
@@ -610,7 +626,10 @@ class _TransactionTile extends StatelessWidget {
                 ),
               ),
               Text(
-                'bal ${Fmt.moneySmart(transaction.balanceAfter)}',
+                context.customerText(
+                  'Balance {amount}',
+                  values: {'amount': Fmt.moneySmart(transaction.balanceAfter)},
+                ),
                 style: TextStyle(fontSize: 11.5, color: brand.inkMuted),
               ),
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/customer_copy.dart';
 
 import '../../../core/notifications/push_providers.dart';
 import '../../../core/providers/core_providers.dart';
@@ -47,7 +48,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     setState(() => _busy = true);
 
     try {
-      await ref.read(accountRepositoryProvider).updateProfile(
+      await ref
+          .read(accountRepositoryProvider)
+          .updateProfile(
             fullName: _name.text,
             email: _email.text,
             marketingOptIn: _marketingChanged ? _marketingOptIn : null,
@@ -64,9 +67,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Future<void> _signOut() async {
-    await ref.read(sessionProvider.notifier).signOut(
-          deviceToken: ref.read(pushTokenProvider),
-        );
+    await ref
+        .read(sessionProvider.notifier)
+        .signOut(deviceToken: ref.read(pushTokenProvider));
   }
 
   @override
@@ -81,7 +84,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           children: [
             const SizedBox(height: 28),
             Text(
-              'Almost there',
+              context.customerText('Almost there'),
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
@@ -91,16 +94,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tell us your name so our kitchen and delivery partner know who the order is for.',
-              style: TextStyle(fontSize: 15, height: 1.45, color: brand.inkMuted),
+              context.customerText(
+                'Tell us your name so our kitchen and delivery partner know who the order is for.',
+              ),
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.45,
+                color: brand.inkMuted,
+              ),
             ),
             const SizedBox(height: 26),
             TextField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
               autofillHints: const [AutofillHints.name],
-              decoration: const InputDecoration(
-                labelText: 'Full name',
+              decoration: InputDecoration(
+                labelText: context.customerText("Full name"),
                 prefixIcon: Icon(Icons.person_outline_rounded),
               ),
               onChanged: (_) => setState(() {}),
@@ -110,23 +119,32 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
-              decoration: const InputDecoration(
-                labelText: 'Email (optional)',
-                helperText: 'We will email your bill and order updates.',
+              decoration: InputDecoration(
+                labelText: context.customerText("Email (optional)"),
+                helperText: context.customerText(
+                  "We will email your bill and order updates.",
+                ),
                 prefixIcon: Icon(Icons.alternate_email_rounded),
               ),
             ),
             if (phone != null) ...[
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: brand.surfaceMuted,
                   borderRadius: BorderRadius.circular(brand.radiusMd),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.verified_rounded, size: 18, color: brand.success),
+                    Icon(
+                      Icons.verified_rounded,
+                      size: 18,
+                      color: brand.success,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -146,9 +164,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 _marketingChanged = true;
               }),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Send me offers and new dish alerts'),
+              title: Text(
+                context.customerText("Send me offers and new dish alerts"),
+              ),
               subtitle: Text(
-                'Optional offers only. Order-critical updates are separate. You can change this any time in your profile.',
+                context.customerText(
+                  'Optional offers only. Order-critical updates are separate. You can change this any time in your profile.',
+                ),
                 style: TextStyle(fontSize: 13, color: brand.inkMuted),
               ),
             ),
@@ -164,13 +186,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Start ordering'),
+                  : Text(context.customerText("Start ordering")),
             ),
             const SizedBox(height: 10),
             Center(
               child: TextButton(
                 onPressed: _busy ? null : _signOut,
-                child: const Text('Use a different number'),
+                child: Text(context.customerText("Use a different number")),
               ),
             ),
           ],

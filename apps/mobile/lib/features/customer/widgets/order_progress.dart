@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/customer_copy.dart';
 import '../../../shared/format.dart';
 import '../data/order_models.dart';
 
@@ -21,8 +22,15 @@ class OrderProgressBar extends StatelessWidget {
     if (view.isFailure || view.step < 0) return const SizedBox.shrink();
 
     final steps = order.isPickup
-        ? const ['Placed', 'Accepted', 'Preparing', 'Ready']
-        : OrderStatusView.trackerSteps;
+        ? [
+            context.customerText('Placed'),
+            context.customerText('Accepted'),
+            context.customerText('Preparing'),
+            context.customerText('Ready'),
+          ]
+        : OrderStatusView.trackerSteps
+              .map(context.customerText)
+              .toList(growable: false);
 
     // Pickup collapses "on the way" and "delivered" into "ready".
     final current = order.isPickup && view.step >= 4 ? 3 : view.step;
@@ -64,16 +72,20 @@ class OrderProgressBar extends StatelessWidget {
                   ),
                 ),
                 child: done
-                    ? const Icon(Icons.check_rounded, size: 12, color: Colors.white)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 12,
+                        color: Colors.white,
+                      )
                     : (active
-                        ? const Padding(
-                            padding: EdgeInsets.all(5),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : null),
+                          ? const Padding(
+                              padding: EdgeInsets.all(5),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : null),
               ),
               const SizedBox(height: 6),
               SizedBox(
@@ -144,10 +156,12 @@ class OrderTimeline extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      entry.label,
+                      context.customerText(entry.label),
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isLatest ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isLatest
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: brand.ink,
                       ),
                     ),
