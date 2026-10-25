@@ -27,6 +27,17 @@ select app.seed_grant_role('90000000-0000-0000-0000-000000000004', 'FINANCE');
 select app.seed_grant_role('90000000-0000-0000-0000-000000000005', 'SUPPORT');
 select app.seed_grant_role('90000000-0000-0000-0000-000000000006', 'MARKETING');
 
+-- Demo orders exercise the real ordering checks, so keep the seeded outlet open
+-- even when CI or a developer resets the database outside its published hours.
+-- This is the same explicit manual-open override that an owner can create in ops.
+insert into public.branch_status_log (
+  branch_id, previous_status, status, note, accepting_orders, changed_by, actor_kind
+) values (
+  '11111111-1111-1111-1111-111111111111', 'CLOSED', 'OPEN',
+  'Seeded demo outlet stays available for order-flow fixtures.', true,
+  '90000000-0000-0000-0000-000000000001', 'USER'
+);
+
 -- ── Kitchen staff (mobile kitchen shell) ──
 select app.seed_user('90000000-0000-0000-0000-000000000201', '9900000201', 'kitchen1@bitesbox.in', 'Ramesh Thakur');
 select app.seed_user('90000000-0000-0000-0000-000000000202', '9900000202', 'kitchen2@bitesbox.in', 'Dinesh Paswan');
