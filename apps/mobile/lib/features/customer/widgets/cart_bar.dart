@@ -10,7 +10,7 @@ import '../data/order_models.dart';
 import '../providers/cart_controller.dart';
 import '../providers/customer_providers.dart';
 
-/// The floating cart bar shown above the menu and home screens.
+/// The floating cart bar shown on customer screens when the cart has items.
 ///
 /// Prices come straight from the server-computed quote; this widget only formats
 /// them. It collapses to nothing when the cart is empty.
@@ -116,10 +116,20 @@ class CartBar extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                   ],
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 19,
-                    color: Colors.white,
+                  IconButton(
+                    onPressed: () => context.push(destination ?? Routes.cart),
+                    tooltip: context.customerText('View cart'),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 36,
+                      height: 36,
+                    ),
+                    icon: const Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 19,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),

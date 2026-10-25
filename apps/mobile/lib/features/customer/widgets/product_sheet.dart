@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/customer_copy.dart';
 
+import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/format.dart';
@@ -11,16 +12,23 @@ import '../data/cart_models.dart';
 import '../data/menu_models.dart';
 import '../providers/cart_controller.dart';
 import '../providers/customer_providers.dart';
+import 'cart_bar.dart';
+import 'product_card.dart' show ProductPrice;
 
 /// Dish configuration: variants, modifier groups and a cooking note.
 ///
-/// The rules shown here (required groups, "pick up to 3", "first 2 free") mirror
-/// the ones the database enforces. The sheet stops a customer wasting a round
-/// trip; it is not what makes the order valid.
+/// It can be embedded in the product page or presented as a sheet. The rules
+/// shown here mirror the ones the database enforces; the server remains the
+/// final authority when the item is added.
 class ProductSheet extends ConsumerStatefulWidget {
-  const ProductSheet({required this.productId, super.key});
+  const ProductSheet({
+    required this.productId,
+    this.embedded = false,
+    super.key,
+  });
 
   final String productId;
+  final bool embedded;
 
   static Future<void> show(BuildContext context, {required String productId}) {
     return AppFeedback.sheet<void>(
@@ -200,13 +208,14 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
           );
 
       if (!mounted) return;
-      Navigator.of(context).pop();
+      if (!widget.embedded) Navigator.of(context).pop();
       AppFeedback.showSuccess(
         context,
         context.customerText(
           '{name} added to your cart.',
           values: {'name': detail.product.name},
         ),
+        duration: const Duration(seconds: 1),
       );
     } catch (error) {
       if (!mounted) return;
@@ -226,27 +235,34 @@ class _ProductSheetState extends ConsumerState<ProductSheet> {
       loading: const SizedBox(height: 320, child: AppLoader()),
       data: (detail) {
         _primeDefaults(detail);
-        return _Content(detail: detail, state: this);
+        return _Content(detail: detail, state: this, embedded: widget.embedded);
       },
     );
   }
 }
 
-class _Content extends StatelessWidget {
-  const _Content({required this.detail, required this.state});
+class _Content extends ConsumerWidget {
+  const _Content({
+    required this.detail,
+    required this.state,
+    required this.embedded,
+  });
 
   final ProductDetail detail;
   final _ProductSheetState state;
+  final bool embedded;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
     final product = detail.product;
     final unitPrice = state._previewUnitPrice(detail);
     final unavailable = !product.isAvailable;
-    final photoHeight = MediaQuery.sizeOf(
-      context,
-    ).width.clamp(280.0, 440.0).toDouble();
+    final cartQuote = ref.watch(cartQuoteProvider);
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final photoHeight = embedded
+        ? screenWidth
+        : screenWidth.clamp(280.0, 440.0).toDouble();
 
     return Column(
       children: [
@@ -254,14 +270,44 @@ class _Content extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              FoodImage(
-                path: product.heroImagePath ?? product.thumbnailPath,
-                height: photoHeight,
-                fit: BoxFit.contain,
-                radius: 0,
-                placeholderAsset:
-                    FoodImage.assetForPath(product.slug) ??
-                    FoodImage.assetForCategory(detail.categoryName),
+              Stack(
+                children: [
+                  FoodImage(
+                    path: product.heroImagePath ?? product.thumbnailPath,
+                    width: embedded ? screenWidth : null,
+                    height: photoHeight,
+                    fit: embedded ? BoxFit.cover : BoxFit.contain,
+                    radius: 0,
+                    placeholderAsset:
+                        FoodImage.assetForPath(product.slug) ??
+                        FoodImage.assetForCategory(detail.categoryName),
+                  ),
+                  if (embedded && product.hasDiscount)
+                    Positioned(
+                      left: 16,
+                      bottom: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: brand.success,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          context.customerText(
+                            '{percent}% OFF',
+                            values: {'percent': product.discountPercent},
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -272,6 +318,14 @@ class _Content extends StatelessWidget {
                       children: [
                         FoodTypeMark(foodType: product.foodType, size: 15),
                         const SizedBox(width: 8),
+                        if (detail.categoryName != null)
+                          Text(
+                            context.customerText(detail.categoryName!),
+                            style: TextStyle(
+                              color: brand.inkMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         if (product.isBestSeller)
                           AppPill(
                             label: context.customerText("Bestseller"),
@@ -298,6 +352,8 @@ class _Content extends StatelessWidget {
                         color: brand.ink,
                       ),
                     ),
+                    const SizedBox(height: 7),
+                    ProductPrice(product: product, showDiscountLabel: true),
                     if ((product.description ?? product.shortDescription) !=
                         null) ...[
                       const SizedBox(height: 8),
@@ -437,12 +493,19 @@ class _Content extends StatelessWidget {
             ],
           ),
         ),
-        _AddBar(
-          detail: detail,
-          state: state,
-          unitPrice: unitPrice,
-          disabled: unavailable,
-        ),
+        if (!embedded || cartQuote.isEmpty)
+          _AddBar(
+            detail: detail,
+            state: state,
+            unitPrice: unitPrice,
+            disabled: unavailable,
+          )
+        else
+          CartBar(
+            actionLabel: 'View cart',
+            destination: Routes.cart,
+            onAdd: unavailable ? null : () => state._addToCart(detail),
+          ),
       ],
     );
   }
