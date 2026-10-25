@@ -39,6 +39,7 @@ jobs:
         run: supabase --version
 
       - name: Select an available database port
+        id: database_port
         run: python3 scripts/ci-supabase-port.py
 
       - name: Start the local stack
@@ -52,9 +53,13 @@ jobs:
       # Fails on error-level findings. `supabase db lint` alone always exits 0, and
       # two functions that threw on every call once slipped through because of it.
       - name: Lint the schema
+        env:
+          SUPABASE_DB_URL: ${{ steps.database_port.outputs.database_url }}
         run: ./scripts/db-lint.sh warning
 
       - name: Run the SQL test suite
+        env:
+          SUPABASE_DB_URL: ${{ steps.database_port.outputs.database_url }}
         run: ./supabase/tests/run.sh
 
       # The committed types must match the schema, otherwise the admin app compiles

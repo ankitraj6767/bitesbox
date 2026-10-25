@@ -70,13 +70,13 @@ def update_database_port(config_path: Path) -> int:
     else:
         print(f"Using available Supabase database port {database_port}.")
 
-    github_env = os.environ.get("GITHUB_ENV")
-    if github_env:
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
         database_url = (
             f"postgresql://postgres:postgres@127.0.0.1:{database_port}/postgres"
         )
-        with open(github_env, "a", encoding="utf-8") as env_file:
-            env_file.write(f"SUPABASE_DB_URL={database_url}\n")
+        with open(github_output, "a", encoding="utf-8") as output_file:
+            output_file.write(f"database_url={database_url}\n")
 
     return database_port
 

@@ -45,11 +45,15 @@ jobs:
           version: 2.110.0
 
       - name: Select an available database port
+        id: database_port
         run: python3 scripts/ci-supabase-port.py
 
       - run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector
       - run: supabase db reset
-      - run: ./supabase/tests/run.sh
+      - name: Run the SQL test suite
+        env:
+          SUPABASE_DB_URL: ${{ steps.database_port.outputs.database_url }}
+        run: ./supabase/tests/run.sh
       - run: supabase stop --no-backup
         if: always()
 
