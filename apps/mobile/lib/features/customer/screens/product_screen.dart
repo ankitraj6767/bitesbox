@@ -98,38 +98,43 @@ class _ProductDetails extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-          child: Stack(
-            children: [
-              FoodImage(
-                path: product.heroImagePath ?? product.thumbnailPath,
-                height: 300,
-                radius: 0,
-                fit: BoxFit.cover,
-                placeholderAsset: FoodImage.assetForPath(product.slug),
-              ),
-              if (product.hasDiscount)
-                Positioned(
-                  left: 16,
-                  bottom: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 11,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: brand.success,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      context.customerText('${product.discountPercent}% OFF'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
+          // Menu photos are square. Matching the hero viewport to that aspect
+          // ratio and expanding its child keeps the full photo edge-to-edge.
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                FoodImage(
+                  path: product.heroImagePath ?? product.thumbnailPath,
+                  radius: 0,
+                  fit: BoxFit.cover,
+                  placeholderAsset: FoodImage.assetForPath(product.slug),
+                ),
+                if (product.hasDiscount)
+                  Positioned(
+                    left: 16,
+                    bottom: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: brand.success,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        context.customerText('${product.discountPercent}% OFF'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
         SliverPadding(
