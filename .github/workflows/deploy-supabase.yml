@@ -44,6 +44,9 @@ jobs:
         with:
           version: 2.110.0
 
+      - name: Select an available database port
+        run: python3 scripts/ci-supabase-port.py
+
       - run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector
       - run: supabase db reset
       - run: ./supabase/tests/run.sh

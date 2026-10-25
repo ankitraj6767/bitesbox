@@ -38,6 +38,9 @@ jobs:
       - name: Show Supabase CLI version
         run: supabase --version
 
+      - name: Select an available database port
+        run: python3 scripts/ci-supabase-port.py
+
       - name: Start the local stack
         run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector
 
