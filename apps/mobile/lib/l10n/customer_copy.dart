@@ -830,6 +830,7 @@ const Map<String, String> _hindi = {
   'Balance {amount}': 'बैलेंस {amount}',
   'Well packed': 'अच्छी तरह पैक था',
   'Hot and fresh': 'गरम और ताज़ा',
+  'Prepared fresh in our kitchen': 'हमारी किचन में ताज़ा तैयार किया गया',
   'Quick delivery': 'तेज़ डिलीवरी',
   'Good portion': 'अच्छी मात्रा',
   'Value for money': 'पैसे वसूल',

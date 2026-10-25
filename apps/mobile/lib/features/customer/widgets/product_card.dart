@@ -198,6 +198,29 @@ class MenuProductCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
+    final description = <String?>[product.shortDescription, product.description]
+        .whereType<String>()
+        .map((value) => value.trim())
+        .firstWhere(
+          (value) => value.isNotEmpty,
+          orElse: () => context.customerText('Prepared fresh in our kitchen'),
+        );
+    final mealDetail = product.servesCount != null
+        ? context.customerText('Serves ${product.servesCount}')
+        : product.spiceLevel != 'NONE'
+        ? context.customerText(Fmt.humanise(product.spiceLevel))
+        : product.dietaryTags.isNotEmpty
+        ? context.customerText(
+            Fmt.humanise(product.dietaryTags.first.replaceAll('-', ' ')),
+          )
+        : product.calories != null
+        ? context.customerText('${product.calories} kcal')
+        : null;
+    final details = <String>[
+      if (product.preparationMinutes > 0)
+        context.customerText('${product.preparationMinutes} min'),
+      if (mealDetail != null) mealDetail,
+    ].join(' · ');
     final quantity = ref.watch(productCartQuantityProvider(product.id));
     final line = ref.watch(singleCartLineProvider(product.id));
     final busy = ref.watch(cartProvider).isLoading;
@@ -299,6 +322,48 @@ class MenuProductCard extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        height: 26,
+                        child: Text(
+                          description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: brand.inkMuted,
+                            fontSize: 10.5,
+                            height: 1.2,
+                          ),
+                        ),
+                      ),
+                      if (details.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        SizedBox(
+                          height: 14,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.schedule_rounded,
+                                size: 11,
+                                color: brand.inkMuted,
+                              ),
+                              const SizedBox(width: 3),
+                              Expanded(
+                                child: Text(
+                                  details,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: brand.inkMuted,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const Spacer(),
                       Row(
                         children: [

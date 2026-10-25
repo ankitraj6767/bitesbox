@@ -180,7 +180,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: columns,
-                                  mainAxisExtent: 292,
+                                  mainAxisExtent: 308,
                                   crossAxisSpacing: 12,
                                   mainAxisSpacing: 14,
                                 ),
