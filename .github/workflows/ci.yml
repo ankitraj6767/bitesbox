@@ -62,6 +62,16 @@ jobs:
           SUPABASE_DB_URL: ${{ steps.database_port.outputs.database_url }}
         run: ./supabase/tests/run.sh
 
+      - name: Capture the database log when startup fails
+        if: failure()
+        run: |
+          database="$(docker ps -a --filter 'name=supabase_db_bitesbox' --format '{{.Names}}' | head -n 1)"
+          if [[ -n "$database" ]]; then
+            docker logs --tail 200 "$database" 2>&1
+          else
+            echo "Supabase database container was not created."
+          fi
+
       # The committed types must match the schema, otherwise the admin app compiles
       # against a contract the database no longer offers.
       - name: Check the generated types are current
