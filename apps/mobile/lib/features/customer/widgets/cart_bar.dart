@@ -15,7 +15,11 @@ import '../providers/customer_providers.dart';
 /// Prices come straight from the server-computed quote; this widget only formats
 /// them. It collapses to nothing when the cart is empty.
 class CartBar extends ConsumerWidget {
-  const CartBar({super.key});
+  const CartBar({this.actionLabel, this.destination, this.onAdd, super.key});
+
+  final String? actionLabel;
+  final String? destination;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,6 +29,19 @@ class CartBar extends ConsumerWidget {
     if (quote.isEmpty) return const SizedBox.shrink();
 
     final blocked = quote.hasUnavailableLines;
+    final String lowerLine;
+    if (actionLabel != null) {
+      lowerLine = context.customerText(actionLabel!);
+    } else if (blocked) {
+      lowerLine = context.customerText('An item is unavailable — tap to fix');
+    } else if (quote.totals.hasSavings) {
+      lowerLine = context.customerText(
+        'Saving {amount}',
+        values: {'amount': Fmt.moneySmart(quote.totals.totalSavings)},
+      );
+    } else {
+      lowerLine = context.customerText('View cart');
+    }
 
     return SafeArea(
       top: false,
@@ -37,7 +54,7 @@ class CartBar extends ConsumerWidget {
           elevation: 6,
           shadowColor: Colors.black.withValues(alpha: 0.22),
           child: InkWell(
-            onTap: () => context.push(Routes.cart),
+            onTap: () => context.push(destination ?? Routes.cart),
             borderRadius: BorderRadius.circular(brand.radiusMd),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
@@ -72,16 +89,7 @@ class CartBar extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          blocked
-                              ? context.customerText('An item is unavailable — tap to fix')
-                              : (quote.totals.hasSavings
-                                    ? context.customerText(
-                                        'Saving {amount}',
-                                        values: {
-                                          'amount': Fmt.moneySmart(quote.totals.totalSavings),
-                                        },
-                                      )
-                                    : context.customerText('View cart')),
+                          lowerLine,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12.5,
@@ -90,6 +98,24 @@ class CartBar extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  if (onAdd != null) ...[
+                    IconButton(
+                      onPressed: onAdd,
+                      tooltip: context.customerText('Add another'),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 36,
+                        height: 36,
+                      ),
+                      icon: const Icon(
+                        Icons.add_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   const Icon(
                     Icons.arrow_forward_rounded,
                     size: 19,

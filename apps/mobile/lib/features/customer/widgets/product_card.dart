@@ -70,6 +70,7 @@ Future<void> addMenuProductToCart(
         '{name} added to your cart.',
         values: {'name': product.name},
       ),
+      duration: const Duration(seconds: 1),
     );
   } catch (error) {
     if (!context.mounted) return;

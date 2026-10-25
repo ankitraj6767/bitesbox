@@ -23,12 +23,17 @@ abstract final class AppFeedback {
     );
   }
 
-  static void showSuccess(BuildContext context, String message) {
+  static void showSuccess(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 3),
+  }) {
     _show(
       context,
       message: context.customerText(message),
       background: context.brand.success,
       icon: Icons.check_circle_outline_rounded,
+      duration: duration,
     );
   }
 

@@ -859,6 +859,8 @@ const Map<String, String> _hindi = {
   'An item is unavailable — tap to fix':
       'एक आइटम उपलब्ध नहीं है — ठीक करने के लिए टैप करें',
   'View cart': 'कार्ट देखें',
+  'Checkout': 'चेकआउट',
+  'Add another': 'एक और जोड़ें',
   'In your box': 'आपके बॉक्स में',
   'Currently unavailable': 'अभी उपलब्ध नहीं',
   '{count} items in your group': 'आपके ग्रुप में {count} आइटम',

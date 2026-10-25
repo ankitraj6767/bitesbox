@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../l10n/customer_copy.dart';
 import '../../../shared/format.dart';
 import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/states.dart';
 import '../data/menu_models.dart';
+import '../providers/cart_controller.dart';
 import '../providers/customer_providers.dart';
+import '../widgets/cart_bar.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/product_card.dart';
 
@@ -23,6 +26,7 @@ class ProductScreen extends ConsumerWidget {
     final detail = ref.watch(productDetailProvider(productId));
     final product = detail.valueOrNull?.product;
     final options = detail.valueOrNull;
+    final cartQuote = ref.watch(cartQuoteProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,6 +43,16 @@ class ProductScreen extends ConsumerWidget {
       ),
       bottomNavigationBar: options == null
           ? null
+          : !cartQuote.isEmpty
+          ? CartBar(
+              actionLabel: 'Checkout',
+              destination: Routes.checkout,
+              onAdd: product?.isAvailable == true
+                  ? () async {
+                      await addMenuProductToCart(context, ref, options.product);
+                    }
+                  : null,
+            )
           : SafeArea(
               top: false,
               child: Container(
