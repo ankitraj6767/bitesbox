@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../l10n/customer_copy.dart';
 
-import '../../../core/errors/app_error.dart';
+import '../../../core/routing/routes.dart';
 import '../../../core/theme/brand_tokens.dart';
 import '../../../shared/feedback.dart';
 import '../../../shared/format.dart';
@@ -10,29 +11,68 @@ import '../../../shared/widgets/common.dart';
 import '../data/cart_models.dart';
 import '../data/menu_models.dart';
 import '../providers/cart_controller.dart';
+import '../providers/customer_providers.dart';
 import 'favorite_button.dart';
-import 'product_sheet.dart';
 
-Future<void> _addProductToCart(
+Future<void> addMenuProductToCart(
   BuildContext context,
   WidgetRef ref,
   MenuProduct product,
 ) async {
-  if (product.hasVariants) {
-    ProductSheet.show(context, productId: product.id);
-    return;
-  }
-
   try {
-    await ref.read(cartProvider.notifier).addItem(productId: product.id);
+    final detail = await ref.read(productDetailProvider(product.id).future);
+    final modifiers = <ModifierSelection>[];
+
+    for (final group in detail.modifierGroups) {
+      final available = group.modifiers
+          .where((modifier) => modifier.isAvailable)
+          .toList();
+      final maxSelections = group.maxSelect ?? available.length;
+      final selected = available
+          .where((modifier) => modifier.isDefault)
+          .take(group.isSingleChoice ? 1 : maxSelections)
+          .toList();
+      final minimum = group.isRequired
+          ? (group.isSingleChoice
+                ? 1
+                : (group.minSelect < 1 ? 1 : group.minSelect))
+          : 0;
+
+      // One-tap add uses the configured defaults. For a required group without
+      // enough defaults, use its first available choices so the cart action does
+      // not unexpectedly open a separate configuration page.
+      for (final modifier in available) {
+        if (selected.length >= minimum || selected.length >= maxSelections) {
+          break;
+        }
+        if (!selected.any((item) => item.id == modifier.id)) {
+          selected.add(modifier);
+        }
+      }
+
+      modifiers.addAll(
+        selected.map((modifier) => ModifierSelection(modifierId: modifier.id)),
+      );
+    }
+
+    await ref
+        .read(cartProvider.notifier)
+        .addItem(
+          productId: detail.product.id,
+          variantId: detail.defaultVariant?.id,
+          quantity: product.minQuantityPerOrder,
+          modifiers: modifiers,
+        );
+    if (!context.mounted) return;
+    AppFeedback.showSuccess(
+      context,
+      context.customerText(
+        '{name} added to your cart.',
+        values: {'name': product.name},
+      ),
+    );
   } catch (error) {
     if (!context.mounted) return;
-    if (error is AppError &&
-        (error.code == ErrorCodes.modifierSelectionRequired ||
-            error.code == ErrorCodes.variantRequired)) {
-      ProductSheet.show(context, productId: product.id);
-      return;
-    }
     AppFeedback.showError(context, error);
   }
 }
@@ -54,9 +94,9 @@ Future<void> _setProductQuantity(
 
 /// A dish on the menu list.
 ///
-/// The add control is a stepper when exactly one configuration of the dish is in
-/// the cart, and an "Add" button otherwise — a customer who ordered two different
-/// sizes must be sent back to the sheet rather than have one silently changed.
+/// The add control is a stepper for a single cart configuration. If several
+/// configurations are already present, another Add uses the dish defaults and
+/// adds a separate line instead of changing either existing configuration.
 class ProductListCard extends ConsumerWidget {
   const ProductListCard({required this.product, super.key});
 
@@ -68,42 +108,42 @@ class ProductListCard extends ConsumerWidget {
 
     return Opacity(
       opacity: product.isAvailable ? 1 : 0.55,
-      child: InkWell(
-        onTap: () => ProductSheet.show(context, productId: product.id),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        FoodTypeMark(foodType: product.foodType),
-                        if (product.isBestSeller) ...[
-                          const SizedBox(width: 8),
-                          AppPill(
-                            label: context.customerText("Bestseller"),
-                            icon: Icons.local_fire_department_rounded,
-                            background: brand.accent.withValues(alpha: 0.14),
-                            foreground: brand.warning,
-                            dense: true,
-                          ),
-                        ] else if (product.isNew) ...[
-                          const SizedBox(width: 8),
-                          AppPill(
-                            label: context.customerText("New"),
-                            background: brand.secondary.withValues(alpha: 0.10),
-                            foreground: brand.secondary,
-                            dense: true,
-                          ),
-                        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      FoodTypeMark(foodType: product.foodType),
+                      if (product.isBestSeller) ...[
+                        const SizedBox(width: 8),
+                        AppPill(
+                          label: context.customerText("Bestseller"),
+                          icon: Icons.local_fire_department_rounded,
+                          background: brand.accent.withValues(alpha: 0.14),
+                          foreground: brand.warning,
+                          dense: true,
+                        ),
+                      ] else if (product.isNew) ...[
+                        const SizedBox(width: 8),
+                        AppPill(
+                          label: context.customerText("New"),
+                          background: brand.secondary.withValues(alpha: 0.10),
+                          foreground: brand.secondary,
+                          dense: true,
+                        ),
                       ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  InkWell(
+                    onTap: () => context.push(Routes.product(product.id)),
+                    child: Text(
                       product.name,
                       style: TextStyle(
                         fontSize: 16,
@@ -112,36 +152,36 @@ class ProductListCard extends ConsumerWidget {
                         color: brand.ink,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    _PriceRow(product: product),
-                    if (product.ratingCount > 0) ...[
-                      const SizedBox(height: 5),
-                      RatingChip(
-                        rating: product.ratingAverage,
-                        count: product.ratingCount,
-                        dense: true,
-                      ),
-                    ],
-                    if ((product.shortDescription ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        product.shortDescription!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.35,
-                          color: brand.inkMuted,
-                        ),
-                      ),
-                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  _PriceRow(product: product),
+                  if (product.ratingCount > 0) ...[
+                    const SizedBox(height: 5),
+                    RatingChip(
+                      rating: product.ratingAverage,
+                      count: product.ratingCount,
+                      dense: true,
+                    ),
                   ],
-                ),
+                  if ((product.shortDescription ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      product.shortDescription!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.35,
+                        color: brand.inkMuted,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(width: 14),
-              _ImageWithAction(product: product),
-            ],
-          ),
+            ),
+            const SizedBox(width: 14),
+            _ImageWithAction(product: product),
+          ],
         ),
       ),
     );
@@ -169,138 +209,136 @@ class MenuProductCard extends ConsumerWidget {
         elevation: 1.5,
         shadowColor: brand.ink.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: () => ProductSheet.show(context, productId: product.id),
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 130,
-                  width: double.infinity,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      FoodImage(
-                        path: product.thumbnailPath ?? product.heroImagePath,
-                        fit: BoxFit.cover,
-                        placeholderAsset: FoodImage.assetForPath(product.slug),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 130,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Positioned.fill(
+                      child: InkWell(
+                        onTap: () => context.push(Routes.product(product.id)),
+                        child: FoodImage(
+                          path: product.thumbnailPath ?? product.heroImagePath,
+                          fit: BoxFit.cover,
+                          placeholderAsset: FoodImage.assetForPath(
+                            product.slug,
+                          ),
+                        ),
                       ),
-                      Positioned(
-                        left: 8,
-                        top: 8,
-                        child: _MenuProductBadge(product: product),
-                      ),
-                      Positioned(
-                        right: 5,
-                        top: 5,
-                        child: FavoriteButton(productId: product.id),
-                      ),
-                      if (!product.isAvailable)
-                        Positioned.fill(
-                          child: ColoredBox(
-                            color: Colors.black.withValues(alpha: 0.34),
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.55),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  product.unavailableReason,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                    ),
+                    Positioned(
+                      left: 8,
+                      top: 8,
+                      child: _MenuProductBadge(product: product),
+                    ),
+                    Positioned(
+                      right: 5,
+                      top: 5,
+                      child: FavoriteButton(productId: product.id),
+                    ),
+                    if (!product.isAvailable)
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: Colors.black.withValues(alpha: 0.34),
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                product.unavailableReason,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
                           ),
                         ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          FoodTypeMark(foodType: product.foodType, size: 13),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              product.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: brand.ink,
+                                fontSize: 13.5,
+                                height: 1.18,
+                                letterSpacing: -0.15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ProductPrice(
+                              product: product,
+                              compact: true,
+                            ),
+                          ),
+                          if (product.ratingCount > 0) ...[
+                            const SizedBox(width: 4),
+                            RatingChip(
+                              rating: product.ratingAverage,
+                              dense: true,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      _MenuAddControl(
+                        product: product,
+                        quantity: quantity,
+                        line: line,
+                        busy: busy,
+                        onAdd: () =>
+                            addMenuProductToCart(context, ref, product),
+                        onQuantityChanged: line == null
+                            ? null
+                            : (next) => _setProductQuantity(
+                                context,
+                                ref,
+                                line.cartItemId,
+                                next,
+                              ),
+                      ),
                     ],
                   ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            FoodTypeMark(foodType: product.foodType, size: 13),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                product.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: brand.ink,
-                                  fontSize: 13.5,
-                                  height: 1.18,
-                                  letterSpacing: -0.15,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${product.hasVariants ? context.customerText("from ") : ''}${Fmt.moneySmart(product.displayPrice)}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: brand.ink,
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                            if (product.ratingCount > 0) ...[
-                              const SizedBox(width: 4),
-                              RatingChip(
-                                rating: product.ratingAverage,
-                                dense: true,
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 7),
-                        _MenuAddControl(
-                          product: product,
-                          quantity: quantity,
-                          line: line,
-                          busy: busy,
-                          onAdd: () => _addProductToCart(context, ref, product),
-                          onQuantityChanged: line == null
-                              ? null
-                              : (next) => _setProductQuantity(
-                                  context,
-                                  ref,
-                                  line.cartItemId,
-                                  next,
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -344,7 +382,7 @@ class _MenuProductBadge extends StatelessWidget {
   }
 }
 
-class _MenuAddControl extends StatelessWidget {
+class _MenuAddControl extends StatefulWidget {
   const _MenuAddControl({
     required this.product,
     required this.quantity,
@@ -358,12 +396,24 @@ class _MenuAddControl extends StatelessWidget {
   final int quantity;
   final CheckoutLine? line;
   final bool busy;
-  final VoidCallback onAdd;
+  final Future<void> Function() onAdd;
   final ValueChanged<int>? onQuantityChanged;
+
+  @override
+  State<_MenuAddControl> createState() => _MenuAddControlState();
+}
+
+class _MenuAddControlState extends State<_MenuAddControl> {
+  bool _adding = false;
 
   @override
   Widget build(BuildContext context) {
     final brand = context.brand;
+    final product = widget.product;
+    final quantity = widget.quantity;
+    final line = widget.line;
+    final quantityChanged = widget.onQuantityChanged;
+    final busy = widget.busy || _adding;
     if (!product.isAvailable) {
       return Container(
         height: 32,
@@ -383,7 +433,7 @@ class _MenuAddControl extends StatelessWidget {
       );
     }
 
-    if (quantity > 0 && line != null && onQuantityChanged != null) {
+    if (quantity > 0 && line != null && quantityChanged != null) {
       return Row(
         children: [
           Expanded(
@@ -404,54 +454,68 @@ class _MenuAddControl extends StatelessWidget {
             ),
           ),
           QuantityStepper(
-            quantity: line!.quantity,
+            quantity: line.quantity,
             dense: true,
             busy: busy,
             max: product.maxQuantityPerOrder ?? 50,
-            onChanged: onQuantityChanged!,
+            onChanged: quantityChanged,
           ),
         ],
       );
     }
 
-    return SizedBox(
-      height: 32,
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: busy
-            ? null
-            : () {
-                if (quantity > 0) {
-                  ProductSheet.show(context, productId: product.id);
-                } else {
-                  onAdd();
-                }
-              },
-        icon: Icon(
-          quantity > 0 ? Icons.tune_rounded : Icons.add_rounded,
-          size: 15,
-        ),
-        label: Text(
-          quantity > 0
-              ? context.customerText(
-                  '{count} in your box',
-                  values: {'count': quantity},
-                )
-              : context.customerText("ADD"),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
-        ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: brand.primaryDark,
-          side: BorderSide(color: brand.primary.withValues(alpha: 0.45)),
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (quantity > 0 && line == null) ...[
+          Text(
+            context.customerText(
+              '{count} in your box',
+              values: {'count': quantity},
+            ),
+            style: TextStyle(
+              color: brand.success,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          const SizedBox(height: 3),
+        ],
+        SizedBox(
+          height: 32,
+          child: OutlinedButton.icon(
+            onPressed: busy
+                ? null
+                : () async {
+                    setState(() => _adding = true);
+                    try {
+                      await widget.onAdd();
+                    } finally {
+                      if (mounted) setState(() => _adding = false);
+                    }
+                  },
+            icon: Icon(Icons.add_rounded, size: 15),
+            label: Text(
+              context.customerText("ADD"),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: brand.primaryDark,
+              side: BorderSide(color: brand.primary.withValues(alpha: 0.45)),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -463,59 +527,81 @@ class _PriceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brand = context.brand;
+    return ProductPrice(product: product, showDiscountLabel: true);
+  }
+}
 
-    return Row(
+class ProductPrice extends StatelessWidget {
+  const ProductPrice({
+    required this.product,
+    this.compact = false,
+    this.showDiscountLabel = false,
+    super.key,
+  });
+
+  final MenuProduct product;
+  final bool compact;
+  final bool showDiscountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = context.brand;
+    final currentStyle = TextStyle(
+      fontSize: compact ? 12.5 : 16,
+      fontWeight: FontWeight.w800,
+      color: brand.ink,
+    );
+    final previousStyle = TextStyle(
+      fontSize: compact ? 11 : 13,
+      fontWeight: FontWeight.w500,
+      color: brand.inkMuted,
+      decoration: TextDecoration.lineThrough,
+    );
+
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: compact ? 4 : 6,
+      runSpacing: 1,
       children: [
-        if (product.hasVariants)
-          Text(
-            context.customerText("from "),
-            style: TextStyle(fontSize: 13, color: brand.inkMuted),
-          ),
+        if (product.hasDiscount)
+          Text(Fmt.moneySmart(product.comparePrice), style: previousStyle),
         Text(
-          Fmt.moneySmart(product.displayPrice),
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: brand.ink,
-          ),
+          '${product.hasVariants ? context.customerText("from ") : ''}${Fmt.moneySmart(product.displayPrice)}',
+          style: currentStyle,
         ),
-        if (product.hasDiscount) ...[
-          const SizedBox(width: 7),
-          Text(
-            Fmt.moneySmart(product.comparePrice),
-            style: TextStyle(
-              fontSize: 13,
-              color: brand.inkMuted,
-              decoration: TextDecoration.lineThrough,
-            ),
-          ),
-          const SizedBox(width: 6),
+        if (showDiscountLabel && product.hasDiscount)
           Text(
             context.customerText('${product.discountPercent}% off'),
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: compact ? 10.5 : 12,
               fontWeight: FontWeight.w700,
               color: brand.success,
             ),
           ),
-        ],
       ],
     );
   }
 }
 
-class _ImageWithAction extends ConsumerWidget {
+class _ImageWithAction extends ConsumerStatefulWidget {
   const _ImageWithAction({required this.product});
 
   final MenuProduct product;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ImageWithAction> createState() => _ImageWithActionState();
+}
+
+class _ImageWithActionState extends ConsumerState<_ImageWithAction> {
+  bool _adding = false;
+
+  @override
+  Widget build(BuildContext context) {
     final brand = context.brand;
+    final product = widget.product;
     final quantity = ref.watch(productCartQuantityProvider(product.id));
     final line = ref.watch(singleCartLineProvider(product.id));
-    final busy = ref.watch(cartProvider).isLoading;
+    final busy = ref.watch(cartProvider).isLoading || _adding;
 
     return SizedBox(
       width: 112,
@@ -523,12 +609,16 @@ class _ImageWithAction extends ConsumerWidget {
         children: [
           Stack(
             children: [
-              FoodImage(
-                path: product.thumbnailPath ?? product.heroImagePath,
-                width: 112,
-                height: 96,
-                radius: brand.radiusMd,
-                placeholderAsset: FoodImage.assetForPath(product.slug),
+              InkWell(
+                onTap: () => context.push(Routes.product(product.id)),
+                borderRadius: BorderRadius.circular(brand.radiusMd),
+                child: FoodImage(
+                  path: product.thumbnailPath ?? product.heroImagePath,
+                  width: 112,
+                  height: 96,
+                  radius: brand.radiusMd,
+                  placeholderAsset: FoodImage.assetForPath(product.slug),
+                ),
               ),
               if (!product.isAvailable)
                 Positioned.fill(
@@ -569,50 +659,52 @@ class _ImageWithAction extends ConsumerWidget {
                   _setQuantity(context, ref, line.cartItemId, next),
             )
           else if (quantity > 0)
-            // Several configurations of this dish are in the cart: editing has to
-            // happen where the customer can see which one they mean.
-            OutlinedButton(
-              onPressed: () =>
-                  ProductSheet.show(context, productId: product.id),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(112, 34),
-                padding: EdgeInsets.zero,
-                foregroundColor: brand.primary,
-                side: BorderSide(color: brand.primary.withValues(alpha: 0.4)),
-              ),
-              child: Text(
-                context.customerText(
-                  '{count} in cart',
-                  values: {'count': quantity},
+            Column(
+              children: [
+                Text(
+                  context.customerText(
+                    '{count} in cart',
+                    values: {'count': quantity},
+                  ),
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: brand.success,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                style: const TextStyle(fontSize: 12.5),
-              ),
+                const SizedBox(height: 3),
+                _addButton(context, busy),
+              ],
             )
           else
-            OutlinedButton(
-              onPressed: busy ? null : () => _add(context, ref),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(112, 34),
-                padding: EdgeInsets.zero,
-                foregroundColor: brand.primary,
-                side: BorderSide(color: brand.primary.withValues(alpha: 0.4)),
-                textStyle: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              child: Text(context.customerText("ADD")),
-            ),
+            _addButton(context, busy),
         ],
       ),
     );
   }
 
-  /// A dish with options always opens the sheet: the server would reject an add
-  /// without a variant, and guessing one for the customer is worse than asking.
   Future<void> _add(BuildContext context, WidgetRef ref) async {
-    await _addProductToCart(context, ref, product);
+    setState(() => _adding = true);
+    try {
+      await addMenuProductToCart(context, ref, widget.product);
+    } finally {
+      if (mounted) setState(() => _adding = false);
+    }
   }
+
+  Widget _addButton(BuildContext context, bool busy) => OutlinedButton.icon(
+    onPressed: busy ? null : () => _add(context, ref),
+    icon: const Icon(Icons.add_rounded, size: 15),
+    label: Text(context.customerText("ADD")),
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size(112, 34),
+      padding: EdgeInsets.zero,
+      foregroundColor: context.brand.primary,
+      side: BorderSide(color: context.brand.primary.withValues(alpha: 0.4)),
+      textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+    ),
+  );
 
   Future<void> _setQuantity(
     BuildContext context,
@@ -638,7 +730,7 @@ class ProductRailCard extends ConsumerWidget {
     return SizedBox(
       width: 156,
       child: InkWell(
-        onTap: () => ProductSheet.show(context, productId: product.id),
+        onTap: () => context.push(Routes.product(product.id)),
         borderRadius: BorderRadius.circular(brand.radiusMd),
         child: Opacity(
           opacity: product.isAvailable ? 1 : 0.55,
@@ -747,16 +839,11 @@ class ProductRailCard extends ConsumerWidget {
               const SizedBox(height: 3),
               Row(
                 children: [
-                  Text(
-                    Fmt.moneySmart(product.displayPrice),
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: brand.ink,
-                    ),
+                  Expanded(
+                    child: ProductPrice(product: product, compact: true),
                   ),
                   if (product.ratingCount > 0) ...[
-                    const Spacer(),
+                    const SizedBox(width: 4),
                     RatingChip(rating: product.ratingAverage, dense: true),
                   ],
                 ],

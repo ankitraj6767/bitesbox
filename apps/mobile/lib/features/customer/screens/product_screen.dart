@@ -1,91 +1,340 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../l10n/customer_copy.dart';
 
 import '../../../core/theme/brand_tokens.dart';
+import '../../../l10n/customer_copy.dart';
+import '../../../shared/format.dart';
+import '../../../shared/widgets/common.dart';
 import '../../../shared/widgets/states.dart';
 import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
-import '../widgets/product_sheet.dart';
 import '../widgets/favorite_button.dart';
+import '../widgets/product_card.dart';
+import '../widgets/product_sheet.dart';
 
-/// A deep-linkable product page.
-///
-/// Inside the app a dish opens as a bottom sheet, which keeps the customer in the
-/// menu. This route exists so a push notification, a banner or a shared link can
-/// land directly on one dish.
-class ProductScreen extends ConsumerStatefulWidget {
+/// Full dish page opened from a dish photo or a shared product link.
+class ProductScreen extends ConsumerWidget {
   const ProductScreen({required this.productId, super.key});
 
   final String productId;
 
   @override
-  ConsumerState<ProductScreen> createState() => _ProductScreenState();
-}
-
-class _ProductScreenState extends ConsumerState<ProductScreen> {
-  bool _opened = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final brand = context.brand;
-    final detail = ref.watch(productDetailProvider(widget.productId));
-
-    // Once the dish resolves, present the same sheet the menu uses. A single
-    // configuration UI means the variant and modifier rules can never diverge.
-    if (!_opened && detail.hasValue) {
-      _opened = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ProductSheet.show(context, productId: widget.productId);
-      });
-    }
+    final detail = ref.watch(productDetailProvider(productId));
+    final product = detail.valueOrNull?.product;
+    final options = detail.valueOrNull;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(detail.valueOrNull?.product.name ?? context.customerText("Dish")),
+        title: Text(product?.name ?? context.customerText('Dish')),
         actions: [
-          if (detail.valueOrNull != null)
-            FavoriteButton(
-              productId: widget.productId,
-              filledBackground: false,
-            ),
+          if (product != null)
+            FavoriteButton(productId: productId, filledBackground: false),
         ],
       ),
       body: AsyncValueView<ProductDetail>(
         value: detail,
-        onRetry: () => ref.invalidate(productDetailProvider(widget.productId)),
-        data: (data) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.restaurant_menu_rounded,
-                  size: 40,
-                  color: brand.inkMuted.withValues(alpha: 0.5),
+        onRetry: () => ref.invalidate(productDetailProvider(productId)),
+        data: (data) => _ProductDetails(detail: data),
+      ),
+      bottomNavigationBar: options == null
+          ? null
+          : SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                decoration: BoxDecoration(
+                  color: brand.surface,
+                  border: Border(top: BorderSide(color: brand.hairline)),
                 ),
-                const SizedBox(height: 16),
+                child: SizedBox(
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: product?.isAvailable == true
+                        ? () async {
+                            if (dataHasOptions(options)) {
+                              await ProductSheet.show(
+                                context,
+                                productId: productId,
+                              );
+                            } else {
+                              await addMenuProductToCart(
+                                context,
+                                ref,
+                                options.product,
+                              );
+                            }
+                          }
+                        : null,
+                    child: Text(
+                      context.customerText(
+                        dataHasOptions(options)
+                            ? 'Choose options'
+                            : 'Add to your box',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+bool dataHasOptions(ProductDetail detail) =>
+    detail.variants.isNotEmpty || detail.modifierGroups.isNotEmpty;
+
+class _ProductDetails extends StatelessWidget {
+  const _ProductDetails({required this.detail});
+
+  final ProductDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = context.brand;
+    final product = detail.product;
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Stack(
+            children: [
+              FoodImage(
+                path: product.heroImagePath ?? product.thumbnailPath,
+                height: 300,
+                radius: 0,
+                fit: BoxFit.cover,
+                placeholderAsset: FoodImage.assetForPath(product.slug),
+              ),
+              if (product.hasDiscount)
+                Positioned(
+                  left: 16,
+                  bottom: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: brand.success,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      context.customerText('${product.discountPercent}% OFF'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    FoodTypeMark(foodType: product.foodType),
+                    if (detail.categoryName != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        context.customerText(detail.categoryName!),
+                        style: TextStyle(
+                          color: brand.inkMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    if (product.isBestSeller) ...[
+                      const SizedBox(width: 8),
+                      AppPill(
+                        label: context.customerText('Bestseller'),
+                        background: brand.primary.withValues(alpha: 0.10),
+                        foreground: brand.primaryDark,
+                        dense: true,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 10),
                 Text(
-                  data.product.name,
-                  textAlign: TextAlign.center,
+                  product.name,
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 26,
+                    height: 1.12,
+                    letterSpacing: -0.6,
+                    fontWeight: FontWeight.w800,
                     color: brand.ink,
                   ),
                 ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () =>
-                      ProductSheet.show(context, productId: widget.productId),
-                  child: Text(context.customerText("Choose options")),
+                const SizedBox(height: 10),
+                ProductPrice(product: product),
+                if (product.ratingCount > 0) ...[
+                  const SizedBox(height: 9),
+                  RatingChip(
+                    rating: product.ratingAverage,
+                    count: product.ratingCount,
+                  ),
+                ],
+                if ((product.description ?? product.shortDescription ?? '')
+                    .isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    product.description ?? product.shortDescription!,
+                    style: TextStyle(
+                      color: brand.inkMuted,
+                      fontSize: 15,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _ProductStat(
+                      icon: Icons.schedule_rounded,
+                      label: context.customerText(
+                        '{minutes} min',
+                        values: {'minutes': product.preparationMinutes},
+                      ),
+                    ),
+                    if (product.servesCount != null)
+                      _ProductStat(
+                        icon: Icons.people_alt_outlined,
+                        label: context.customerText(
+                          'Serves {count}',
+                          values: {'count': product.servesCount!},
+                        ),
+                      ),
+                    if (product.calories != null)
+                      _ProductStat(
+                        icon: Icons.local_fire_department_outlined,
+                        label: context.customerText(
+                          '{calories} kcal',
+                          values: {'calories': product.calories!},
+                        ),
+                      ),
+                    if (product.spiceLevel != 'NONE')
+                      _ProductStat(
+                        icon: Icons.whatshot_outlined,
+                        label: context.customerText(product.spiceLevel),
+                      ),
+                  ],
                 ),
+                if (detail.variants.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    context.customerText('Available portions'),
+                    style: TextStyle(
+                      color: brand.ink,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...detail.variants
+                      .where((variant) => variant.isAvailable)
+                      .map(
+                        (variant) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  variant.name,
+                                  style: TextStyle(color: brand.ink),
+                                ),
+                              ),
+                              if (variant.comparePrice != null &&
+                                  variant.comparePrice! > variant.price) ...[
+                                Text(
+                                  Fmt.moneySmart(variant.comparePrice),
+                                  style: TextStyle(
+                                    color: brand.inkMuted,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                                const SizedBox(width: 7),
+                              ],
+                              Text(
+                                Fmt.moneySmart(variant.price),
+                                style: TextStyle(
+                                  color: brand.ink,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                ],
+                if (product.allergens.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(13),
+                    decoration: BoxDecoration(
+                      color: brand.warning.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      context.customerText(
+                        'Contains {allergens}',
+                        values: {'allergens': product.allergens.join(', ')},
+                      ),
+                      style: TextStyle(
+                        color: brand.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ProductStat extends StatelessWidget {
+  const _ProductStat({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = context.brand;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: brand.surfaceMuted,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: brand.inkMuted),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: brand.inkMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

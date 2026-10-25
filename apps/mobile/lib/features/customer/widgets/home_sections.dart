@@ -10,7 +10,6 @@ import '../../../shared/widgets/common.dart';
 import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
 import 'product_card.dart';
-import 'product_sheet.dart';
 
 /// Renders one CMS-driven home section.
 ///
@@ -259,7 +258,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
     switch (banner.linkKind) {
       case 'PRODUCT':
         if (banner.linkProductId != null) {
-          ProductSheet.show(context, productId: banner.linkProductId!);
+          context.push(Routes.product(banner.linkProductId!));
         }
       case 'CATEGORY':
         context.push(Routes.menu);
