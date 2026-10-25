@@ -10,7 +10,6 @@ import '../data/menu_models.dart';
 import '../providers/customer_providers.dart';
 import '../widgets/favorite_button.dart';
 import '../widgets/product_card.dart';
-import '../widgets/product_sheet.dart';
 
 /// Full dish page opened from a dish photo or a shared product link.
 class ProductScreen extends ConsumerWidget {
@@ -53,27 +52,14 @@ class ProductScreen extends ConsumerWidget {
                   child: FilledButton(
                     onPressed: product?.isAvailable == true
                         ? () async {
-                            if (dataHasOptions(options)) {
-                              await ProductSheet.show(
-                                context,
-                                productId: productId,
-                              );
-                            } else {
-                              await addMenuProductToCart(
-                                context,
-                                ref,
-                                options.product,
-                              );
-                            }
+                            await addMenuProductToCart(
+                              context,
+                              ref,
+                              options.product,
+                            );
                           }
                         : null,
-                    child: Text(
-                      context.customerText(
-                        dataHasOptions(options)
-                            ? 'Choose options'
-                            : 'Add to your box',
-                      ),
-                    ),
+                    child: Text(context.customerText('Add to cart')),
                   ),
                 ),
               ),
@@ -81,9 +67,6 @@ class ProductScreen extends ConsumerWidget {
     );
   }
 }
-
-bool dataHasOptions(ProductDetail detail) =>
-    detail.variants.isNotEmpty || detail.modifierGroups.isNotEmpty;
 
 class _ProductDetails extends StatelessWidget {
   const _ProductDetails({required this.detail});

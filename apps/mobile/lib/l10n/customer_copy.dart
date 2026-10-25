@@ -264,6 +264,7 @@ const Map<String, String> _hindi = {
   'You saved this': 'आपने इसे पसंदीदा में रखा',
   'You rated this highly': 'आपने इसे अच्छी रेटिंग दी',
   'Mild spice': 'हल्का तीखापन',
+  'Add to cart': 'कार्ट में जोड़ें',
   'Matches a food type you chose':
       'आपकी चुनी हुई खाने की श्रेणी से मेल खाता है',
   'Popular at this outlet': 'इस आउटलेट पर लोकप्रिय',
